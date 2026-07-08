@@ -1,0 +1,4 @@
+@model AlignHR.Models.Employee
+
+<input type="hidden" id="hdnGrossSalary" value="@ViewBag.GrossSalary" />
+@await Html.PartialAsync("_EmployeeProfileCard", Model)

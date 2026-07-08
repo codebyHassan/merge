@@ -1,0 +1,47 @@
+@{
+    ViewData["Title"] = "Execute Provident Fund Generation";
+    ViewBag.ActivePage = "PFMembers";
+}
+
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <i class="fas fa-home"></i>
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">Provident Funds</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Execute</div>
+</div>
+
+<div class="form-shell">
+    <div class="card-inner">
+        <h2 class="card-title">Execute Provident Fund Generation</h2>
+        <p class="text-muted mb-4">This process will delete all existing Provident Fund records for the selected period and regenerate them for all active employees who are Provident Fund members.</p>
+
+        <form asp-action="Execute" method="post" class="execute-form">
+            @Html.AntiForgeryToken()
+
+            <div class="form-grid" style="margin-bottom: 2rem; max-width: 500px;">
+                <div class="form-item">
+                    <label class="form-label">Salary Period <span class="required">*</span></label>
+                    <select name="SalaryPeriodFK" class="form-control" asp-items="ViewBag.SalaryPeriodFK" required>
+                        <option value="">-- Select Salary Period --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-actions-sticky mt-4">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Are you sure? All existing records for this period will be deleted.')">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; vertical-align: middle; display: inline-block;">
+                        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    </svg>
+                    Execute Generation
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

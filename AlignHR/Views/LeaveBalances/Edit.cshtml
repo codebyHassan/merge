@@ -1,0 +1,119 @@
+@model AlignHR.Models.LeaveBalance
+
+@{
+    ViewData["Title"] = "Edit Leave Balance";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header animate-fade">
+    <div>
+        <h1 class="page-title">Edit Leave Balance</h1>
+        <p class="page-subtitle">Modify existing leave allocation for @Model.Employee?.FullName</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>
+
+<form asp-action="Edit" method="post" class="animate-fade" style="animation-delay: 0.1s">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="UpdatedAt" />
+    <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom:16px;font-weight:600"></div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px;">
+        
+        <!-- Left Column: Assignment -->
+        <div class="hr-card" style="margin-bottom:0; height: 100%;">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-user-tag"></i> Assignment</div>
+            </div>
+            <div class="card-body">
+                <div class="form-group mb-4">
+                    <label asp-for="EmployeeId" class="form-label">Employee</label>
+                    <select asp-for="EmployeeId" class="form-control" asp-items="ViewBag.EmployeeId" readonly disabled></select>
+                    <input type="hidden" asp-for="EmployeeId" />
+                    <span class="text-muted small">Employee assignment cannot be changed after creation.</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label asp-for="LeaveTypeId" class="form-label">Leave Type</label>
+                        <select asp-for="LeaveTypeId" class="form-control" asp-items="ViewBag.LeaveTypeId" readonly disabled></select>
+                        <input type="hidden" asp-for="LeaveTypeId" />
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Year" class="form-label">Fiscal Year <span class="req">*</span></label>
+                        <input asp-for="Year" class="form-control" />
+                        <span asp-validation-for="Year" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Balance Details -->
+        <div class="hr-card" style="margin-bottom:0; height: 100%;">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-calculator"></i> Balance Adjustment</div>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group mb-3">
+                        <label asp-for="Allocated" class="form-label">Total Allocated</label>
+                        <input asp-for="Allocated" class="form-control" type="number" step="0.5" />
+                        <span asp-validation-for="Allocated" class="text-danger small"></span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="CarriedForward" class="form-label">Carried Forward</label>
+                        <input asp-for="CarriedForward" class="form-control" type="number" step="0.5" />
+                        <span asp-validation-for="CarriedForward" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group mb-3">
+                        <label asp-for="Used" class="form-label">Leaves Used</label>
+                        <input asp-for="Used" class="form-control" type="number" step="0.5" />
+                        <span asp-validation-for="Used" class="text-danger small"></span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="Pending" class="form-label">Pending Approval</label>
+                        <input asp-for="Pending" class="form-control" type="number" step="0.5" />
+                        <span asp-validation-for="Pending" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="form-group mt-3">
+                    <label asp-for="Available" class="form-label font-bold text-primary">Available Balance (Calculated)</label>
+                    <input asp-for="Available" class="form-control bg-light" readonly />
+                    <p class="text-muted small mt-1">Available = (Allocated + CarriedForward) - (Used + Pending)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hr-card" style="margin-top: 24px; margin-bottom: 0;">
+        <div class="card-body" style="padding: 16px 24px; display: flex; justify-content: flex-end; align-items: center; background: var(--surface-hover);">
+            <div class="form-actions" style="padding-top: 0;">
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            function calculateAvailable() {
+                const allocated = parseFloat($('#Allocated').val()) || 0;
+                const carried = parseFloat($('#CarriedForward').val()) || 0;
+                const used = parseFloat($('#Used').val()) || 0;
+                const pending = parseFloat($('#Pending').val()) || 0;
+                
+                const available = (allocated + carried) - (used + pending);
+                $('#Available').val(available.toFixed(2));
+            }
+
+            $('#Allocated, #CarriedForward, #Used, #Pending').on('input change', calculateAvailable);
+        });
+    </script>
+}

@@ -1,0 +1,59 @@
+@model AlignHR.Models.AttendencePolicies
+
+@{
+    ViewData["Title"] = "Policy Details";
+    ViewBag.ActivePage = "AttendencePolicies";
+}
+
+<!-- Breadcrumb Area -->
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <i class="fas fa-home"></i>
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">Attendance Policies</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Policy Details</div>
+</div>
+
+<!-- Main Content Card -->
+<div class="form-shell">
+    <div class="card-inner">
+        <h2 class="card-subtitle">Attendance Policy Details</h2>
+
+        <div class="form-grid">
+            <div class="form-item">
+                <label class="form-label">Late Grace Time</label>
+                <div class="form-control" style="background-color: var(--bg); border-color: transparent;">@Model.LateGraceTime Minutes</div>
+            </div>
+            <div class="form-item">
+                <label class="form-label">OT Starts After</label>
+                <div class="form-control" style="background-color: var(--bg); border-color: transparent;">@Model.OtAfterMintues Minutes</div>
+            </div>
+            <div class="form-item">
+                <label class="form-label">Max OT Per Day</label>
+                <div class="form-control" style="background-color: var(--bg); border-color: transparent;">@Model.MaxOtPerDay Minutes</div>
+            </div>
+            <div class="form-item">
+                <label class="form-label">Weekly Hour Limit</label>
+                <div class="form-control" style="background-color: var(--bg); border-color: transparent;">@Model.WeeklyHourLimit Hours</div>
+            </div>
+            <div class="form-item">
+                <label class="form-label">Effective From Date</label>
+                <div class="form-control" style="background-color: var(--bg); border-color: transparent;">@Model.EffictiveTime.ToString("MMM dd, yyyy")</div>
+            </div>
+            <div class="form-item">
+                <label class="form-label">Is Flexible Policy?</label>
+                <div class="form-control" style="background-color: var(--bg); border-color: transparent;">@(Model.IsFlexiable ? "Yes" : "No")</div>
+            </div>
+        </div>
+
+        <div class="form-actions-sticky">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to List</a>
+            <a asp-action="Edit" asp-route-id="@Model.id" class="btn btn-primary btn-sm">Edit Policy</a>
+        </div>
+    </div>
+</div>

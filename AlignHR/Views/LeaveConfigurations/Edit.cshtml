@@ -1,0 +1,263 @@
+@model AlignHR.Models.LeaveConfiguration
+
+@{
+    ViewData["Title"] = "Edit Leave Configuration";
+    ViewBag.ActivePage = "LeaveConfigurations";
+}
+
+@section Styles {
+    <style>
+        .config-energy {
+            --acc-1: #1F2937;
+            --acc-2: #9CA3AF;
+            --acc-soft: #F3F4F6;
+            --acc-border: #E5E7EB;
+        }
+        .config-energy input[type="checkbox"],
+        .config-energy input[type="radio"] { accent-color: var(--acc-1); }
+        .lc-grid { display:grid; grid-template-columns:340px 1fr; gap:16px; }
+        .lc-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+        .lc-stat { border:1px solid #d4d4d8; border-radius:10px; background:linear-gradient(180deg,#ffffff 0%,#fafafa 100%); padding:10px 12px; box-shadow:0 4px 12px rgba(24,24,27,.08); }
+        .lc-stat small { display:block; color:var(--text-muted); font-size:12px; margin-bottom:4px; }
+        .lc-stat strong { font-size:18px; color:var(--acc-1); }
+        .lc-route { display:flex; flex-direction:column; gap:10px; }
+        .lc-option { border:1px solid var(--border-light); border-radius:10px; background:#fff; padding:11px; display:flex; gap:10px; align-items:flex-start; cursor:pointer; transition:border-color .15s ease, box-shadow .15s ease, background .15s ease; }
+        .lc-option:hover { border-color:#D1D5DB; box-shadow:0 4px 10px rgba(31, 41, 55,.14); background:#fffaf5; }
+        .lc-option input[type=radio] { margin-top:2px; width:16px; height:16px; }
+        .lc-option strong { display:block; font-size:13px; color:var(--text-primary); }
+        .lc-option span { display:block; font-size:12px; color:var(--text-muted); }
+        .lc-map-head, .lc-row { display:grid; grid-template-columns:1fr 1.1fr; }
+        .lc-map-head { background:linear-gradient(90deg,var(--acc-soft),#f0f9ff); border-bottom:1px solid var(--acc-border); }
+        .lc-map-head > div, .lc-cell { padding:10px 12px; }
+        .lc-map-wrap { border:1px solid #d4d4d8; border-radius:10px; overflow:visible; background:#fff; box-shadow:0 4px 12px rgba(24,24,27,.08); position:relative; }
+        .lc-row { border-bottom:1px solid var(--border-light); }
+        .lc-row:last-child { border-bottom:0; }
+        .lc-cell { overflow:visible; }
+        .lc-empty { min-height:220px; border:1px dashed var(--border-light); border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--text-muted); gap:8px; }
+        .approver-shell { position:relative; }
+        .approver-search-wrap { position:relative; }
+        .approver-search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:12px; }
+        .approver-search-input { padding-left:30px; }
+        .approver-dropdown { position:absolute; top:calc(100% + 8px); left:0; right:0; border:1px solid #d4d4d8; border-radius:10px; background:#fff; z-index:200; max-height:300px; overflow:auto; box-shadow:0 12px 24px rgba(24,24,27,.18); }
+        .approver-selected { border:1px solid var(--border-light); border-radius:8px; padding:8px 10px; display:flex; justify-content:space-between; align-items:center; }
+        .approver-selected-copy strong { display:block; font-size:13px; }
+        .approver-selected-copy span { display:block; font-size:11px; color:var(--text-muted); }
+        .approver-clear { border:0; background:transparent; color:var(--text-muted); }
+        .approver-result { width:100%; border:0; background:#fff; padding:12px 14px; border-bottom:1px solid var(--border-light); display:flex; align-items:center; justify-content:space-between; text-align:left; cursor:pointer; }
+        .approver-result:last-child { border-bottom:0; }
+        .approver-result:hover { background:#F3F4F6; }
+        .approver-result-main { display:flex; flex-direction:column; min-width:0; }
+        .approver-result-name { font-size:14px; font-weight:600; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:340px; }
+        .approver-result-code { font-size:12px; color:var(--text-muted); }
+        .approver-result-tag { font-size:12px; color:#1F2937; background:#F3F4F6; border:1px solid #D1D5DB; border-radius:999px; padding:3px 10px; white-space:nowrap; }
+        .approver-result-empty { padding:12px; font-size:12px; color:var(--text-muted); }
+        @@media (max-width:992px){ .lc-grid{grid-template-columns:1fr;} .lc-stats{grid-template-columns:repeat(2,1fr);} }
+        @@media (max-width:640px){ .lc-stats{grid-template-columns:1fr;} .lc-map-head, .lc-row { grid-template-columns:1fr; } }
+    </style>
+}
+
+<div class="config-energy">
+<form asp-action="Edit" method="post" id="configForm" class="animate-fade" style="animation-delay:.06s">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="CreatedAt" />
+    <div asp-validation-summary="ModelOnly" style="color:var(--danger-text);margin-bottom:12px;font-weight:600"></div>
+
+    <div class="lc-stats">
+        <div class="lc-stat"><small>Selected Routing</small><strong id="summaryGrouping">@Model.GroupingType</strong></div>
+        <div class="lc-stat"><small>Rows Loaded</small><strong id="summaryMappings">@Model.Details.Count</strong></div>
+        <div class="lc-stat"><small>Assigned Approvers</small><strong id="summaryAssigned">0</strong></div>
+        <div class="lc-stat"><small>Coverage</small><strong id="summaryCoverage">0%</strong></div>
+    </div>
+
+    <div class="lc-grid">
+        <section class="hr-card" style="margin-bottom:0">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-sitemap"></i> Routing Setup</div>
+            </div>
+            <div class="card-body">
+                <div class="lc-route">
+                    <label class="lc-option" onclick="selectGroupType('Department')">
+                        <input type="radio" name="groupType" value="Department" @(Model.IsDepartment ? "checked" : null) />
+                        <input type="hidden" name="IsDepartment" id="chk_Department" value="@(Model.IsDepartment ? "true" : "false")" />
+                        <div><strong>Department</strong><span>Route approvals by department.</span></div>
+                    </label>
+                    <label class="lc-option" onclick="selectGroupType('SubDepartment')">
+                        <input type="radio" name="groupType" value="SubDepartment" @(Model.IsSubDepartment ? "checked" : null) />
+                        <input type="hidden" name="IsSubDepartment" id="chk_SubDepartment" value="@(Model.IsSubDepartment ? "true" : "false")" />
+                        <div><strong>Sub-Department</strong><span>Route by sub-department structure.</span></div>
+                    </label>
+                    <label class="lc-option" onclick="selectGroupType('Grade')">
+                        <input type="radio" name="groupType" value="Grade" @(Model.IsGrade ? "checked" : null) />
+                        <input type="hidden" name="IsGrade" id="chk_Grade" value="@(Model.IsGrade ? "true" : "false")" />
+                        <div><strong>Grade</strong><span>Route by employee grade level.</span></div>
+                    </label>
+                    <label class="lc-option" onclick="selectGroupType('Division')">
+                        <input type="radio" name="groupType" value="Division" @(Model.IsDivision ? "checked" : null) />
+                        <input type="hidden" name="IsDivision" id="chk_Division" value="@(Model.IsDivision ? "true" : "false")" />
+                        <div><strong>Division</strong><span>Route by business division.</span></div>
+                    </label>
+                </div>
+                <div style="margin-top:12px;border-top:1px solid var(--border-light);padding-top:12px;display:flex;justify-content:space-between;align-items:center;">
+                    <div>
+                        <div style="font-weight:700;font-size:13px;color:var(--text-primary)">Activation</div>
+                        <div style="color:var(--text-muted);font-size:12px">Keep configuration active.</div>
+                    </div>
+                    <div class="form-check m-0">
+                        <input type="checkbox" asp-for="IsActive" id="IsActive" class="form-check-input" />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="hr-card" style="margin-bottom:0">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-user-check"></i> Approver Assignment</div>
+            </div>
+            <div class="card-body">
+                <div id="mappingPlaceholder" class="lc-empty" style="display:none;">
+                    <i class="fas fa-diagram-project"></i>
+                    <strong>Select routing dimension</strong>
+                    <span>Grid appears here after selection.</span>
+                </div>
+                <div id="mappingLoader" class="lc-empty" style="display:none;">
+                    <div class="search-loader"></div><span>Loading routing values...</span>
+                </div>
+                <div id="mappingTable" class="lc-map-wrap">
+                    <div class="lc-map-head"><div>Group Value</div><div>Approver</div></div>
+                    <div id="mappingBody"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <div class="hr-card" style="margin-top:24px; margin-bottom:0;">
+        <div class="card-body" style="padding:16px 24px;display:flex;justify-content:flex-end;align-items:center;">
+                <div class="form-actions" style="padding-top:0; background:none !important; border-top:none !important;">
+                <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+</form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const groupingLabels = { Department:'Department', SubDepartment:'Sub-Department', Grade:'Grade', Division:'Division' };
+        const existingMappings = [
+            @foreach (var d in Model.Details)
+            {
+                <text>{ id: @d.ReferenceId, empNo: '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(d.ApproverEmpNo ?? ""))', empName: '@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(d.ApproverName ?? ""))' },</text>
+            }
+        ];
+        function selectGroupType(type) {
+            ['Department','SubDepartment','Grade','Division'].forEach(t => {
+                document.getElementById('chk_' + t).value = 'false';
+                const r = document.querySelector('input[name="groupType"][value="' + t + '"]');
+                if (r) r.checked = t === type;
+            });
+            document.getElementById('chk_' + type).value = 'true';
+            document.getElementById('summaryGrouping').textContent = groupingLabels[type] || 'Not Selected';
+            loadGroupValues(type);
+        }
+        function updateAssignmentStats() {
+            const total = document.querySelectorAll('.assignment-row').length;
+            const assigned = document.querySelectorAll('input[name="approverEmpNos"][value]:not([value=""])').length;
+            const coverage = total === 0 ? 0 : Math.round((assigned / total) * 100);
+            document.getElementById('summaryMappings').textContent = total;
+            document.getElementById('summaryAssigned').textContent = assigned;
+            document.getElementById('summaryCoverage').textContent = coverage + '%';
+        }
+        async function loadGroupValues(type) {
+            document.getElementById('mappingPlaceholder').style.display = 'none';
+            document.getElementById('mappingTable').style.display = 'none';
+            document.getElementById('mappingLoader').style.display = 'flex';
+            try {
+                const response = await fetch('@Url.Action("GetGroupValues")?groupType=' + type);
+                const values = await response.json();
+                const body = document.getElementById('mappingBody');
+                body.innerHTML = '';
+                values.forEach((item, idx) => {
+                    const mapping = existingMappings.find(m => m.id === item.id) || { empNo: '', empName: '' };
+                    const row = document.createElement('div');
+                    row.className = 'assignment-row lc-row';
+                    row.innerHTML = `
+                        <div class="assignment-cell lc-cell assignment-group">
+                            <strong>${item.name}</strong>
+                            <span>${groupingLabels[type]} node</span>
+                            <input type="hidden" name="referenceIds" value="${item.id}" />
+                            <input type="hidden" name="referenceNames" value="${item.name}" />
+                        </div>
+                        <div class="assignment-cell lc-cell">
+                            <div class="approver-shell">
+                                <div id="searchWrapper_${idx}" class="approver-search-wrap" style="display:${mapping.empNo ? 'none' : 'block'};">
+                                    <i class="fas fa-search approver-search-icon"></i>
+                                    <input type="text" class="form-control approver-search-input" placeholder="Search employee by code or name..." data-row="${idx}" oninput="searchApprover(this, ${idx})" autocomplete="off" />
+                                </div>
+                                <div id="selectedWrapper_${idx}" class="approver-selected" style="display:${mapping.empNo ? 'flex' : 'none'};">
+                                    <div class="approver-selected-copy">
+                                        <strong id="selectedNameText_${idx}">${mapping.empName}</strong>
+                                        <span id="selectedCodeText_${idx}">${mapping.empNo}</span>
+                                    </div>
+                                    <button type="button" class="approver-clear" onclick="clearApprover(${idx})"><i class="fas fa-times"></i></button>
+                                </div>
+                                <input type="hidden" name="approverEmpNos" id="empNo_${idx}" value="${mapping.empNo}" />
+                                <input type="hidden" name="approverNames" id="empName_${idx}" value="${mapping.empName}" />
+                                <div class="approver-dropdown" id="dropdown_${idx}" style="display:none;"></div>
+                            </div>
+                        </div>`;
+                    body.appendChild(row);
+                });
+                document.getElementById('mappingLoader').style.display = 'none';
+                document.getElementById('mappingTable').style.display = 'block';
+                updateAssignmentStats();
+            } catch {
+                document.getElementById('mappingLoader').style.display = 'none';
+                document.getElementById('mappingPlaceholder').style.display = 'flex';
+            }
+        }
+        let searchTimer = null;
+        function searchApprover(input, rowIndex) {
+            clearTimeout(searchTimer);
+            if (input.value.trim().length < 2) { document.getElementById('dropdown_' + rowIndex).style.display = 'none'; return; }
+            searchTimer = setTimeout(async () => {
+                try {
+                    const response = await fetch('@Url.Action("SearchEmployees")?term=' + encodeURIComponent(input.value.trim()) + '&rowIndex=' + rowIndex);
+                    const html = await response.text();
+                    const dropdown = document.getElementById('dropdown_' + rowIndex);
+                    dropdown.innerHTML = html;
+                    dropdown.style.display = 'block';
+                } catch {}
+            }, 350);
+        }
+        function selectApprover(rowIndex, code, name) {
+            document.getElementById('empNo_' + rowIndex).value = code;
+            document.getElementById('empName_' + rowIndex).value = name;
+            document.getElementById('selectedNameText_' + rowIndex).textContent = name;
+            document.getElementById('selectedCodeText_' + rowIndex).textContent = code;
+            document.getElementById('searchWrapper_' + rowIndex).style.display = 'none';
+            document.getElementById('selectedWrapper_' + rowIndex).style.display = 'flex';
+            document.getElementById('dropdown_' + rowIndex).style.display = 'none';
+            updateAssignmentStats();
+        }
+        function clearApprover(rowIndex) {
+            document.getElementById('empNo_' + rowIndex).value = '';
+            document.getElementById('empName_' + rowIndex).value = '';
+            document.getElementById('searchWrapper_' + rowIndex).style.display = 'block';
+            document.getElementById('selectedWrapper_' + rowIndex).style.display = 'none';
+            const input = document.querySelector('.approver-search-input[data-row="' + rowIndex + '"]');
+            if (input) { input.value = ''; input.focus(); }
+            updateAssignmentStats();
+        }
+        document.addEventListener('click', function (e) {
+            if (!e.target.closest('.approver-shell')) {
+                document.querySelectorAll('.approver-dropdown').forEach(d => d.style.display = 'none');
+            }
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectedType = document.querySelector('input[name="groupType"]:checked')?.value;
+            if (selectedType) loadGroupValues(selectedType);
+            else updateAssignmentStats();
+        });
+    </script>
+}

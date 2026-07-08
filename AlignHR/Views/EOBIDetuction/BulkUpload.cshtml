@@ -1,0 +1,91 @@
+@model AlignHR.Models.EOBIDetuction
+@{
+    ViewData["Title"] = "Bulk Upload - EOBI Deduction";
+    ViewBag.ActivePage = "EOBIDetuction";
+    var errors = ViewBag.Errors as List<string>;
+}
+
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <i class="fas fa-home"></i>
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">EOBI Deduction</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Bulk Upload</div>
+</div>
+
+<div class="form-shell">
+    <div class="card-inner">
+        <div class="upload-header">
+            <h2 class="card-subtitle">Bulk Upload Enrollment via CSV</h2>
+            <p class="text-muted">Register multiple employees for EOBI deduction in a specific salary period.</p>
+        </div>
+
+        <div class="sample-format-box mt-4 mb-4">
+            <div class="sample-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <i class="fas fa-file-csv"></i>
+                    <span>Sample CSV Format</span>
+                </div>
+                <a asp-action="DownloadSampleCsv" class="btn-download-sample">
+                    <i class="fas fa-download"></i>
+                    Download CSV
+                </a>
+            </div>
+            <pre class="sample-content">EmployeeCode
+EMP001
+EMP102
+EMP105</pre>
+            <p class="small text-muted mt-2">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Note:</strong> The EOBI amount will be automatically applied based on the rate defined in the selected Salary Period.
+            </p>
+        </div>
+
+        @if (errors != null && errors.Any())
+        {
+            <div class="error-container animate-fade-in mb-4">
+                <div class="error-header">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span>Validation Errors Found (@errors.Count)</span>
+                </div>
+                <ul class="error-list">
+                    @foreach (var error in errors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+                <p class="small mt-2">Please fix these errors in your CSV file and try again. No data was saved.</p>
+            </div>
+        }
+
+        <form asp-action="BulkUpload" method="post" enctype="multipart/form-data">
+            <div asp-validation-summary="All" class="text-danger small mb-3"></div>
+
+            <div class="form-grid">
+                <div class="form-item">
+                    <label class="form-label">Select Salary Period <span class="required">*</span></label>
+                    <select name="PeriodSalery" class="form-control" required asp-items="ViewBag.PeriodSalery">
+                        <option value="">-- Select Period --</option>
+                    </select>
+                </div>
+
+                <div class="form-item">
+                    <label class="form-label">CSV File (Employee Codes Only) <span class="required">*</span></label>
+                    <input type="file" name="file" class="form-control" accept=".csv" required />
+                </div>
+            </div>
+
+            <div class="form-actions-sticky mt-4">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-upload mr-2"></i> Process Upload
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

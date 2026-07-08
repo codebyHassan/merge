@@ -1,0 +1,7 @@
+@model IEnumerable<string>
+
+<option value="">-- Select Category --</option>
+@foreach (var category in Model)
+{
+    <option value="@category">@category</option>
+}

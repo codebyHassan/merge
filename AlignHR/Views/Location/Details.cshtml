@@ -1,0 +1,61 @@
+@model AlignHR.Models.Location
+@{
+    ViewData["Title"] = "Location Details";
+    ViewBag.ActivePage = "Location";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-0">Name</label>
+                <div class="value fw-bold">@Model.Name</div>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-0">Latitude</label>
+                <div class="value">@(Model.Latitude?.ToString() ?? "—")</div>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-0">Longitude</label>
+                <div class="value">@(Model.Longitude?.ToString() ?? "—")</div>
+            </div>
+
+            <div class="col-12">
+                <label class="form-label small fw-semibold text-muted mb-0">Address</label>
+                <div class="value">@(Model.Adress ?? "—")</div>
+            </div>
+        </div>
+
+        <hr class="my-4 text-muted opacity-25" />
+
+        <!-- Audit Row -->
+        <div class="row g-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-0">Created At</label>
+                <div class="value small">@Model.createat.ToString("dd MMM yyyy HH:mm:ss")</div>
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label small fw-semibold text-muted mb-0">Created By</label>
+                <div class="value small">@Model.createdby</div>
+            </div>
+            @if (Model.updateat > DateTime.MinValue)
+            {
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-0">Updated At</label>
+                    <div class="value small">@Model.updateat.ToString("dd MMM yyyy HH:mm:ss")</div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-0">Updated By</label>
+                    <div class="value small">@Model.updatedby</div>
+                </div>
+            }
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+            </div>
+        </div>
+    </div>
+</div>

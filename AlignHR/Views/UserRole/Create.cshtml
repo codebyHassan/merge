@@ -1,0 +1,52 @@
+@model AlignHR.Models.UserRole
+@{
+    ViewData["Title"] = "Assign Role";
+    ViewBag.ActivePage = "UserRole";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                var errors = ViewData.ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                if (errors.Any())
+                {
+                    <div class="alert alert-danger p-2 mb-3 small" role="alert">@errors.First()</div>
+                }
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label for="UserId" class="form-label small fw-semibold">User <span class="text-danger">*</span></label>
+                    <select name="UserId" id="UserId" class="form-select form-select-sm" required>
+                        <option value="">— Select User —</option>
+                        @foreach (var item in ViewBag.Users as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="RoleId" class="form-label small fw-semibold">Role <span class="text-danger">*</span></label>
+                    <select name="RoleId" id="RoleId" class="form-select form-select-sm" required>
+                        <option value="">— Select Role —</option>
+                        @foreach (var item in ViewBag.Roles as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Assign Role</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,170 @@
+@model List<AlignHR.Models.DmsDefinationFile>
+@{
+    ViewData["Title"] = "DMS Checklist Upload";
+    ViewBag.ActivePage = "Employees";
+    var employee = ViewBag.Employee as AlignHR.Models.Employee;
+    var hasDms = ViewBag.HasDmsDefinition as bool? ?? false;
+    var dmsName = ViewBag.DmsDefinitionName as string;
+    var progressPercent = ViewBag.DmsProgress as double? ?? 0;
+    var uploadedDocs = ViewBag.UploadedDocuments as List<AlignHR.Models.Document> ?? new List<AlignHR.Models.Document>();
+}
+
+<div class="container-fluid py-3">
+    <div class="row align-items-center mb-4">
+        <div class="col-auto me-auto">
+            <h1 class="h4 text-dark mb-0 fw-bold">DMS Document Checklist</h1>
+            <span class="text-muted small">Manage required documents for employee <strong>@employee?.FullName</strong></span>
+        </div>
+        <div class="col-auto">
+            <a href="@Url.Action("Index", "Employees")" class="btn btn-outline-secondary btn-sm shadow-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Employee List
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show small py-2 px-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.5rem 1rem;"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show small py-2 px-3 mb-4 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="padding: 0.5rem 1rem;"></button>
+        </div>
+    }
+
+    @if (employee != null)
+    {
+        <div class="row g-3 mb-4">
+            <!-- Employee card -->
+            <div class="col-12 col-md-5">
+                <div class="card border shadow-sm h-100 bg-white">
+                    <div class="card-body p-3">
+                        <h5 class="card-title h6 text-uppercase fw-bold text-muted mb-3 border-bottom pb-2">Employee Details</h5>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="avatar bg-primary text-white fw-bold rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; font-size: 1.2rem; min-width: 48px;">
+                                @(employee.FirstName?.Substring(0, 1))@(employee.LastName?.Substring(0, 1))
+                            </div>
+                            <div>
+                                <div class="fw-bold text-dark fs-6">@employee.FullName</div>
+                                <div class="small text-muted mb-1">Code: <span class="fw-semibold">@employee.Code</span></div>
+                                <div class="small text-muted">Department: <span class="fw-semibold">@(employee.Department?.Name ?? "—")</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Progress card -->
+            <div class="col-12 col-md-7">
+                <div class="card border shadow-sm h-100 bg-white">
+                    <div class="card-body p-3 d-flex flex-column justify-content-center">
+                        <h5 class="card-title h6 text-uppercase fw-bold text-muted mb-3 border-bottom pb-2">Checklist Completion</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-dark small">DMS Schema: <span class="text-primary">@(string.IsNullOrEmpty(dmsName) ? "None Assigned" : dmsName)</span></span>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success py-1 px-2">@progressPercent% Done</span>
+                        </div>
+                        <div class="progress" style="height: 12px; border-radius: 6px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" 
+                                 style="width: @progressPercent%;" aria-valuenow="@progressPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="text-muted small mt-2">
+                            Please upload all missing files below to achieve 100% compliance.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!hasDms)
+    {
+        <div class="alert alert-warning border border-warning-subtle d-flex align-items-center gap-3 py-3 shadow-sm" role="alert">
+            <i class="fa-solid fa-triangle-exclamation fs-3 text-warning"></i>
+            <div>
+                <h4 class="alert-heading h6 fw-bold mb-1 text-warning-emphasis">No DMS Checklist Assigned</h4>
+                <p class="mb-0 small text-warning-emphasis">This employee does not have a linked user account or the linked user account does not have a DMS Definition File checklist assigned. Please map a DMS Definition to the User account associated with this employee.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border shadow-sm bg-white">
+            <div class="card-header bg-light py-3 border-bottom">
+                <h6 class="m-0 fw-bold text-dark"><i class="fa-solid fa-list-check me-2 text-primary"></i>Required Documents Checklist</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-muted small text-uppercase">
+                            <tr>
+                                <th class="px-4 py-3 border-bottom">Category</th>
+                                <th class="px-4 py-3 border-bottom">Document Type</th>
+                                <th class="px-4 py-3 border-bottom">Weight</th>
+                                <th class="px-4 py-3 border-bottom">Label</th>
+                                <th class="px-4 py-3 border-bottom">Status & Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model != null && Model.Count > 0)
+                            {
+                                foreach (var item in Model)
+                                {
+                                    var uploaded = uploadedDocs.FirstOrDefault(d => d.CategoryID == item.CategoryID && d.DocumentTypeID == item.DocumentTypeID);
+                                    <tr>
+                                        <td class="px-4 py-3 fw-bold text-dark small">@(item.Category?.CategoryName ?? "—")</td>
+                                        <td class="px-4 py-3 text-muted small">@(item.DocumentType?.TypeName ?? "—")</td>
+                                        <td class="px-4 py-3 small">
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary-subtle font-monospace">@item.Percentage%</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-muted small">@(item.label ?? "—")</td>
+                                        <td class="px-4 py-3">
+                                            @if (uploaded != null)
+                                            {
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success d-inline-flex align-items-center gap-1 py-1 px-2 small">
+                                                        <i class="fa-solid fa-circle-check"></i> Uploaded
+                                                    </span>
+                                                    <a href="@uploaded.FilePath" target="_blank" class="btn btn-outline-primary btn-xs py-1 px-2 border" style="font-size: 11px;">
+                                                        <i class="fa-solid fa-eye me-1"></i> View
+                                                    </a>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="UploadChecklistFile" method="post" enctype="multipart/form-data" class="d-flex align-items-center gap-2 my-0">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="EmployeeID" value="@employee?.Id" />
+                                                    <input type="hidden" name="CategoryID" value="@item.CategoryID" />
+                                                    <input type="hidden" name="DocumentTypeID" value="@item.DocumentTypeID" />
+                                                    <input type="hidden" name="Title" value="@(item.label ?? item.DocumentType?.TypeName ?? "DMS Document")" />
+                                                    
+                                                    <input type="file" name="File" class="form-control form-control-sm border shadow-sm" required style="max-width: 220px; font-size: 11px; padding: 2px 8px; height: auto;" />
+                                                    <button type="submit" class="btn btn-primary btn-xs py-1 px-2" style="font-size: 11px;">
+                                                        <i class="fa-solid fa-cloud-arrow-up me-1"></i> Upload
+                                                    </button>
+                                                </form>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center py-4 text-muted small">
+                                        <i class="fa-solid fa-folder-open mb-2 fs-3 text-muted"></i>
+                                        <div>No required documents configured in this DMS Definition.</div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>

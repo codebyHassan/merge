@@ -1,0 +1,128 @@
+@model IEnumerable<AlignHR.Models.AttendencePolicies>
+
+@{
+    ViewData["Title"] = "Attendance Policies";
+    ViewBag.ActivePage = "AttendencePolicies";
+}
+
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <span>Attendance Policies</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Attendance Policy Management</h1>
+            <p class="page-subtitle">
+                Manage all attendance rules, late grace periods, and overtime settings
+            </p>
+        </div>
+
+        <div class="flex gap-8">
+            <a class="btn btn-primary btn-sm" asp-action="Create">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add Policy
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="table-shell">
+    <div class="table-toolbar">
+        <div class="table-card-title"> All Policies</div>
+
+        <div class="table-filters">
+            <form method="get" asp-action="Index" onsubmit="return false;" style="display: flex; align-items: center; gap: 8px;">
+                <div style="position: relative; width: 100%;">
+                    <input type="text" name="search" class="filter-input form-control" placeholder="Search Here..." value="@Context.Request.Query["search"]" 
+                           hx-get="@Url.Action("Index")" 
+                           hx-target="#table-container" 
+                           hx-select="#table-container"
+                           hx-indicator="#search-loader"
+                           hx-trigger="keyup changed delay:500ms, search" />
+                    <span id="search-loader" class="htmx-indicator" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
+                        <div class="search-loader"></div>
+                    </span>
+                </div>
+            </form></div>
+    </div>
+
+    <div id="table-container">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Late Grace (Min)</th>
+                    <th>OT After (Min)</th>
+                    <th>Max OT/Day</th>
+                    <th>Weekly Limit (Hrs)</th>
+                    <th>Effective Date</th>
+                    <th>Flexible</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                        <tr>
+                            <td>@item.id</td>
+                            <td>@item.LateGraceTime min</td>
+                            <td>@item.OtAfterMintues min</td>
+                            <td>@item.MaxOtPerDay min</td>
+                            <td>@item.WeeklyHourLimit hrs</td>
+                            <td>@item.EffictiveTime.ToString("MMM dd, yyyy")</td>
+                            <td>
+                            @if (item.IsFlexiable)
+                            {
+                                        <span class="status-badge active">Yes</span>
+                            }
+                            else
+                            {
+                                        <span class="status-badge inactive">No</span>
+                            }
+                            </td>
+                            <td>
+                                <div class="table-actions">
+
+
+                                    <a asp-action="Edit" asp-route-id="@item.id" class="btn btn-icon btn-sm" title="Edit">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                        </svg>
+                                    </a>
+
+                                    <form asp-action="Delete" asp-route-id="@item.id" method="post" style="display:inline;"
+                                          onsubmit="return confirm('Are you sure you want to delete this policy?');">
+                                        <button class="btn btn-icon btn-sm text-danger" type="submit" title="Delete"
+                                                restrict-delete-type="AttendencePolicies" restrict-delete-id="@item.id">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6" />
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                }
+                @if (!Model.Any())
+                {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                No attendance policies found.
+                            </td>
+                        </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    </div>
+</div>
+

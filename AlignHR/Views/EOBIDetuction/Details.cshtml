@@ -1,0 +1,82 @@
+@model AlignHR.Models.EOBIDetuction
+@using AlignHR.Services
+@inject IPayrollLockService LockService
+
+@{
+    ViewData["Title"] = "EOBI Deduction Details";
+    bool isLocked = await LockService.IsRecordLocked(Model.EmployeeId, Model.PeriodSalery);
+}
+
+<div class="page-header animate-fade-in">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a href="/EOBIDetuction">EOBI Deductions</a>
+        <span>/</span>
+        <span>Details</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">EOBI Deduction Details</h1>
+            <p class="page-subtitle">Statutory social security record for @Model.Employee?.FirstName</p>
+        </div>
+
+        <div class="flex gap-12">
+            @if (isLocked)
+            {
+                <div class="status-badge locked"><i class="fas fa-lock"></i><span>FINALIZED</span></div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="details-grid animate-slide-up">
+    <div class="erp-card main">
+        <div class="card-header-premium">
+            <i class="fas fa-shield-alt"></i>
+            <span>Registration Details</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-group">
+                <label>Employee</label>
+                <div class="value-highlight">@Model.Employee?.FirstName @Model.Employee?.LastName</div>
+            </div>
+            <div class="info-group">
+                <label>EOBI Number</label>
+                <div class="value">@(Model.Employee?.EobiNumber?.ToString() ?? "Not Enrolled")</div>
+            </div>
+            <hr class="divider" />
+            <div class="info-group">
+                <label>Applicable Period</label>
+                <div class="value">@Model.SalaryPeriod?.PeriodName</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="erp-card secondary">
+        <div class="card-header-premium financial">
+            <i class="fas fa-hand-holding-heart"></i>
+            <span>Contribution</span>
+        </div>
+        <div class="card-body-premium centered">
+            <div class="stat-box-container">
+                <div class="stat-box">
+                    <label>EOBI Amount</label>
+                    <div class="stat-value secondary">PKR @(Model.Amount?.ToString("N2") ?? "0.00")</div>
+                </div>
+            </div>
+            <div class="meta-info">
+                <div class="meta-item"><i class="fas fa-info-circle"></i><span>Type: Statutory Deduction</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-actions-footer">
+        <a href="/EOBIDetuction" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i>Back</a>
+        @if (!isLocked)
+        {
+            <a href="/EOBIDetuction/Edit/@Model.id" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i>Edit Entry</a>
+        }
+    </div>
+</div>

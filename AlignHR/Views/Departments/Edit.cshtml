@@ -1,0 +1,65 @@
+@model AlignHR.Models.Department
+@{
+    ViewData["Title"] = "Edit Department";
+    ViewBag.ActivePage = "Departments";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" id="editDepartmentForm" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input asp-for="createat" type="hidden" />
+            <input asp-for="createdby" type="hidden" />
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <!-- Row 1 -->
+                <div class="col-12 col-md-3">
+                    <label asp-for="Code" class="form-label small fw-semibold">Department Code <span class="text-danger">*</span></label>
+                    <input asp-for="Code" class="form-control form-control-sm" placeholder="e.g. IT-001" required />
+                    <span asp-validation-for="Code" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="Name" class="form-label small fw-semibold">Department Name <span class="text-danger">*</span></label>
+                    <input asp-for="Name" class="form-control form-control-sm" placeholder="e.g. Information Technology" required />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="Owner" class="form-label small fw-semibold">Department Owner <span class="text-danger">*</span></label>
+                    <input asp-for="Owner" class="form-control form-control-sm" placeholder="e.g. John Doe" required />
+                    <span asp-validation-for="Owner" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="Role" class="form-label small fw-semibold">Owner Role</label>
+                    <input asp-for="Role" class="form-control form-control-sm" placeholder="e.g. Department Manager" />
+                    <span asp-validation-for="Role" class="text-danger small"></span>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="col-12">
+                    <label asp-for="Description" class="form-label small fw-semibold">Description</label>
+                    <textarea asp-for="Description" class="form-control form-control-sm" rows="3" placeholder="Enter department description"></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

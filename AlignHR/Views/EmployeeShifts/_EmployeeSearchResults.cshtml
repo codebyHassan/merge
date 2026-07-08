@@ -1,0 +1,44 @@
+@model IEnumerable<AlignHR.Models.Employee>
+
+<div class="shift-search-results">
+    @if (Model != null && Model.Any())
+    {
+        <div class="shift-search-results__head">
+            <span class="shift-search-results__label">Matching Employees</span>
+            <button type="button" class="shift-search-results__addall" onclick="addAllEmployeesFromSearch()">
+                Add All (@Model.Count())
+            </button>
+        </div>
+
+        @foreach (var emp in Model)
+        {
+            <div class="search-result-item shift-search-result-card"
+                 data-id="@emp.Id"
+                 data-name="@emp.FullName (@emp.Code)"
+                 data-code="@emp.Code">
+                <div class="shift-search-result-card__body">
+                    <div class="shift-search-result-card__line">
+                        <span class="shift-search-result-card__name">@emp.FullName</span>
+                        <span class="badge-code">@emp.Code</span>
+                        <span>@(emp.Department?.Name ?? "No Dept")</span>
+                    </div>
+                </div>
+                <button type="button" class="shift-search-result-card__cta" aria-label="Add @emp.FullName">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="shift-search-results__empty">
+            <div class="shift-search-results__icon">
+                <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <div>
+                <div class="shift-search-results__title">No matches</div>
+                <div class="shift-search-results__text">Try a different name, code, or department.</div>
+            </div>
+        </div>
+    }
+</div>

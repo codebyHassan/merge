@@ -1,0 +1,66 @@
+@model List<AlignHR.Controllers.IncomeTaxDetuctionController.BulkAddPreviewItem>
+@{
+    int periodId = ViewBag.PeriodId;
+}
+
+<section class="table-shell animate-fade-in" data-erp-table id="bulk-add-preview-shell">
+    <div class="table-toolbar">
+        <div class="table-card-title">
+            <i class="fa-solid fa-list-check me-2 text-success"></i>
+            Calculation Preview (@Model.Count Active Employees)
+        </div>
+        <div class="filter-group">
+            <form asp-action="BulkAdd" method="post" class="m-0">
+                <input type="hidden" name="periodId" value="@periodId" />
+                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Calculate and save all these tax deduction records?');">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Save All Records
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 150px;">Emp Code</th>
+                    <th scope="col">Full Name</th>
+                    <th scope="col" style="width: 180px;">Gross Salary</th>
+                    <th scope="col" style="width: 180px;">Monthly Tax</th>
+                    <th scope="col" style="width: 180px;" class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td data-label="Emp Code"><span class="fw-semibold">@item.Code</span></td>
+                        <td data-label="Full Name"><strong>@item.Name</strong></td>
+                        <td data-label="Gross Salary">@item.GrossSalary.ToString("N0")</td>
+                        <td data-label="Monthly Tax" class="@(item.MonthlyTax > 0 ? "text-danger" : "text-muted")">
+                            <strong>@item.MonthlyTax.ToString("N2")</strong>
+                        </td>
+                        <td data-label="Status" class="text-center">
+                            @if (item.HasError)
+                            {
+                                <span class="status-badge status-risk"><i class="fa-solid fa-triangle-exclamation me-1"></i>Calc Error</span>
+                            }
+                            else if (item.GrossSalary <= 0)
+                            {
+                                <span class="status-badge status-pending"><i class="fa-solid fa-file-invoice-dollar me-1"></i>No Payroll</span>
+                            }
+                            else if (item.MonthlyTax <= 0)
+                            {
+                                <span class="status-badge status-info"><i class="fa-solid fa-circle-minus me-1"></i>No Tax</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-approved"><i class="fa-solid fa-circle-check me-1"></i>Ready</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

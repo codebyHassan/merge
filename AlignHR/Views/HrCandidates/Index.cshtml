@@ -1,0 +1,78 @@
+@model IPagedList<AlignHR.Models.HrCandidateListItemViewModel>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Candidates";
+    ViewBag.ActivePage = "HrCandidates";
+    var currentFilter = ViewData["CurrentFilter"]?.ToString();
+}
+
+<section class="filter-bar mb-2">
+    <div class="input-group input-group-sm me-auto" style="width:auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control" type="search" name="search" value="@currentFilter"
+               placeholder="Name, email or employer"
+               hx-get="@Url.Action("Index")" hx-target="#candidates-page"
+               hx-select="#candidates-page" hx-trigger="keyup[key=='Enter'], search"
+               hx-include="[name='search']" hx-push-url="true" form="none" />
+    </div>
+    <div class="filter-group"></div>
+</section>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="table-shell" data-erp-table id="candidates-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Experience</th>
+                    <th>Employer</th>
+                    <th>Applications</th>
+                    <th class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@c.FullName</td>
+                        <td>@c.Email</td>
+                        <td>@(c.Phone ?? "—")</td>
+                        <td>@(c.TotalExperienceYears.HasValue ? $"{c.TotalExperienceYears:0.#} yr" : "—")</td>
+                        <td>@(c.CurrentEmployer ?? "—")</td>
+                        <td><span class="badge bg-secondary">@c.ApplicationCount</span></td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Details" asp-route-id="@c.Id" title="View"><i class="fa-solid fa-eye"></i></a>
+                                <a class="btn btn-icon btn-sm btn-icon-warning" asp-action="Edit" asp-route-id="@c.Id" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-users"></i>
+                <h3 class="h6 mt-2 mb-1">No candidates found</h3>
+                <p class="text-muted mb-0">Add a candidate to start tracking applications.</p>
+            </div>
+        }
+    </div>
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage–@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav>@Html.PagedListPager(Model, page => Url.Action("Index", new { page, search = currentFilter }), new PagedListRenderOptions { UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" }, LiElementClasses = new[] { "page-item" }, PageClasses = new[] { "page-link" } })</nav>
+    </div>
+</section>

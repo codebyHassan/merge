@@ -1,0 +1,228 @@
+@model AlignHR.Models.HrLMFeedbackViewModel
+
+@{
+    ViewData["Title"] = "Interview Feedback";
+    ViewBag.ActivePage = "HrMyInterviews";
+
+    var ivStatusClass = Model.InterviewStatus switch
+    {
+        "Completed"   => "badge-success",
+        "Cancelled"   => "badge-danger",
+        "NoShow"      => "badge-danger",
+        "Rescheduled" => "badge-warning",
+        _             => "badge-secondary"
+    };
+
+    var hasFeedback = Model.FeedbackId > 0;
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        @* ── Interview Info ── *@
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-md-3">
+                <div class="small text-muted">Candidate</div>
+                <div class="fw-semibold">@(Model.CandidateName ?? "—")</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <div class="small text-muted">Round</div>
+                <div class="fw-semibold">@(Model.RoundName ?? "—")</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <div class="small text-muted">Scheduled</div>
+                <div>@Model.ScheduledDateTime.ToString("dd MMM yyyy HH:mm")</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <div class="small text-muted">Status</div>
+                <span class="status-badge @ivStatusClass">@Model.InterviewStatus</span>
+            </div>
+            @if (Model.PanelMembers.Any())
+            {
+                <div class="col-12">
+                    <div class="small text-muted mb-1">Interview Panel</div>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach (var p in Model.PanelMembers)
+                        {
+                            <span class="badge bg-secondary fw-normal">@p</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <hr class="my-3 opacity-25" />
+
+        @* ── Feedback Form ── *@
+        <div class="fw-semibold small mb-3 d-flex align-items-center gap-2">
+            @(hasFeedback ? "Edit Feedback" : "Feedback")
+            @if (Model.IsSubmitted)
+            {
+                <span class="status-badge badge-success">Submitted</span>
+            }
+            else if (hasFeedback)
+            {
+                <span class="status-badge badge-warning">Draft</span>
+            }
+        </div>
+
+        <form asp-action="LineManagerFeedback" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ScheduleId" />
+            <input type="hidden" asp-for="RequisitionId" />
+            <input type="hidden" asp-for="FeedbackId" />
+            <input type="hidden" asp-for="IsSubmitted" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold">Recommendation <span class="text-danger">*</span></label>
+                    <select asp-for="Recommendation" class="form-select form-select-sm" required>
+                        <option value="">— Select —</option>
+                        <option>Strong Hire</option>
+                        <option>Hire</option>
+                        <option>Hold</option>
+                        <option>Reject</option>
+                    </select>
+                    <span asp-validation-for="Recommendation" class="text-danger small"></span>
+                </div>
+
+                @if (Model.CriteriaScores.Any())
+                {
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small fw-semibold">Overall Score</label>
+                        <div id="overallScoreDisplay"
+                             class="p-2 rounded text-center fw-bold"
+                             style="background:var(--ahr-surface-2,#f8f9fa);border:1px solid var(--ahr-border);font-size:1.1rem;min-height:31px">
+                            —
+                        </div>
+                        <input type="hidden" asp-for="OverallScore" id="overallScoreHidden" />
+                        <div class="small text-muted mt-1">Calculated from scorecard</div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="form-label small fw-semibold mb-2">Scorecard</div>
+                        <table class="table table-sm">
+                            <thead><tr><th>Criteria</th><th>Max</th><th style="width:150px">Score</th></tr></thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.CriteriaScores.Count; i++)
+                                {
+                                    <input type="hidden" name="CriteriaScores[@i].CriteriaId"   value="@Model.CriteriaScores[i].CriteriaId" />
+                                    <input type="hidden" name="CriteriaScores[@i].CriteriaName" value="@Model.CriteriaScores[i].CriteriaName" />
+                                    <input type="hidden" name="CriteriaScores[@i].MaxScore"     value="@Model.CriteriaScores[i].MaxScore" />
+                                    <tr>
+                                        <td>@Model.CriteriaScores[i].CriteriaName</td>
+                                        <td class="text-muted">@Model.CriteriaScores[i].MaxScore</td>
+                                        <td>
+                                            <input type="number" name="CriteriaScores[@i].Score"
+                                                   value="@Model.CriteriaScores[i].Score"
+                                                   step="0.5" min="0" max="@Model.CriteriaScores[i].MaxScore"
+                                                   class="form-control form-control-sm"
+                                                   data-criteria-score
+                                                   data-max="@Model.CriteriaScores[i].MaxScore" />
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot>
+                                <tr class="fw-semibold">
+                                    <td>Total</td>
+                                    <td id="totalMaxDisplay" class="text-muted">@Model.CriteriaScores.Sum(c => c.MaxScore)</td>
+                                    <td id="totalScoreDisplay">—</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small fw-semibold">Overall Score (0–100)</label>
+                        <input asp-for="OverallScore" type="number" step="0.1" min="0" max="100"
+                               class="form-control form-control-sm" />
+                    </div>
+                }
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Strengths</label>
+                    <textarea asp-for="Strengths" class="form-control form-control-sm" rows="3"
+                              placeholder="What did the candidate do well?"></textarea>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Concerns</label>
+                    <textarea asp-for="Concerns" class="form-control form-control-sm" rows="3"
+                              placeholder="Any concerns or red flags?"></textarea>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label small fw-semibold">Additional Comments</label>
+                    <textarea asp-for="Comments" class="form-control form-control-sm" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="history.back()">Back</button>
+                @if (!Model.IsSubmitted)
+                {
+                    <button type="submit" name="btnAction" value="save"
+                            id="btnSave" class="btn btn-secondary btn-sm">Save</button>
+                    <button type="submit" name="btnAction" value="submit"
+                            id="btnSubmit" class="btn btn-primary btn-sm"
+                            onclick="return confirm('Are you sure you want to submit this feedback? Once submitted it cannot be undone.')">
+                        Submit Feedback
+                    </button>
+                }
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+    // ── Scorecard auto-calculation ──
+    (function () {
+        var inputs = document.querySelectorAll('[data-criteria-score]');
+        if (!inputs.length) return;
+
+        function calc() {
+            var totalScore = 0, totalMax = 0;
+            inputs.forEach(function (inp) {
+                totalScore += parseFloat(inp.value) || 0;
+                totalMax   += parseFloat(inp.dataset.max) || 0;
+            });
+            var pct = totalMax > 0 ? Math.round((totalScore / totalMax) * 1000) / 10 : 0;
+            var display = document.getElementById('overallScoreDisplay');
+            var hidden  = document.getElementById('overallScoreHidden');
+            var tscore  = document.getElementById('totalScoreDisplay');
+            if (display) display.textContent = pct.toFixed(1) + '%';
+            if (hidden)  hidden.value = pct.toFixed(1);
+            if (tscore)  tscore.textContent = totalScore.toFixed(1);
+        }
+
+        inputs.forEach(function (inp) { inp.addEventListener('input', calc); });
+        calc();
+    })();
+
+    // ── Lock form on submit to prevent double-click ──
+    document.querySelector('form').addEventListener('submit', function () {
+        var btns = this.querySelectorAll('button[type="submit"]');
+        btns.forEach(function (b) { b.disabled = true; });
+    });
+    </script>
+}

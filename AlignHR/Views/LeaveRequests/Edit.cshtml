@@ -1,0 +1,238 @@
+@model AlignHR.Models.LeaveRequest
+@using AlignHR.Models.Enums
+
+@{
+    ViewData["Title"] = "Edit Leave Request";
+}
+
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a asp-action="Index">Leave Requests</a>
+        <span>/</span>
+        <span>Edit</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Edit Leave Request</h1>
+            <p class="page-subtitle">Modify leave application details</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="hr-card animate-fade">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-edit"></i>
+                    Request Details
+                </div>
+            </div>
+
+            <div class="card-body">
+                <form asp-action="Edit">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-4"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="EmployeeId" />
+                    <input type="hidden" asp-for="CurrentApproverId" />
+                    <input type="hidden" asp-for="ApprovalLevel" />
+                    <input type="hidden" asp-for="AppliedAt" />
+                    <input type="hidden" asp-for="RowVersion" />
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            <div class="form-group">
+                                <label class="form-label">Employee</label>
+                                <div class="form-control bg-light">@Model.Employee?.FullName (@Model.Employee?.Code)</div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="form-group">
+                                <label asp-for="LeaveTypeId" class="form-label">Leave Type</label>
+                                <select asp-for="LeaveTypeId" class="form-control" asp-items="ViewBag.LeaveTypeId"></select>
+                                <span asp-validation-for="LeaveTypeId" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="form-group">
+                                <label asp-for="FromDate" class="form-label">From Date</label>
+                                <input asp-for="FromDate" type="date" class="form-control" id="fromDate" />
+                                <span asp-validation-for="FromDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="form-group">
+                                <label asp-for="ToDate" class="form-label">To Date</label>
+                                <input asp-for="ToDate" type="date" class="form-control" id="toDate" />
+                                <span asp-validation-for="ToDate" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 mb-4">
+                            <div class="form-group">
+                                <label asp-for="DaysCount" class="form-label">Days Count</label>
+                                <input asp-for="DaysCount" type="number" step="0.25" class="form-control" id="daysCount" />
+                                <span asp-validation-for="DaysCount" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mb-4">
+                            <div class="custom-toggle">
+                                <input asp-for="IsHalfDay" id="isHalfDay" />
+                                <div class="toggle-switch" onclick="document.getElementById('isHalfDay').click()"></div>
+                                <div class="toggle-content">
+                                    <span class="toggle-title">Half Day Application</span>
+                                    <span class="toggle-desc">Enable if this is a half-day leave request</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4 @(Model.IsHalfDay ? "" : "d-none")" id="halfDayOptions">
+                            <div class="form-group">
+                                <label asp-for="HalfDaySession" class="form-label">Session</label>
+                                <select asp-for="HalfDaySession" class="form-control">
+                                    <option value="FirstHalf">First Half</option>
+                                    <option value="SecondHalf">Second Half</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            <div class="form-group">
+                                <label asp-for="Status" class="form-label">Request Status <span class="req">*</span></label>
+                                <select asp-for="Status" class="form-control">
+                                    <option value="Pending">Pending</option>
+                                    <option value="Approved">Approved</option>
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                                <span asp-validation-for="Status" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mb-4">
+                            <div class="form-group">
+                                <label asp-for="Reason" class="form-label">Reason / Remarks</label>
+                                <textarea asp-for="Reason" class="form-control" rows="3">@Model.Reason</textarea>
+                                <span asp-validation-for="Reason" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-12 mb-4">
+                            <div class="form-group">
+                                <label asp-for="AttachmentUrl" class="form-label">Attachment URL</label>
+                                <input asp-for="AttachmentUrl" class="form-control" />
+                                <span asp-validation-for="AttachmentUrl" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions mt-4 border-top pt-4">
+                        <button type="submit" class="btn btn-primary">
+                            Save Changes
+                        </button>
+                        <a asp-action="Index" class="btn btn-light">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="hr-card">
+            <div class="card-header">
+                <div class="card-title">
+                    <i class="fas fa-info-circle"></i>
+                    Workflow State
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-column gap-3">
+                    @{
+                        var stageLabel = Model.CurrentStage switch
+                        {
+                            WorkflowStage.LineManager => "Line Manager",
+                            WorkflowStage.HigherManagement => "Higher Mgmt",
+                            WorkflowStage.HR => "HR / Final",
+                            WorkflowStage.FinalApproved => "Final Approved",
+                            WorkflowStage.Rejected => "Rejected",
+                            _ => Model.CurrentStage.ToString()
+                        };
+                    }
+                    <div>
+                        <div class="text-muted small">Current Stage</div>
+                        <div class="font-medium">@stageLabel (L@(Model.ApprovalLevel))</div>
+                    </div>
+                    @if (Model.ApprovedAt.HasValue)
+                    {
+                        <div>
+                            <div class="text-muted small text-success">Approved At</div>
+                            <div class="font-medium text-success">@Model.ApprovedAt.Value.ToString("MMM dd, yyyy HH:mm")</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ApprovedByEmpNo))
+                    {
+                        <div>
+                            <div class="text-muted small">Approved By</div>
+                            <div class="font-medium">@Model.ApprovedByEmpNo</div>
+                        </div>
+                    }
+                    @if (Model.RejectedAt.HasValue)
+                    {
+                        <div>
+                            <div class="text-muted small text-danger">Rejected At</div>
+                            <div class="font-medium text-danger">@Model.RejectedAt.Value.ToString("MMM dd, yyyy HH:mm")</div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                        {
+                            <div>
+                                <div class="text-muted small">Rejection Reason</div>
+                                <div class="font-medium text-danger">@Model.RejectionReason</div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const isHalfDayCheckbox = document.getElementById('isHalfDay');
+        const halfDayOptions = document.getElementById('halfDayOptions');
+        const fromDateInput = document.getElementById('fromDate');
+        const toDateInput = document.getElementById('toDate');
+        const daysCountInput = document.getElementById('daysCount');
+
+        isHalfDayCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                halfDayOptions.classList.remove('d-none');
+                daysCountInput.value = 0.5;
+            } else {
+                halfDayOptions.classList.add('d-none');
+                calculateDays();
+            }
+        });
+
+        function calculateDays() {
+            if (fromDateInput.value && toDateInput.value && !isHalfDayCheckbox.checked) {
+                const start = new Date(fromDateInput.value);
+                const end = new Date(toDateInput.value);
+                const diffTime = Math.abs(end - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+                daysCountInput.value = diffDays > 0 ? diffDays : 0;
+            }
+        }
+
+        fromDateInput.addEventListener('change', calculateDays);
+        toDateInput.addEventListener('change', calculateDays);
+    </script>
+}

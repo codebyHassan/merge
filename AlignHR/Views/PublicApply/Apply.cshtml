@@ -1,0 +1,369 @@
+@model AlignHR.Models.HrPublicApplyViewModel
+@{
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    ViewData["Title"] = $"Apply – {Model.JobTitle}";
+
+    var degrees = new[]
+    {
+        "Matric / O-Level","Intermediate / A-Level","Diploma","Bachelor's (BS/BBA/MBBS/etc.)",
+        "Master's (MS/MBA/MPhil/etc.)","PhD / Doctorate","Post-Doctorate","Other"
+    };
+
+    var disciplines = new[]
+    {
+        "Computer Science / Software Engineering","Information Technology","Electrical Engineering",
+        "Mechanical Engineering","Civil Engineering","Business Administration",
+        "Accounting / Finance","Economics","Human Resources","Marketing / Communications",
+        "Law / Legal Studies","Medicine / Healthcare","Social Sciences","Education",
+        "Mathematics / Statistics","Media / Journalism","Architecture","Psychology","Other"
+    };
+
+    var experienceRanges = new[]
+    {
+        "Fresh Graduate (< 1 year)","1 – 2 years","3 – 5 years","5 – 8 years","8+ years"
+    };
+}
+
+<div class="public-card">
+
+    @* ── Job header ── *@
+    <div style="padding:28px 32px 20px;border-bottom:1px solid var(--ahr-border);">
+        <div style="font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ahr-text-muted);margin-bottom:6px;">
+            Job Application
+        </div>
+        <h1 style="font-family:var(--ahr-font-display);font-size:22px;font-weight:700;margin:0 0 4px;color:var(--ahr-text);">
+            @Model.JobTitle
+        </h1>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px;">
+            @if (!string.IsNullOrWhiteSpace(Model.JobCode))
+            {
+                <span style="font-family:var(--ahr-font-mono);font-size:12px;background:var(--ahr-bg);border:1px solid var(--ahr-border);border-radius:4px;padding:2px 8px;color:var(--ahr-text-muted);">
+                    @Model.JobCode
+                </span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.DepartmentName))
+            {
+                <span style="font-size:12px;color:var(--ahr-text-muted);">@Model.DepartmentName</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.EmploymentType))
+            {
+                <span style="font-size:12px;color:var(--ahr-text-muted);">@Model.EmploymentType</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.Location))
+            {
+                <span style="font-size:12px;color:var(--ahr-text-muted);">@Model.Location</span>
+            }
+        </div>
+    </div>
+
+    @* ── Form ── *@
+    <form asp-controller="PublicApply" asp-action="Apply" asp-route-id="@Model.JobPostingId"
+          method="post" enctype="multipart/form-data" novalidate>
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="JobPostingId" />
+
+        @* Validation summary *@
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div style="margin:20px 32px 0;padding:12px 16px;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;font-size:13px;color:#991b1b;">
+                <div asp-validation-summary="ModelOnly"></div>
+                Please correct the errors below and resubmit.
+            </div>
+        }
+
+        @* ── Personal Information ── *@
+        <div style="padding:24px 32px 0;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ahr-accent);margin-bottom:16px;">
+                Personal Information
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+                <div class="form-group">
+                    <label asp-for="FirstName" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <input asp-for="FirstName" class="form-control form-control-sm" placeholder="e.g. Ahmad" />
+                    <span asp-validation-for="FirstName" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="LastName" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <input asp-for="LastName" class="form-control form-control-sm" placeholder="e.g. Khan" />
+                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Email" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <input asp-for="Email" type="email" class="form-control form-control-sm" placeholder="you@example.com" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Phone" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <input asp-for="Phone" class="form-control form-control-sm" placeholder="+92 3XX XXXXXXX" />
+                    <span asp-validation-for="Phone" class="text-danger small"></span>
+                </div>
+
+                @* Country — populated via API *@
+                <div class="form-group">
+                    <label asp-for="Country" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <select id="countrySelect" name="Country" class="form-select form-select-sm">
+                        <option value="">Loading countries…</option>
+                    </select>
+                    <span asp-validation-for="Country" class="text-danger small"></span>
+                </div>
+
+                @* City — populated via API based on selected country *@
+                <div class="form-group">
+                    <label asp-for="City" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <select id="citySelect" name="City" class="form-select form-select-sm" disabled>
+                        <option value="">— Select country first —</option>
+                    </select>
+                    <span asp-validation-for="City" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="DateOfBirth" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <input asp-for="DateOfBirth" type="date" class="form-control form-control-sm" />
+                    <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="Gender" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <select asp-for="Gender" class="form-select form-select-sm">
+                        <option value="">— Select —</option>
+                        <option value="Female">Female</option>
+                        <option value="Male">Male</option>
+                        <option value="Other">Other</option>
+                        <option value="Prefer not to disclose">Prefer not to disclose</option>
+                    </select>
+                    <span asp-validation-for="Gender" class="text-danger small"></span>
+                </div>
+
+            </div>
+        </div>
+
+        @* ── Education ── *@
+        <div style="padding:24px 32px 0;margin-top:8px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ahr-accent);margin-bottom:16px;">
+                Education
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+                <div class="form-group">
+                    <label asp-for="HighestDegree" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <select asp-for="HighestDegree" class="form-select form-select-sm">
+                        <option value="">— Select degree —</option>
+                        @foreach (var d in degrees)
+                        {
+                            <option value="@d" selected="@(Model.HighestDegree == d)">@d</option>
+                        }
+                    </select>
+                    <span asp-validation-for="HighestDegree" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="FieldOfStudy" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <select asp-for="FieldOfStudy" class="form-select form-select-sm">
+                        <option value="">— Select field —</option>
+                        @foreach (var f in disciplines)
+                        {
+                            <option value="@f" selected="@(Model.FieldOfStudy == f)">@f</option>
+                        }
+                    </select>
+                    <span asp-validation-for="FieldOfStudy" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group" style="grid-column:span 2;">
+                    <label asp-for="University" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <input asp-for="University" class="form-control form-control-sm" placeholder="e.g. University of the Punjab" />
+                    <span asp-validation-for="University" class="text-danger small"></span>
+                </div>
+
+            </div>
+        </div>
+
+        @* ── Experience ── *@
+        <div style="padding:24px 32px 0;margin-top:8px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ahr-accent);margin-bottom:16px;">
+                Experience
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+                <div class="form-group">
+                    <label asp-for="ExperienceRange" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <select asp-for="ExperienceRange" class="form-select form-select-sm">
+                        <option value="">— Select —</option>
+                        @foreach (var e in experienceRanges)
+                        {
+                            <option value="@e" selected="@(Model.ExperienceRange == e)">@e</option>
+                        }
+                    </select>
+                    <span asp-validation-for="ExperienceRange" class="text-danger small"></span>
+                </div>
+
+                <div class="form-group">
+                    <label asp-for="IsCurrentlyEmployed" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                    <select asp-for="IsCurrentlyEmployed" class="form-select form-select-sm" id="employedSelect">
+                        <option value="">— Select —</option>
+                        <option value="true" selected="@(Model.IsCurrentlyEmployed == true)">Yes</option>
+                        <option value="false" selected="@(Model.IsCurrentlyEmployed == false)">No</option>
+                    </select>
+                    <span asp-validation-for="IsCurrentlyEmployed" class="text-danger small"></span>
+                </div>
+
+                <div id="employmentDetails" style="display:@(Model.IsCurrentlyEmployed == true ? "contents" : "none");">
+                    <div class="form-group">
+                        <label asp-for="CurrentEmployer" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                        <input asp-for="CurrentEmployer" class="form-control form-control-sm" placeholder="Company name" />
+                        <span asp-validation-for="CurrentEmployer" class="text-danger small"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="CurrentDesignation" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                        <input asp-for="CurrentDesignation" class="form-control form-control-sm" placeholder="Your current role" />
+                        <span asp-validation-for="CurrentDesignation" class="text-danger small"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="NoticePeriod" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                        <select asp-for="NoticePeriod" class="form-select form-select-sm">
+                            <option value="">— Select —</option>
+                            <option value="Immediate">Immediate</option>
+                            <option value="1 month">1 month</option>
+                            <option value="2 months">2 months</option>
+                            <option value="3 months">3 months</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <span asp-validation-for="NoticePeriod" class="text-danger small"></span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        @* ── Resume Upload ── *@
+        <div style="padding:24px 32px;">
+            <div style="font-size:11px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ahr-accent);margin-bottom:16px;">
+                Resume / CV
+            </div>
+            <div class="form-group">
+                <label asp-for="ResumeFile" class="form-label" style="font-size:12px;font-weight:600;"></label>
+                <input asp-for="ResumeFile" type="file" class="form-control form-control-sm" accept=".pdf,.doc,.docx" />
+                <div style="font-size:11px;color:var(--ahr-text-muted);margin-top:4px;">
+                    Accepted formats: PDF, DOC, DOCX &mdash; max 5 MB
+                </div>
+                <span asp-validation-for="ResumeFile" class="text-danger small"></span>
+            </div>
+        </div>
+
+        @* ── Submit ── *@
+        <div style="padding:0 32px 28px;border-top:1px solid var(--ahr-border);margin-top:8px;padding-top:20px;">
+            <button type="submit" class="btn btn-primary" style="min-width:160px;font-weight:600;">
+                Submit Application
+            </button>
+            <p style="font-size:11px;color:var(--ahr-text-muted);margin-top:12px;margin-bottom:0;">
+                By submitting, you agree that your information will be used for recruitment purposes only.
+            </p>
+        </div>
+
+    </form>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
+<script>
+(function () {
+    // Values to restore after API loads (handles form re-submit on validation errors)
+    var savedCountry = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Country ?? "Pakistan"));
+    var savedCity    = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.City ?? ""));
+
+    var countrySel = document.getElementById('countrySelect');
+    var citySel    = document.getElementById('citySelect');
+    var employedSel = document.getElementById('employedSelect');
+    var empDetails  = document.getElementById('employmentDetails');
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    function setLoading(sel, msg) {
+        sel.disabled = true;
+        sel.innerHTML = '<option value="">' + msg + '</option>';
+    }
+
+    function setError(sel, msg) {
+        sel.disabled = false;
+        sel.innerHTML = '<option value="">' + msg + '</option>';
+    }
+
+    function populate(sel, items, savedValue) {
+        sel.innerHTML = '<option value="">— Select —</option>';
+        items.forEach(function (item) {
+            var opt = document.createElement('option');
+            opt.value = item;
+            opt.textContent = item;
+            if (item === savedValue) opt.selected = true;
+            sel.appendChild(opt);
+        });
+        sel.disabled = false;
+    }
+
+    // ── Countries ──────────────────────────────────────────────────────────
+
+    function loadCountries() {
+        setLoading(countrySel, 'Loading countries…');
+
+        fetch('/api/dropdown/countries')
+            .then(function (r) { return r.json(); })
+            .then(function (names) {
+                populate(countrySel, names, savedCountry);
+                if (savedCountry) {
+                    loadCities(savedCountry);
+                }
+            })
+            .catch(function () {
+                setError(countrySel, '— Could not load countries —');
+            });
+    }
+
+    // ── Cities ─────────────────────────────────────────────────────────────
+
+    function loadCities(country) {
+        setLoading(citySel, 'Loading cities…');
+
+        fetch('/api/dropdown/cities?country=' + encodeURIComponent(country))
+            .then(function (r) { return r.json(); })
+            .then(function (cities) {
+                if (!Array.isArray(cities) || cities.length === 0) {
+                    setError(citySel, '— No cities found —');
+                    return;
+                }
+                populate(citySel, cities, savedCity);
+            })
+            .catch(function () {
+                setError(citySel, '— Could not load cities —');
+            });
+    }
+
+    // ── Country change → reload cities ─────────────────────────────────────
+
+    countrySel.addEventListener('change', function () {
+        var country = this.value;
+        savedCity = '';
+        if (!country) {
+            setError(citySel, '— Select country first —');
+            return;
+        }
+        loadCities(country);
+    });
+
+    // ── Currently employed toggle ───────────────────────────────────────────
+
+    function toggleEmployed() {
+        empDetails.style.display = employedSel.value === 'true' ? 'contents' : 'none';
+    }
+    employedSel.addEventListener('change', toggleEmployed);
+    toggleEmployed();
+
+    // ── Init ────────────────────────────────────────────────────────────────
+
+    loadCountries();
+
+})();
+</script>
+}

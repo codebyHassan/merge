@@ -1,0 +1,86 @@
+@model AlignHR.Models.MasterLoanAdvance
+
+<div class="form-grid animate-fade-in">
+    <div class="form-item">
+        <label asp-for="RequestDate" class="form-label">Request Date <span class="required">*</span></label>
+        <input asp-for="RequestDate" type="date" class="form-control" required />
+    </div>
+    <div class="form-item">
+        <label asp-for="TotalAmount" class="form-label">Loan Amount <span class="required">*</span></label>
+        <input asp-for="TotalAmount" type="number" step="0.01" class="form-control" placeholder="0.00" required id="totalLoanAmount" />
+        <span asp-validation-for="TotalAmount" class="text-danger" style="font-size: 0.8rem;"></span>
+    </div>
+    <div class="form-item">
+        <label asp-for="TenureMonths" class="form-label">Tenure (Months) <span class="required">*</span></label>
+        <input asp-for="TenureMonths" type="number" class="form-control" min="1" required id="tenureMonths" />
+    </div>
+    <div class="form-item">
+        <label asp-for="InterestRate" class="form-label">Interest Rate (%)</label>
+        <input asp-for="InterestRate" type="number" step="0.1" class="form-control" placeholder="0.0" id="interestRate" />
+    </div>
+    <div class="form-item">
+        <label asp-for="MonthlyInstallment" class="form-label">Monthly Installment</label>
+        <input asp-for="MonthlyInstallment" type="number" step="0.01" class="form-control" readonly id="monthlyInstallment" style="background-color: #f8fafc;" />
+        <span id="installmentError" class="text-danger" style="font-size: 0.8rem; display: none; margin-top: 4px;"></span>
+    </div>
+    <div class="form-item">
+        <label asp-for="ApprovedAmount" class="form-label">Approved Amount</label>
+        <input asp-for="ApprovedAmount" type="number" step="0.01" class="form-control" placeholder="0.00" />
+    </div>
+    <div class="form-item full-width">
+        <label asp-for="Reason" class="form-label">Reason</label>
+        <textarea asp-for="Reason" class="form-control" rows="3" placeholder="Enter reason for loan..."></textarea>
+    </div>
+
+    <div class="form-item full-width" style="margin-top: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; background: #FAFAF9; padding: 1rem; border-radius: 8px; border: 1px solid #F9FAFB;">
+            <label class="premium-switch">
+                <input asp-for="LoanDetuction" type="checkbox" />
+                <span class="premium-slider"></span>
+            </label>
+            <div>
+                <label asp-for="LoanDetuction" style="font-weight: 700; color: #1F2937; cursor: pointer; display: block; margin-bottom: 0;">Stop Deduction</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculateInstallment() {
+        const total = parseFloat(document.getElementById('totalLoanAmount').value) || 0;
+        const tenure = parseInt(document.getElementById('tenureMonths').value) || 1;
+        const interest = parseFloat(document.getElementById('interestRate').value) || 0;
+        const grossSalary = parseFloat(document.getElementById('hdnGrossSalary')?.value) || 0;
+        
+        const totalWithInterest = total + (total * (interest / 100));
+        const installment = totalWithInterest / tenure;
+        
+        const installmentField = document.getElementById('monthlyInstallment');
+        if (installmentField) {
+            installmentField.value = installment.toFixed(2);
+
+            // Validation check
+            const limit = grossSalary * 0.5;
+            const errorSpan = document.getElementById('installmentError');
+            
+            if (grossSalary > 0 && installment > limit) {
+                installmentField.style.borderColor = '#ef4444';
+                installmentField.style.backgroundColor = '#fef2f2';
+                if (errorSpan) {
+                    errorSpan.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Exceeds 50% of Gross Salary (Limit: ${limit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})`;
+                    errorSpan.style.display = 'block';
+                }
+            } else {
+                installmentField.style.borderColor = '#e2e8f0';
+                installmentField.style.backgroundColor = '#f8fafc';
+                if (errorSpan) {
+                    errorSpan.style.display = 'none';
+                }
+            }
+        }
+    }
+
+    document.getElementById('totalLoanAmount')?.addEventListener('input', calculateInstallment);
+    document.getElementById('tenureMonths')?.addEventListener('input', calculateInstallment);
+    document.getElementById('interestRate')?.addEventListener('input', calculateInstallment);
+</script>

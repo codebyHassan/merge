@@ -1,0 +1,166 @@
+@model AlignHR.Models.LeaveBalance
+
+@{
+    ViewData["Title"] = "Add Leave Balance";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header animate-fade">
+    <div>
+        <h1 class="page-title">Add Leave Balance</h1>
+        <p class="page-subtitle">Allocate and initialize leave balances for an employee.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</div>
+
+<form asp-action="Create" method="post" class="animate-fade" style="animation-delay: 0.1s">
+    <div asp-validation-summary="ModelOnly" class="text-danger" style="margin-bottom:16px;font-weight:600"></div>
+
+    <div style="display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 24px;">
+        
+        <!-- Left Column: Assignment -->
+        <div class="hr-card" style="margin-bottom:0; height: 100%;">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-user-tag"></i> Assignment</div>
+            </div>
+            <div class="card-body">
+                <div class="form-group mb-4" style="position: relative;">
+                    <label class="form-label">Search Employee <span class="req">*</span></label>
+                    <div style="position: relative;">
+                        <input type="text" id="employeeSearch" class="form-control" placeholder="Type name or employee code..." 
+                               hx-get="@Url.Action("SearchEmployees")" 
+                               hx-trigger="keyup changed delay:300ms" 
+                               hx-target="#employeeSearchResults" 
+                               name="term"
+                               autocomplete="off" />
+                        <div id="employeeSearchResults" style="position: absolute; width: 100%; z-index: 1000; background: white; border: 1px solid var(--border-light); border-top: none; border-radius: 0 0 8px 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-height: 250px; overflow-y: auto; display: none;"></div>
+                    </div>
+                    <input type="hidden" asp-for="EmployeeId" id="selectedEmployeeId" />
+                    <div id="selectedEmployeeDisplay" class="mt-2 p-2 rounded" style="display:none; background: var(--success-light); border: 1px solid var(--success-border);">
+                        <span class="text-success font-medium"><i class="fas fa-check-circle"></i> Selected: </span>
+                        <span id="employeeNameSpan"></span>
+                        <button type="button" class="btn-close float-end" onclick="clearSelection()" style="font-size: 10px;"></button>
+                    </div>
+                    <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label asp-for="LeaveTypeId" class="form-label">Leave Type <span class="req">*</span></label>
+                        <select asp-for="LeaveTypeId" class="form-control" asp-items="ViewBag.LeaveTypeId">
+                            <option value="">-- Choose Type --</option>
+                        </select>
+                        <span asp-validation-for="LeaveTypeId" class="text-danger small"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="Year" class="form-label">Fiscal Year <span class="req">*</span></label>
+                        <input asp-for="Year" class="form-control" value="@DateTime.Now.Year" />
+                        <span asp-validation-for="Year" class="text-danger small"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Balance Details -->
+        <div class="hr-card" style="margin-bottom:0; height: 100%;">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-calculator"></i> Balance Allocation</div>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group mb-3">
+                        <label asp-for="Allocated" class="form-label">Total Allocated</label>
+                        <input asp-for="Allocated" class="form-control" type="number" step="0.5" />
+                        <span asp-validation-for="Allocated" class="text-danger small"></span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="CarriedForward" class="form-label">Carried Forward</label>
+                        <input asp-for="CarriedForward" class="form-control" type="number" step="0.5" />
+                        <span asp-validation-for="CarriedForward" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group mb-3">
+                        <label asp-for="Used" class="form-label">Leaves Used</label>
+                        <input asp-for="Used" class="form-control" type="number" step="0.5" />
+                        <span asp-validation-for="Used" class="text-danger small"></span>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label asp-for="Pending" class="form-label">Pending Approval</label>
+                        <input asp-for="Pending" class="form-control" type="number" step="0.5" />
+                        <span asp-validation-for="Pending" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <div class="form-group mt-3">
+                    <label asp-for="Available" class="form-label font-bold text-primary">Available Balance (Calculated)</label>
+                    <input asp-for="Available" class="form-control bg-light" readonly />
+                    <p class="text-muted small mt-1">Available = (Allocated + CarriedForward) - (Used + Pending)</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="hr-card" style="margin-top: 24px; margin-bottom: 0;">
+        <div class="card-body" style="padding: 16px 24px; display: flex; justify-content: flex-end; align-items: center; background: var(--surface-hover);">
+            <div class="form-actions" style="padding-top: 0;">
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Initialize Balance</button>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            function calculateAvailable() {
+                const allocated = parseFloat($('#Allocated').val()) || 0;
+                const carried = parseFloat($('#CarriedForward').val()) || 0;
+                const used = parseFloat($('#Used').val()) || 0;
+                const pending = parseFloat($('#Pending').val()) || 0;
+                
+                const available = (allocated + carried) - (used + pending);
+                $('#Available').val(available.toFixed(2));
+            }
+
+            $('#Allocated, #CarriedForward, #Used, #Pending').on('input change', calculateAvailable);
+        });
+
+        document.getElementById('employeeSearch').addEventListener('input', function() {
+            const results = document.getElementById('employeeSearchResults');
+            if (this.value.length >= 2) {
+                results.style.display = 'block';
+            } else {
+                results.style.display = 'none';
+            }
+        });
+
+        // Close results when clicking outside
+        document.addEventListener('click', function(e) {
+            const results = document.getElementById('employeeSearchResults');
+            const search = document.getElementById('employeeSearch');
+            if (e.target !== search && !results.contains(e.target)) {
+                results.style.display = 'none';
+            }
+        });
+
+        function selectEmployee(id, name) {
+            document.getElementById('selectedEmployeeId').value = id;
+            document.getElementById('employeeNameSpan').innerText = name;
+            document.getElementById('selectedEmployeeDisplay').style.display = 'block';
+            document.getElementById('employeeSearchResults').style.display = 'none';
+            document.getElementById('employeeSearch').value = '';
+            document.getElementById('employeeSearch').parentElement.style.display = 'none';
+        }
+
+        function clearSelection() {
+            document.getElementById('selectedEmployeeId').value = '';
+            document.getElementById('selectedEmployeeDisplay').style.display = 'none';
+            document.getElementById('employeeSearch').parentElement.style.display = 'block';
+            document.getElementById('employeeSearch').focus();
+        }
+    </script>
+}

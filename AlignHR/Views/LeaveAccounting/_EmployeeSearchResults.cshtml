@@ -1,0 +1,25 @@
+@model IEnumerable<AlignHR.Models.Employee>
+
+@if (Model != null && Model.Any())
+{
+    foreach (var emp in Model)
+    {
+        var initials = string.Concat(emp.FirstName?[0], emp.LastName?[0]).ToUpper();
+        <div class="la-result-item"
+             data-code="@emp.Code"
+             data-name="@emp.FullName"
+             onclick="selectEmployee('@emp.Code', '@emp.FullName')">
+            <div class="la-result-avatar">@initials</div>
+            <div>
+                <div class="fw-semibold small">@emp.FullName</div>
+                <div class="text-muted" style="font-size:11px;">@emp.Code &middot; @(emp.Department?.Name ?? "-")</div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div style="padding:0.65rem 0.85rem;text-align:center;color:var(--erp-text-muted);font-size:0.8125rem;">
+        No employees found
+    </div>
+}

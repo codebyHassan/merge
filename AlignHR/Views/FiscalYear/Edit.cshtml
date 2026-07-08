@@ -1,0 +1,50 @@
+@model AlignHR.Models.FiscalYear
+@{
+    ViewData["Title"] = "Edit Fiscal Year";
+    ViewBag.ActivePage = "FiscalYear";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="id" />
+            <input type="hidden" asp-for="createat" />
+            <input type="hidden" asp-for="createdby" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label asp-for="title" class="form-label small fw-semibold">Fiscal Year Title <span class="text-danger">*</span></label>
+                    <input asp-for="title" class="form-control form-control-sm" placeholder="2025-26" required
+                           maxlength="7" pattern="\d{4}-\d{2}"
+                           oninput="this.value = this.value.replace(/[^\d-]/g, ''); if(this.value.length === 4 && !this.value.includes('-')) this.value += '-';" />
+                    <span asp-validation-for="title" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label asp-for="startdate" class="form-label small fw-semibold">Start Date <span class="text-danger">*</span></label>
+                    <input asp-for="startdate" class="form-control form-control-sm" type="date" required />
+                    <span asp-validation-for="startdate" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label asp-for="enddate" class="form-label small fw-semibold">End Date <span class="text-danger">*</span></label>
+                    <input asp-for="enddate" class="form-control form-control-sm" type="date" required />
+                    <span asp-validation-for="enddate" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

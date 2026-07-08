@@ -1,0 +1,98 @@
+@model AlignHR.Models.HrApprovalActionViewModel
+
+@{
+    ViewData["Title"] = "Approve Offer";
+    ViewData["BreadcrumbParent"] = "Offer Inbox";
+    ViewData["BreadcrumbParentUrl"] = Url.Action("MyApprovals", "HrOffers");
+    ViewBag.ActivePage = "HrOfferApprovals";
+
+    var fromInbox = (ViewBag.From as string) == "inbox";
+    var noteLines = (Model.Notes ?? "")
+        .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        .Select(n => n.Trim()).Where(n => n.Length > 0).ToList();
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        @* Header *@
+        <div class="d-flex align-items-start justify-content-between mb-4 gap-2">
+            <div>
+                <div class="fw-bold fs-6">@(Model.OfferNumber ?? "Offer")</div>
+                <div class="small text-muted mt-1">
+                    @(Model.CandidateName ?? "—")
+                    @if (!string.IsNullOrWhiteSpace(Model.CandidateEmail)) { <span> · @Model.CandidateEmail</span> }
+                    @if (!string.IsNullOrWhiteSpace(Model.JobTitle)) { <span> · @Model.JobTitle</span> }
+                </div>
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="history.back()">Back</button>
+        </div>
+
+        @* Offer Details *@
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-4">
+                <div class="small text-muted">Proposed Salary</div>
+                <div class="fw-bold fs-6">@(Model.Salary?.ToString("N0") ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="small text-muted">Joining Date</div>
+                <div>—</div>
+            </div>
+            <div class="col-6 col-md-4">
+                <div class="small text-muted">Offer Expiry</div>
+                <div>@(Model.ExpiryDate?.ToString("dd MMM yyyy") ?? "—")</div>
+            </div>
+        </div>
+
+        @* Decision Form *@
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-danger py-2 small mb-3">
+                <div asp-validation-summary="ModelOnly"></div>
+            </div>
+        }
+
+        <form asp-action="ApproveOffer" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="from"          value="@(fromInbox ? "inbox" : "")" />
+            <input type="hidden" name="ApprovalId"    value="@Model.ApprovalId" />
+            <input type="hidden" name="OfferId"       value="@Model.OfferId" />
+            <input type="hidden" name="OfferNumber"   value="@Model.OfferNumber" />
+            <input type="hidden" name="CandidateName" value="@Model.CandidateName" />
+            <input type="hidden" name="Salary"        value="@Model.Salary" />
+            <input type="hidden" name="ApprovalLevel" value="@Model.ApprovalLevel" />
+
+            <div class="row g-3 mb-4">
+                @if (noteLines.Any())
+                {
+                    <div class="col-12 col-md-6">
+                        <div class="small fw-semibold mb-1">Offer Notes</div>
+                        <ul class="mb-0 small" style="padding-left:18px;">
+                            @foreach (var note in noteLines)
+                            {
+                                <li>@note</li>
+                            }
+                        </ul>
+                    </div>
+                }
+                <div class="@(noteLines.Any() ? "col-12 col-md-6" : "col-12 col-md-6")">
+                    <label class="form-label small fw-semibold">Comments <span class="fw-normal text-muted">(optional)</span></label>
+                    <textarea name="Comments" class="form-control form-control-sm" rows="4"
+                              placeholder="Add remarks for your decision…">@Model.Comments</textarea>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 justify-content-end">
+                <button type="submit" name="Action" value="Reject"
+                        class="btn btn-outline-danger btn-sm"
+                        onclick="return confirm('Reject this offer?');">
+                    Reject Offer
+                </button>
+                <button type="submit" name="Action" value="Approve" class="btn btn-primary btn-sm">
+                    Approve Offer
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>

@@ -1,0 +1,50 @@
+@model IEnumerable<AlignHR.Models.PayRollDefinationFile>
+@{
+    decimal grossSalary = ViewBag.GrossSalary ?? 0;
+}
+
+<div class="form-shell" style="background: #fff; border-radius: 12px; overflow: hidden;">
+    <div style="background: var(--bg-secondary); padding: 12px 16px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+        <h4 class="form-label" style="margin: 0; font-size: 0.95rem;">
+            <i class="fas fa-chart-pie mr-2 text-primary"></i> Salary Structure
+        </h4>
+        <span class="badge badge-info">Current Definition</span>
+    </div>
+    
+    <div class="erp-table-wrap" style="padding: 0;">
+        <table class="table table-hover erp-table" style="width: 100%; border-spacing: 0;">
+            <thead style="background: #fcfcfd;">
+                <tr>
+                    <th style="padding: 10px 15px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid #f1f5f9;">Component</th>
+                    <th style="padding: 10px 15px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid #f1f5f9; text-align: right;">Ratio</th>
+                    <th style="padding: 10px 15px; font-size: 11px; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid #f1f5f9; text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    decimal percentage = 0;
+                    decimal.TryParse(item.Percentage, out percentage);
+                    decimal calculatedAmount = (grossSalary * percentage) / 100;
+                    
+                    <tr style="background: transparent; border-bottom: 1px solid #f8fafc;">
+                        <td style="padding: 12px 15px; font-weight: 500; font-size: 0.85rem; border-top: none; border-bottom: none;">
+                            @(item.PayRollCom?.Name ?? item.label ?? "N/A")
+                        </td>
+                        <td style="padding: 12px 15px; text-align: right; border-top: none; border-bottom: none;">
+                            <span style="font-size: 11px; font-weight: 600; color: var(--text-secondary);">@item.Percentage%</span>
+                        </td>
+                        <td style="padding: 12px 15px; text-align: right; font-weight: 600; color: var(--primary); border-top: none; border-bottom: none;">
+                            @calculatedAmount.ToString("N0")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    
+    <div style="background: #f8fafc; padding: 15px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase;">Total Gross</span>
+        <span style="font-size: 1.1rem; font-weight: 700; color: var(--primary-dark);">@grossSalary.ToString("N0") <small style="font-size: 10px; font-weight: 500;">PKR</small></span>
+    </div>
+</div>

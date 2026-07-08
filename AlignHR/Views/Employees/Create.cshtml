@@ -1,0 +1,470 @@
+@model AlignHR.Models.Employee
+@{
+    ViewData["Title"] = "Create Employee";
+    ViewBag.ActivePage = "Employees";
+}
+
+
+
+<form method="post" id="employeeCreateForm" class="employee-create needs-validation" enctype="multipart/form-data" novalidate>
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+    @if (ViewBag.OnboardingId != null)
+    {
+        <input type="hidden" name="onboardingId" value="@ViewBag.OnboardingId" />
+        <input type="hidden" name="hireTypeHidden" value="@(ViewBag.HireType ?? "New")" />
+    }
+
+    @if (ViewBag.Candidate != null)
+    {
+        var c = (AlignHR.Models.HrCandidate)ViewBag.Candidate;
+        <input type="hidden" name="candidateFk" value="@c.Id" />
+        <div class="alert alert-info py-2 mb-3 small d-flex align-items-center gap-2">
+            <i class="fa-solid fa-user-tie"></i>
+            <span>
+                Creating employee for candidate: <strong>@c.FirstName @c.LastName</strong>
+                @if (!string.IsNullOrEmpty(c.Email)) { <span class="ms-2 text-muted">· @c.Email</span> }
+                @if (!string.IsNullOrEmpty(c.Phone)) { <span class="ms-2 text-muted">· @c.Phone</span> }
+            </span>
+        </div>
+    }
+
+    <div class="employee-create-grid">
+        <aside class="employee-profile-panel">
+            <div class="profile-card-compact">
+                <div class="profile-avatar-upload">
+                    <span id="employeeInitials">NE</span>
+                    <label class="btn btn-light btn-sm" for="imageInput" aria-label="Upload employee photo">
+                        <i class="fa-solid fa-camera"></i>
+                    </label>
+                    <input type="file" name="ImageFile" id="imageInput" class="visually-hidden" accept="image/*" />
+                </div>
+                <div>
+                    <strong id="employeeProfileName">New Employee</strong>
+                    <span>Draft profile</span>
+                </div>
+            </div>
+
+            <!-- <div class="policy-note">
+                <strong>HR policy</strong>
+                <span>Employee code, department, joining date, and reporting manager are required before profile activation.</span>
+            </div> -->
+        </aside>
+
+        <main class="employee-form-main">
+            <ul class="nav nav-tabs border-0 mb-0" id="employeeTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="identity-tab" data-bs-toggle="tab" data-bs-target="#identity-pane" type="button" role="tab"><i class="fa-solid fa-id-card me-1"></i> Identity</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="employment-tab" data-bs-toggle="tab" data-bs-target="#employment-pane" type="button" role="tab"><i class="fa-solid fa-briefcase me-1"></i> Employment</button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#payroll-pane" type="button" role="tab"><i class="fa-solid fa-money-bill-wave me-1"></i> Payroll & Statutory</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="employeeTabsContent">
+                <!-- Tab 1: Identity -->
+                <div class="tab-pane fade show active" id="identity-pane" role="tabpanel">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="Code" class="form-label">Employee Code</label>
+                            <input asp-for="Code" class="form-control" placeholder="EMP-001" />
+                            <span asp-validation-for="Code" class="invalid-feedback"></span>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="FirstName" class="form-label">First Name</label>
+                            <input asp-for="FirstName" class="form-control" placeholder="Enter first name" id="FirstName" />
+                            <span asp-validation-for="FirstName" class="invalid-feedback"></span>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="LastName" class="form-label">Last Name</label>
+                            <input asp-for="LastName" class="form-control" placeholder="Enter last name" id="LastName" />
+                            <span asp-validation-for="LastName" class="invalid-feedback"></span>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="LineManagerEmpNo" class="form-label">Reporting Manager</label>
+                            <input asp-for="LineManagerEmpNo" class="form-control" placeholder="Manager code" />
+                            <span asp-validation-for="LineManagerEmpNo" class="invalid-feedback"></span>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="LeaveApproverEmpNo" class="form-label">Leave Approver</label>
+                            <input asp-for="LeaveApproverEmpNo" class="form-control" placeholder="Approver code" />
+                            <span asp-validation-for="LeaveApproverEmpNo" class="invalid-feedback"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 2: Employment -->
+                <div class="tab-pane fade" id="employment-pane" role="tabpanel">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="DepartmentFk" class="form-label">Department</label>
+                            <select asp-for="DepartmentFk" class="form-select" asp-items="ViewBag.Departments">
+                                <option value="">Select department</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="DesiginationId" class="form-label">Designation</label>
+                            <select asp-for="DesiginationId" class="form-select" asp-items="ViewBag.Designations">
+                                <option value="">Select designation</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="Dateofjoin" class="form-label">Joining Date</label>
+                            <input asp-for="Dateofjoin" type="date" class="form-control"
+                                   value="@(Model.Dateofjoin != default ? Model.Dateofjoin.ToString("yyyy-MM-dd") : DateTime.Now.ToString("yyyy-MM-dd"))" />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="EmploymentTypeFk" class="form-label">Emp. Type</label>
+                            <select asp-for="EmploymentTypeFk" class="form-select" asp-items="ViewBag.EmploymentTypes">
+                                <option value="">Select type</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="EmploymentStatusFk" class="form-label">Emp. Status</label>
+                            <select asp-for="EmploymentStatusFk" class="form-select" asp-items="ViewBag.EmploymentStatuses">
+                                <option value="">Select status</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="LocationFk" class="form-label">Work Location</label>
+                            <select asp-for="LocationFk" class="form-select" asp-items="ViewBag.Locations">
+                                <option value="">Select location</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="SubDepartmentFk" class="form-label">Sub Department</label>
+                            <select asp-for="SubDepartmentFk" class="form-select" asp-items="ViewBag.SubDepartments">
+                                <option value="">Select sub-dept</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="DivisionFk" class="form-label">Division</label>
+                            <select asp-for="DivisionFk" class="form-select" asp-items="ViewBag.Divisions">
+                                <option value="">Select division</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="GradeFk" class="form-label">Grade</label>
+                            <select asp-for="GradeFk" class="form-select" asp-items="ViewBag.Grades">
+                                <option value="">Select grade</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label">Leave Permissions</label>
+                            <div class="form-check form-switch mt-1">
+                                <input asp-for="CanApplyForOthers" class="form-check-input" type="checkbox" id="canApplyOthers" />
+                                <label class="form-check-label small" for="canApplyOthers">Can apply for others</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Payroll & Statutory -->
+                <div class="tab-pane fade" id="payroll-pane" role="tabpanel">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="BankNameFk" class="form-label">Bank Name</label>
+                            <select asp-for="BankNameFk" class="form-select" asp-items="ViewBag.BankNames">
+                                <option value="">Select bank</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="BankHolderName" class="form-label">Account Holder</label>
+                            <input asp-for="BankHolderName" class="form-control" placeholder="Account name" />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="AccountNumber" class="form-label">IBAN / Account</label>
+                            <input asp-for="AccountNumber" class="form-control" placeholder="PK00..." />
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label asp-for="SalaryStatus" class="form-label">Salary Status</label>
+                            <input asp-for="SalaryStatus" class="form-control bg-light" readonly id="salaryStatusInput" value="Active" />
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label text-muted small fw-bold">SERVICE CONTROLS</label>
+                            <div class="d-flex gap-4 p-2 border rounded-2 bg-light bg-opacity-10">
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsServiceEnded" class="form-check-input" type="checkbox" id="isServiceEndedCheck" />
+                                    <label class="form-check-label small" for="isServiceEndedCheck">Service Ended</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input asp-for="IsSalaryStopped" class="form-check-input" type="checkbox" id="isSalaryStoppedCheck" />
+                                    <label class="form-check-label small" for="isSalaryStoppedCheck">Salary Stopped</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-md-6 col-xl-3" id="serviceEndDateContainer" style="display: none;">
+                            <label asp-for="ServiceEndDate" class="form-label">Service End Date</label>
+                            <input asp-for="ServiceEndDate" type="datetime-local" class="form-control" id="serviceEndDateInput" readonly />
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <div class="row g-3">
+                                <!-- Tax Setup Card -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="deduction-card h-100">
+                                        <div class="deduction-header">
+                                            <label class="form-check-label" for="filerToggle">Filer Status</label>
+                                            <div class="form-check form-switch form-check-premium">
+                                                <input class="form-check-input" type="checkbox" asp-for="IsFiler" id="filerToggle">
+                                            </div>
+                                        </div>
+                                        <div class="deduction-body deduction-animate-container" id="ntnContainer">
+                                            <label asp-for="NTN" class="form-label small text-muted">NTN Number</label>
+                                            <input asp-for="NTN" class="form-control form-control-sm" placeholder="4444-333-1" id="ntnInput" />
+                                            <span id="ntnError" class="text-danger x-small" style="display: none;">Limit 8 digits</span>
+                                        </div>
+                                        <div class="mt-2 pt-2 border-top border-light">
+                                            <div class="d-flex gap-3">
+                                                <div class="form-check">
+                                                    <input asp-for="TaxExempted" class="form-check-input" type="checkbox" id="taxExempt" />
+                                                    <label class="form-check-label small" for="taxExempt">Exempted</label>
+                                                </div>
+                                                <div class="form-check">
+                                                    <input asp-for="ZakatDeduction" class="form-check-input" type="checkbox" id="zakatDec" />
+                                                    <label class="form-check-label small" for="zakatDec">Zakat Dec.</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- EOBI Card -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="deduction-card h-100">
+                                        <div class="deduction-header">
+                                            <label class="form-check-label" for="eobiToggle">EOBI Membership</label>
+                                            <div class="form-check form-switch form-check-premium">
+                                                <input class="form-check-input" type="checkbox" asp-for="isEobi" id="eobiToggle">
+                                            </div>
+                                        </div>
+                                        <div class="deduction-body deduction-animate-container" id="eobiNumberContainer">
+                                            <label asp-for="EobiNumber" class="form-label small text-muted">EOBI Number</label>
+                                            <input asp-for="EobiNumber" class="form-control form-control-sm" placeholder="EOBI #" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Social Security Card -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="deduction-card h-100">
+                                        <div class="deduction-header">
+                                            <label class="form-check-label" for="ssToggle">Social Security</label>
+                                            <div class="form-check form-switch form-check-premium">
+                                                <input class="form-check-input" type="checkbox" asp-for="isSocailSecuirty" id="ssToggle">
+                                            </div>
+                                        </div>
+                                        <div class="deduction-body deduction-animate-container" id="ssNumberContainer">
+                                            <label asp-for="SocailSecuirty" class="form-label small text-muted">SS Number</label>
+                                            <input asp-for="SocailSecuirty" class="form-control form-control-sm" placeholder="SS #" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Overtime Card -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="deduction-card h-100">
+                                        <div class="deduction-header">
+                                            <label class="form-check-label" for="overtimeToggle">Overtime Policy</label>
+                                            <div class="form-check form-switch form-check-premium">
+                                                <input class="form-check-input" type="checkbox" asp-for="isOverTime" id="overtimeToggle">
+                                            </div>
+                                        </div>
+                                        <div class="deduction-body deduction-animate-container" id="overtimePolicyContainer">
+                                            <select asp-for="OvertimePolicyId" class="form-select form-select-sm" id="overtimePolicyDropdown">
+                                                <option value="">Select policy</option>
+                                                @if (ViewBag.PoliciesList != null)
+                                                {
+                                                    foreach (var policy in (IEnumerable<AlignHR.Models.Overtime>)ViewBag.PoliciesList)
+                                                    {
+                                                        <option value="@policy.OvertimeId"
+                                                                selected="@(Model?.OvertimePolicyId == policy.OvertimeId || (Model?.OvertimePolicyId == null && policy.IsDefault))"
+                                                                disabled="@(policy.IsDefault ? "disabled" : null)">
+                                                            @policy.PolicyName @(policy.IsDefault ? "(Default)" : "")
+                                                        </option>
+                                                    }
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- PF Card -->
+                                <div class="col-12 col-md-6 col-lg-4">
+                                    <div class="deduction-card h-100">
+                                        <div class="deduction-header">
+                                            <label class="form-check-label" for="pfToggle">PF Membership</label>
+                                            <div class="form-check form-switch form-check-premium">
+                                                <input class="form-check-input" type="checkbox" asp-for="isPfMember" id="pfToggle">
+                                            </div>
+                                        </div>
+                                        <div class="deduction-body deduction-animate-container" id="pfNumberContainer">
+                                            <div class="row g-2">
+                                                <div class="col-12">
+                                                    <input asp-for="pfmembernumber" class="form-control form-control-sm" placeholder="PF Number" />
+                                                </div>
+                                                <div class="col-12 mt-1">
+                                                    <div class="d-flex align-items-center justify-content-between">
+                                                        <label class="form-check-label x-small fw-bold" for="fixedPfToggle">FIXED AMOUNT?</label>
+                                                        <div class="form-check form-switch">
+                                                            <input class="form-check-input" type="checkbox" asp-for="IsFixedPFAmount" id="fixedPfToggle">
+                                                        </div>
+                                                    </div>
+                                                    <div class="deduction-animate-container mt-1" id="pfAmountContainer">
+                                                        <input asp-for="PFAmount" class="form-control form-control-sm" type="number" step="0.01" placeholder="0.00" />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions-sticky mt-0">
+                <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Back</a>
+                <button class="btn btn-primary btn-sm" type="submit">Save</button>
+            </div>
+        </main>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const imageInput = document.getElementById('imageInput');
+            const initials = document.getElementById('employeeInitials');
+            const profileName = document.getElementById('employeeProfileName');
+            const firstName = document.getElementById('FirstName');
+            const lastName = document.getElementById('LastName');
+
+            function updateProfileCard() {
+                const first = (firstName?.value || '').trim();
+                const last = (lastName?.value || '').trim();
+                const nextInitials = `${first.charAt(0)}${last.charAt(0)}`.trim().toUpperCase();
+                if (initials) initials.textContent = nextInitials || 'NE';
+                if (profileName) profileName.textContent = `${first} ${last}`.trim() || 'New Employee';
+            }
+
+            firstName?.addEventListener('input', updateProfileCard);
+            lastName?.addEventListener('input', updateProfileCard);
+
+            if (imageInput && initials) {
+                imageInput.addEventListener('change', function (event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    const reader = new FileReader();
+                    reader.onload = function (readerEvent) {
+                        initials.style.backgroundImage = `url("${readerEvent.target.result}")`;
+                        initials.style.backgroundSize = 'cover';
+                        initials.style.backgroundPosition = 'center';
+                        initials.textContent = '';
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            const isServiceEndedCheck = document.getElementById('isServiceEndedCheck');
+            const isSalaryStoppedCheck = document.getElementById('isSalaryStoppedCheck');
+            const salaryStatusInput = document.getElementById('salaryStatusInput');
+            const serviceEndDateContainer = document.getElementById('serviceEndDateContainer');
+            const serviceEndDateInput = document.getElementById('serviceEndDateInput');
+
+            function updateStatus() {
+                if (!isServiceEndedCheck || !isSalaryStoppedCheck || !salaryStatusInput) return;
+                salaryStatusInput.value = !isServiceEndedCheck.checked && !isSalaryStoppedCheck.checked ? 'Active' : 'Inactive';
+
+                if (!serviceEndDateContainer || !serviceEndDateInput) return;
+                if (isServiceEndedCheck.checked) {
+                    serviceEndDateContainer.style.display = '';
+                    if (!serviceEndDateInput.value) {
+                        const now = new Date();
+                        const offset = now.getTimezoneOffset() * 60000;
+                        serviceEndDateInput.value = new Date(now.getTime() - offset).toISOString().slice(0, 16);
+                    }
+                } else {
+                    serviceEndDateContainer.style.display = 'none';
+                    serviceEndDateInput.value = '';
+                }
+            }
+
+            isServiceEndedCheck?.addEventListener('change', updateStatus);
+            isSalaryStoppedCheck?.addEventListener('change', updateStatus);
+
+            const filerToggle = document.getElementById('filerToggle');
+            const ntnContainer = document.getElementById('ntnContainer');
+            const eobiToggle = document.getElementById('eobiToggle');
+            const eobiNumberContainer = document.getElementById('eobiNumberContainer');
+            const ssToggle = document.getElementById('ssToggle');
+            const ssNumberContainer = document.getElementById('ssNumberContainer');
+            const overtimeToggle = document.getElementById('overtimeToggle');
+            const overtimePolicyContainer = document.getElementById('overtimePolicyContainer');
+            const overtimePolicyDropdown = document.getElementById('overtimePolicyDropdown');
+            const defaultPolicyId = '@ViewBag.DefaultOvertimePolicyId';
+            const pfToggle = document.getElementById('pfToggle');
+            const pfNumberContainer = document.getElementById('pfNumberContainer');
+            const fixedPfToggle = document.getElementById('fixedPfToggle');
+            const pfAmountContainer = document.getElementById('pfAmountContainer');
+
+            function toggleSection(toggle, container) {
+                if (!toggle || !container) return;
+                container.classList.toggle('show', toggle.checked);
+            }
+
+            filerToggle?.addEventListener('change', () => toggleSection(filerToggle, ntnContainer));
+            eobiToggle?.addEventListener('change', () => toggleSection(eobiToggle, eobiNumberContainer));
+            ssToggle?.addEventListener('change', () => toggleSection(ssToggle, ssNumberContainer));
+            pfToggle?.addEventListener('change', () => toggleSection(pfToggle, pfNumberContainer));
+            fixedPfToggle?.addEventListener('change', () => toggleSection(fixedPfToggle, pfAmountContainer));
+
+            overtimeToggle?.addEventListener('change', function () {
+                toggleSection(overtimeToggle, overtimePolicyContainer);
+                if (overtimeToggle.checked && defaultPolicyId && overtimePolicyDropdown && !overtimePolicyDropdown.value) {
+                    overtimePolicyDropdown.value = defaultPolicyId;
+                }
+            });
+
+            const ntnInput = document.getElementById('ntnInput');
+            const ntnError = document.getElementById('ntnError');
+
+            ntnInput?.addEventListener('input', function (event) {
+                let value = event.target.value.replace(/\D/g, '');
+                if (value.length > 8) {
+                    value = value.substring(0, 8);
+                    if (ntnError) ntnError.style.display = 'block';
+                } else if (ntnError) {
+                    ntnError.style.display = 'none';
+                }
+
+                let formatted = '';
+                if (value.length > 0) {
+                    formatted = value.substring(0, 4);
+                    if (value.length > 4) {
+                        formatted += '-' + value.substring(4, 7);
+                        if (value.length > 7) formatted += '-' + value.substring(7, 8);
+                    }
+                }
+                event.target.value = formatted;
+            });
+
+            updateProfileCard();
+            updateStatus();
+            toggleSection(filerToggle, ntnContainer);
+            toggleSection(eobiToggle, eobiNumberContainer);
+            toggleSection(ssToggle, ssNumberContainer);
+            toggleSection(pfToggle, pfNumberContainer);
+            toggleSection(fixedPfToggle, pfAmountContainer);
+            toggleSection(overtimeToggle, overtimePolicyContainer);
+        });
+    </script>
+}

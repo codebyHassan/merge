@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p \"/tmp/alignhr_pages\")",
+      "Bash(pdftoppm -png -r 110 \"New Align HR \\(1\\).pdf\" \"/tmp/alignhr_pages/page\")",
+      "Read(//tmp/**)",
+      "Bash(python -m pip install --quiet PyMuPDF)",
+      "Bash(python -c \"import fitz; print\\('PyMuPDF ready', fitz.version\\)\")",
+      "Bash(python)",
+      "Artifact",
+      "Bash(grep -iE \"Service.cs$\")",
+      "PowerShell(Start-Process \"G:\\\\VA_Projects\\\\AlignHR \\(orignal source\\) before merging\\\\align-hr\\\\AlignHR\\\\General-Dashboard-Intelligent-v2.html\"; Write-Output \"Opened v2 in browser\")",
+      "Bash(dotnet build *)"
+    ]
+  }
+}

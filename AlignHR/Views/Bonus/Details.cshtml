@@ -1,0 +1,93 @@
+@model AlignHR.Models.Bonus
+@using AlignHR.Services
+@inject IPayrollLockService LockService
+
+@{
+    ViewData["Title"] = "Bonus Details";
+    bool isLocked = await LockService.IsRecordLocked(Model.EmployeeID, Model.SalaryPeriodID);
+}
+
+<div class="page-header animate-fade-in">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a href="/Bonus">Bonuses</a>
+        <span>/</span>
+        <span>Details</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Bonus Details</h1>
+            <p class="page-subtitle">Reward disbursement record for @Model.Employee?.FirstName</p>
+        </div>
+
+        <div class="flex gap-12">
+            @if (isLocked)
+            {
+                <div class="status-badge locked"><i class="fas fa-lock"></i><span>LOCKED</span></div>
+            }
+            else
+            {
+                <div class="status-badge active"><i class="fas fa-star"></i><span>APPROVED</span></div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="details-grid animate-slide-up">
+    <div class="erp-card main">
+        <div class="card-header-premium">
+            <i class="fas fa-gift"></i>
+            <span>Bonus Breakdown</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-group">
+                <label>Employee</label>
+                <div class="value-highlight">@Model.Employee?.FirstName @Model.Employee?.LastName</div>
+                <div class="value small text-muted">Emp ID: @Model.Employee?.Code</div>
+            </div>
+            <hr class="divider" />
+            <div class="info-group">
+                <label>Calculation Mode</label>
+                <div class="value">
+                    <span class="badge-premium">@(Model.IsPercentage ? "Percentage Based" : "Fixed Amount")</span>
+                </div>
+            </div>
+            @if (Model.IsPercentage)
+            {
+                <div class="info-group">
+                    <label>Percentage Rate</label>
+                    <div class="value">@Model.BonusPercentage% of Gross Salary</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="erp-card secondary">
+        <div class="card-header-premium financial">
+            <i class="fas fa-wallet"></i>
+            <span>Disbursement</span>
+        </div>
+        <div class="card-body-premium centered">
+            <div class="stat-box-container">
+                <div class="stat-box">
+                    <label>Net Bonus Amount</label>
+                    <div class="stat-value secondary">PKR @Model.BonusAmount.ToString("N0")</div>
+                </div>
+            </div>
+            <div class="meta-info">
+                <div class="meta-item"><i class="fas fa-calendar-check"></i><span>Disbursed In: @Model.SalaryPeriod?.PeriodName</span></div>
+                <div class="meta-item"><i class="fas fa-history"></i><span>Created At: @Model.createat.ToString("dd MMM yyyy")</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-actions-footer">
+        <a href="/Bonus" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i>Back</a>
+        @if (!isLocked)
+        {
+            <a href="/Bonus/Edit/@Model.Id" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i>Edit Bonus</a>
+        }
+    </div>
+</div>

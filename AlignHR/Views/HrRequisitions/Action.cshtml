@@ -1,0 +1,213 @@
+@model AlignHR.Models.HrWorkflowActionViewModel
+
+@{
+    ViewData["Title"] = "Requisition Workflow Action";
+    ViewBag.ActivePage = "HrRequisitionsInbox";
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@* Requisition Details *@
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        @* Header row: status + step *@
+        <div class="d-flex align-items-center justify-content-between mb-3 pb-2" style="border-bottom:1px solid var(--erp-border)">
+            <div>
+                <span class="fw-semibold">@Model.RequisitionNo</span>
+                <span class="text-muted mx-2">—</span>
+                <span>@Model.PositionTitle</span>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="status-badge badge-secondary">@Model.CurrentStepName</span>
+                @if (!string.IsNullOrWhiteSpace(Model.CurrentApproverName))
+                {
+                    <span class="small text-muted">assigned to <strong>@Model.CurrentApproverName</strong></span>
+                }
+            </div>
+        </div>
+
+        @* Core fields *@
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Department</div>
+                <div class="fw-semibold">@(Model.DepartmentName ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Requesting Employee</div>
+                <div>@(Model.EmployeeName ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Type</div>
+                <div>@(Model.RequisitionType ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Nature</div>
+                <div>@(Model.Nature ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Initial Date</div>
+                <div>@(Model.InitialDate?.ToString("dd MMM yyyy") ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Promised Date</div>
+                <div>@(Model.PromisedDate?.ToString("dd MMM yyyy") ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Budget / Month</div>
+                <div>@(Model.BudgetAmountPerMonth.HasValue ? Model.BudgetAmountPerMonth.Value.ToString("N0") : "—")</div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Reason))
+            {
+                <div class="col-12">
+                    <div class="small text-muted">Reason</div>
+                    <div>@Model.Reason</div>
+                </div>
+            }
+        </div>
+
+        @* Skills & Offerings *@
+        @if (Model.Skills.Any() || Model.Offerings.Any())
+        {
+            <div class="row g-3 mb-3">
+                @if (Model.Skills.Any())
+                {
+                    <div class="col-12 col-md-6">
+                        <div class="small fw-bold text-uppercase mb-2" style="letter-spacing:.05em;color:var(--erp-muted-strong)">
+                            <i class="fa-solid fa-screwdriver-wrench me-1"></i>Required Skills
+                        </div>
+                        <table class="table table-sm erp-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Skill</th>
+                                    <th class="text-center">Yrs Exp</th>
+                                    <th class="text-center">Mandatory</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var s in Model.Skills)
+                                {
+                                    <tr>
+                                        <td>@s.SkillName</td>
+                                        <td class="text-center">@(s.YearsExperience.HasValue ? s.YearsExperience.Value.ToString("0.#") : "—")</td>
+                                        <td class="text-center">
+                                            @if (s.IsMandatory)
+                                            {
+                                                <span class="status-badge badge-success">Yes</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-badge badge-secondary">Optional</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                @if (Model.Offerings.Any())
+                {
+                    <div class="col-12 col-md-6">
+                        <div class="small fw-bold text-uppercase mb-2" style="letter-spacing:.05em;color:var(--erp-muted-strong)">
+                            <i class="fa-solid fa-gift me-1"></i>Offerings
+                        </div>
+                        <table class="table table-sm erp-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Offering</th>
+                                    <th>Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var o in Model.Offerings)
+                                {
+                                    <tr>
+                                        <td>@o.OfferingName</td>
+                                        <td class="text-muted small">@(o.Description ?? "—")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        }
+
+        @* Action form *@
+        <form method="post" class="mt-2 pt-2" style="border-top:1px solid var(--erp-border)">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="workflowInstanceId" value="@Model.WorkflowInstanceId" />
+            <div class="mb-3">
+                <label for="comments" class="form-label small fw-semibold">Comments</label>
+                <textarea id="comments" name="comments" class="form-control form-control-sm" rows="3"></textarea>
+            </div>
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Inbox" class="btn btn-outline-secondary btn-sm">Back</a>
+                <button type="submit" formaction="@Url.Action("SendBack")" class="btn btn-outline-warning btn-sm">
+                    <i class="fa-solid fa-rotate-left me-1"></i>Send Back
+                </button>
+                <button type="submit" formaction="@Url.Action("Reject")" class="btn btn-outline-danger btn-sm">
+                    <i class="fa-solid fa-xmark me-1"></i>Reject
+                </button>
+                <button type="submit" formaction="@Url.Action("Approve")" class="btn btn-primary btn-sm">
+                    <i class="fa-solid fa-check me-1"></i>Approve
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@* Approval history *@
+@if (Model.History.Any())
+{
+    <section class="table-shell mt-3" data-erp-table>
+        <div class="erp-table-wrap">
+            <table class="table table-hover erp-table">
+                <thead>
+                    <tr>
+                        <th>Step</th>
+                        <th>Approver Type</th>
+                        <th>Action</th>
+                        <th>Action By</th>
+                        <th>Comments</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.History)
+                    {
+                        <tr>
+                            <td>@item.StepName</td>
+                            <td>@(item.ApproverType ?? "—")</td>
+                            <td>
+                                @{
+                                    var badgeClass = item.ActionType switch
+                                    {
+                                        "Approved"  => "badge-success",
+                                        "Rejected"  => "badge-danger",
+                                        "SentBack"  => "badge-warning",
+                                        "Submitted" => "badge-secondary",
+                                        _           => "badge-secondary"
+                                    };
+                                }
+                                <span class="status-badge @badgeClass">@item.ActionType</span>
+                            </td>
+                            <td>@item.ActionByName</td>
+                            <td class="text-muted small">@(item.Comments ?? "—")</td>
+                            <td class="text-muted small">@item.ActionDate.ToString("dd MMM yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}

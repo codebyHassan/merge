@@ -1,0 +1,103 @@
+@model AlignHR.Models.WithoutPayDays
+@{
+    ViewData["Title"] = "Edit Without Pay Days";
+    ViewBag.ActivePage = "WithoutPayDays";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6" style="position: relative; z-index: 1001;">
+                    <label class="form-label small fw-semibold">Search Employee <span class="text-danger">*</span></label>
+                    <div class="search-with-icon position-relative">
+                        <i class="fas fa-search position-absolute text-muted" style="left: 1rem; top: 50%; transform: translateY(-50%);"></i>
+                        <input type="text" id="employeeSearch" name="term" class="form-control form-control-sm" style="padding-left: 2.5rem;"
+                               value="@(Model.Employee != null ? $"{Model.Employee.FirstName} {Model.Employee.LastName} ({Model.Employee.Code})" : "")"
+                               placeholder="Type name or code..." autocomplete="off"
+                               hx-get="/Ajax/SearchEmployees"
+                               hx-trigger="keyup delay:300ms, search"
+                               hx-target="#employeeResults" />
+                    </div>
+                    <div id="employeeResults" class="search-results-container position-absolute w-100 bg-white shadow-sm border rounded mt-1" style="z-index: 1000;"></div>
+                    <input type="hidden" asp-for="EmployeeId" id="hfEmployeeId" />
+                    <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold" asp-for="PeriodSalery">Salary Period <span class="text-danger">*</span></label>
+                    <select asp-for="PeriodSalery" class="form-select form-select-sm" asp-items="ViewBag.PeriodSalery" required>
+                        <option value="">Select Period</option>
+                    </select>
+                    <span asp-validation-for="PeriodSalery" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold" asp-for="withoutpaydays">Number of Days <span class="text-danger">*</span></label>
+                    <input asp-for="withoutpaydays" class="form-control form-control-sm" type="number" step="0.01" required />
+                    <span asp-validation-for="withoutpaydays" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <div id="employeeProfileCard" class="employee-profile-slot"
+                         hx-get="/Employees/GetEmployeeByCode?id=@Model.EmployeeId"
+                         hx-trigger="load">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Clear hidden ID when user types
+        const searchInput = document.getElementById('employeeSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const hiddenInput = document.getElementById('hfEmployeeId');
+                if (hiddenInput) hiddenInput.value = '';
+            });
+        }
+
+        // Handle Employee Selection
+        document.body.addEventListener('click', function(e) {
+            const row = e.target.closest('.search-result-item');
+            if (row) {
+                const id = row.dataset.id;
+                const name = row.dataset.name;
+                const code = row.dataset.code;
+                
+                const hiddenInput = document.getElementById('hfEmployeeId');
+                hiddenInput.value = id;
+                document.getElementById('employeeResults').innerHTML = '';
+                document.getElementById('employeeSearch').value = name + ' (' + code + ')';
+                
+                // Trigger profile card load
+                htmx.ajax('GET', '/Employees/GetEmployeeByCode?id=' + id, {
+                    target: '#employeeProfileCard'
+                });
+            }
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                const results = document.getElementById('employeeResults');
+                if (results) results.innerHTML = '';
+            }
+        });
+    });
+</script>

@@ -1,0 +1,210 @@
+@model AlignHR.Models.EmployeeShifts
+@{
+    ViewData["Title"] = "Shift Assignment Details";
+    ViewBag.ActivePage = "EmployeeShifts";
+}
+
+@section Styles {
+    <style>
+        .shift-detail-card {
+            border: 1px solid var(--erp-border);
+            border-radius: 0.8rem;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+        }
+
+        .shift-detail-card__header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.7rem;
+            padding: 0.7rem 0.85rem 0.62rem;
+            border-bottom: 1px solid var(--erp-border);
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.08), rgba(15, 23, 42, 0.03));
+        }
+
+        .shift-detail-card__eyebrow {
+            margin: 0 0 0.18rem;
+            color: var(--erp-primary);
+            font-size: 0.63rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .shift-detail-card__title {
+            margin: 0;
+            color: var(--erp-text);
+            font-family: "Plus Jakarta Sans", sans-serif;
+            font-size: 0.84rem;
+            font-weight: 800;
+        }
+
+        .shift-detail-card__subtitle {
+            margin: 0.1rem 0 0;
+            color: var(--erp-muted);
+            font-size: 0.68rem;
+        }
+
+        .shift-detail-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 0.25rem 0.58rem;
+            font-size: 0.63rem;
+            font-weight: 800;
+            line-height: 1;
+            background: rgba(100, 116, 139, 0.12);
+            color: #475569;
+        }
+
+        .shift-detail-card__body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            padding: 0.82rem;
+        }
+
+        .shift-detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.72rem;
+        }
+
+        @@media (max-width: 991.98px) {
+            .shift-detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .shift-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-radius: 0.72rem;
+            border: 1px solid var(--erp-border);
+            background: rgba(249, 250, 251, 0.9);
+            padding: 0.55rem 0.7rem;
+            min-width: 0;
+        }
+
+        .shift-detail-item__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.9rem;
+            height: 1.9rem;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.12);
+            color: var(--erp-primary);
+            flex: 0 0 auto;
+        }
+
+        .shift-detail-item__label {
+            color: var(--erp-muted);
+            font-size: 0.64rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .shift-detail-item__value {
+            color: var(--erp-text);
+            font-size: 0.8rem;
+            font-weight: 800;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .shift-detail-summary {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 0.72rem;
+        }
+
+        @@media (max-width: 991.98px) {
+            .shift-detail-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <div class="shift-detail-card">
+            <div class="shift-detail-card__header">
+                <div>
+                    <div class="shift-detail-card__eyebrow">Read Only</div>
+                    <h2 class="shift-detail-card__title">Shift Assignment Details</h2>
+                    <p class="shift-detail-card__subtitle">Compact overview without audit fields.</p>
+                </div>
+                <span class="shift-detail-pill">View</span>
+            </div>
+
+            <div class="shift-detail-card__body">
+                <div class="shift-detail-summary">
+                    <div class="shift-detail-item">
+                        <div class="shift-detail-item__icon"><i class="fa-solid fa-id-badge"></i></div>
+                        <div class="min-w-0">
+                            <div class="shift-detail-item__label">Employee</div>
+                            <div class="shift-detail-item__value">@(Model.Employee != null ? $"{Model.Employee.FirstName} {Model.Employee.LastName} ({Model.Employee.Code})" : "Unknown Employee")</div>
+                        </div>
+                    </div>
+
+                    <div class="shift-detail-item">
+                        <div class="shift-detail-item__icon"><i class="fa-solid fa-people-roof"></i></div>
+                        <div class="min-w-0">
+                            <div class="shift-detail-item__label">Shift</div>
+                            <div class="shift-detail-item__value">@ViewBag.ShiftName</div>
+                        </div>
+                    </div>
+
+                    <div class="shift-detail-item">
+                        <div class="shift-detail-item__icon"><i class="fa-solid fa-building"></i></div>
+                        <div class="min-w-0">
+                            <div class="shift-detail-item__label">Department</div>
+                            <div class="shift-detail-item__value">@(Model.Employee?.Department?.Name ?? "-")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="shift-detail-grid">
+                    <div class="shift-detail-item">
+                        <div class="shift-detail-item__icon"><i class="fa-solid fa-calendar-day"></i></div>
+                        <div class="min-w-0">
+                            <div class="shift-detail-item__label">Effective From</div>
+                            <div class="shift-detail-item__value">@Model.EffiectiveForm.ToString("MMM dd, yyyy")</div>
+                        </div>
+                    </div>
+
+                    <div class="shift-detail-item">
+                        <div class="shift-detail-item__icon"><i class="fa-solid fa-calendar-check"></i></div>
+                        <div class="min-w-0">
+                            <div class="shift-detail-item__label">Effective To</div>
+                            <div class="shift-detail-item__value">@(Model.EffiectiveTo.HasValue ? Model.EffiectiveTo.Value.ToString("MMM dd, yyyy") : "Ongoing")</div>
+                        </div>
+                    </div>
+
+                    <div class="shift-detail-item">
+                        <div class="shift-detail-item__icon"><i class="fa-solid fa-bed"></i></div>
+                        <div class="min-w-0">
+                            <div class="shift-detail-item__label">Rest Day</div>
+                            <div class="shift-detail-item__value">@Model.RestDay</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mt-2">
+                    <div class="col-12 d-flex justify-content-end gap-2">
+                        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

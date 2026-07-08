@@ -1,0 +1,195 @@
+@{
+    var grossSalary = ViewBag.GrossSalary != null ? (decimal)ViewBag.GrossSalary : 0m;
+    var periodRate = ViewBag.PeriodRate != null ? (decimal)ViewBag.PeriodRate : 0m;
+    var eobiAmount = ViewBag.EOBIAmount != null ? (decimal)ViewBag.EOBIAmount : 0m;
+    var netSalary = ViewBag.NetSalary != null ? (decimal)ViewBag.NetSalary : grossSalary;
+    var periodName = ViewBag.PeriodName as string ?? "Selected period";
+    var isEobiActive = ViewBag.IsEobiActive == true;
+    var employeeId = Context.Request.Query["EmployeeId"].ToString();
+}
+
+@if (ViewBag.CalculationSuccessful == true)
+{
+    if (isEobiActive)
+    {
+        <div class="payroll-calculation-card payroll-calculation-card--success animate-profile-in">
+            <div class="payroll-calculation-topband is-success"></div>
+
+            <div class="payroll-calculation-header">
+                <div class="payroll-calculation-heading">
+                    <span class="payroll-calculation-icon is-success">
+                        <i class="fas fa-shield-alt"></i>
+                    </span>
+                    <div>
+                        <h4>EOBI Deduction Details</h4>
+                        <p>Employee is enrolled in EOBI and the selected period rate is ready to apply.</p>
+                    </div>
+                </div>
+
+                <div class="payroll-calculation-badges">
+                    <span class="payroll-pill payroll-pill--success">Active</span>
+                    <span class="payroll-pill">@periodName</span>
+                </div>
+            </div>
+
+            <div class="payroll-calculation-hero payroll-calculation-hero--success">
+                <div>
+                    <span class="payroll-calculation-eyebrow">Applied Deduction</span>
+                    <strong>PKR @eobiAmount.ToString("N2")</strong>
+                    <small>This amount is synced into the form field automatically.</small>
+                </div>
+
+                <div class="payroll-calculation-hero-meta">
+                    <div>
+                        <span>Gross Salary</span>
+                        <strong>PKR @grossSalary.ToString("N2")</strong>
+                    </div>
+                    <div>
+                        <span>Net After EOBI</span>
+                        <strong>PKR @netSalary.ToString("N2")</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payroll-calculation-grid">
+                <div class="payroll-metric">
+                    <span class="payroll-metric-label">Gross Salary</span>
+                    <strong class="payroll-metric-value">PKR @grossSalary.ToString("N2")</strong>
+                    <span class="payroll-metric-note">Latest monthly payroll amount</span>
+                </div>
+
+                <div class="payroll-metric payroll-metric--warning">
+                    <span class="payroll-metric-label">Period Flat Rate</span>
+                    <strong class="payroll-metric-value">PKR @periodRate.ToString("N2")</strong>
+                    <span class="payroll-metric-note">Defined on the selected period</span>
+                </div>
+
+                <div class="payroll-metric payroll-metric--danger">
+                    <span class="payroll-metric-label">Deduction Applied</span>
+                    <strong class="payroll-metric-value">PKR @eobiAmount.ToString("N2")</strong>
+                    <span class="payroll-metric-note">Will be saved with this record</span>
+                </div>
+
+                <div class="payroll-metric payroll-metric--success">
+                    <span class="payroll-metric-label">Net Salary</span>
+                    <strong class="payroll-metric-value">PKR @netSalary.ToString("N2")</strong>
+                    <span class="payroll-metric-note">Gross salary - EOBI deduction</span>
+                </div>
+            </div>
+
+            <div class="payroll-breakdown-panels">
+                <div class="payroll-breakdown-panel">
+                    <div class="payroll-breakdown-panel-header">
+                        <span class="payroll-breakdown-panel-title">Calculation Logic</span>
+                        <span class="payroll-pill payroll-pill--success">Enrolled</span>
+                    </div>
+
+                    <strong class="payroll-breakdown-panel-range">@periodName</strong>
+
+                    <div class="payroll-detail-list">
+                        <div class="payroll-detail-row">
+                            <span>Base gross salary</span>
+                            <strong>PKR @grossSalary.ToString("N2")</strong>
+                        </div>
+                        <div class="payroll-detail-row">
+                            <span>Selected period rate</span>
+                            <strong>PKR @periodRate.ToString("N2")</strong>
+                        </div>
+                        <div class="payroll-detail-row">
+                            <span>Net after deduction</span>
+                            <strong>PKR @netSalary.ToString("N2")</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payroll-calculation-note payroll-calculation-note--success">
+                <i class="fas fa-circle-check"></i>
+                <span>This employee is EOBI-enabled, so the selected period's flat deduction is being applied.</span>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="payroll-calculation-card payroll-calculation-card--inactive animate-profile-in">
+            <div class="payroll-calculation-topband is-danger"></div>
+
+            <div class="payroll-calculation-header">
+                <div class="payroll-calculation-heading">
+                    <span class="payroll-calculation-icon is-danger">
+                        <i class="fas fa-shield-halved"></i>
+                    </span>
+                    <div>
+                        <h4>EOBI Not Active On Profile</h4>
+                        <p>No EOBI deduction will be applied until the employee is marked as EOBI enrolled.</p>
+                    </div>
+                </div>
+
+                <div class="payroll-calculation-badges">
+                    <span class="payroll-pill payroll-pill--danger">Inactive</span>
+                    <span class="payroll-pill">@periodName</span>
+                </div>
+            </div>
+
+            <div class="payroll-calculation-grid">
+                <div class="payroll-metric">
+                    <span class="payroll-metric-label">Gross Salary</span>
+                    <strong class="payroll-metric-value">PKR @grossSalary.ToString("N2")</strong>
+                    <span class="payroll-metric-note">Latest monthly payroll amount</span>
+                </div>
+
+                <div class="payroll-metric">
+                    <span class="payroll-metric-label">Configured Period Rate</span>
+                    <strong class="payroll-metric-value">PKR @periodRate.ToString("N2")</strong>
+                    <span class="payroll-metric-note">Available once EOBI is enabled</span>
+                </div>
+
+                <div class="payroll-metric payroll-metric--success">
+                    <span class="payroll-metric-label">Applied Deduction</span>
+                    <strong class="payroll-metric-value">PKR @eobiAmount.ToString("N2")</strong>
+                    <span class="payroll-metric-note">No deduction is being posted</span>
+                </div>
+
+                <div class="payroll-metric">
+                    <span class="payroll-metric-label">Net Salary</span>
+                    <strong class="payroll-metric-value">PKR @netSalary.ToString("N2")</strong>
+                    <span class="payroll-metric-note">Unchanged until EOBI is enabled</span>
+                </div>
+            </div>
+
+            <div class="payroll-calculation-note">
+                <i class="fas fa-circle-info"></i>
+                <span>Update the employee profile to enable EOBI, then the period rate will automatically apply here.</span>
+                @if (!string.IsNullOrWhiteSpace(employeeId))
+                {
+                    <a href="/Employees/Edit/@employeeId" target="_blank" class="payroll-alert-link">Update Profile</a>
+                }
+            </div>
+        </div>
+    }
+
+    <script>
+        (function () {
+            var amountField = document.querySelector('.amount-field');
+            if (amountField) {
+                amountField.value = '@eobiAmount';
+            }
+        })();
+    </script>
+}
+else
+{
+    <div class="payroll-calculation-card payroll-calculation-card--placeholder animate-profile-in">
+        <div class="payroll-calculation-header">
+            <div class="payroll-calculation-heading">
+                <span class="payroll-calculation-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </span>
+                <div>
+                    <h4>EOBI Deduction Details</h4>
+                    <p>Select an employee and salary period to preview the EOBI deduction card.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}

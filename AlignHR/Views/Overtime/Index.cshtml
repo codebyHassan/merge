@@ -1,0 +1,141 @@
+@model IPagedList<AlignHR.Models.Overtime>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@{
+    ViewData["Title"] = "Overtime Policies";
+    ViewBag.ActivePage = "Overtime";
+}
+
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <span>Attendance</span>
+        <span>/</span>
+        <span>Overtime Policies</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Overtime Management</h1>
+            <p class="page-subtitle">Configure and manage overtime policies and rates</p>
+        </div>
+
+        <div class="flex gap-8">
+            <a class="btn btn-primary btn-sm" asp-action="Create">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add Policy
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="table-shell">
+    <div class="table-toolbar">
+        <div class="table-card-title">All Policies (@Model.TotalItemCount)</div>
+
+        <div class="table-filters">
+            <form method="get" asp-action="Index" onsubmit="return false;" style="display: flex; align-items: center; gap: 8px;">
+                <div style="position: relative; width: 100%;">
+                    <input type="text" name="search" class="filter-input form-control" placeholder="Search Here..." value="@Context.Request.Query["search"]" 
+                           hx-get="@Url.Action("Index")" 
+                           hx-target="#table-container" 
+                           hx-select="#table-container"
+                           hx-indicator="#search-loader"
+                           hx-trigger="keyup changed delay:500ms, search" />
+                    <span id="search-loader" class="htmx-indicator" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
+                        <div class="search-loader"></div>
+                    </span>
+                </div>
+            </form></div>
+    </div>
+
+    <div id="table-container">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Policy Name</th>
+                    <th>Day Type</th>
+                    <th>Hours (Min/Max)</th>
+                    <th>Rate</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <strong>@item.PolicyName</strong>
+                                @if (item.IsDefault)
+                                {
+                                    <span class="badge" style="background: #e0e7ff; color: #4338ca; margin-left: 5px;">Default</span>
+                                }
+                                <div style="font-size: 0.8rem; color: var(--text-muted);">Base: @item.CalculationBase</div>
+                            </td>
+                            <td>
+                                <span class="badge @(item.DayType == "Holiday" ? "badge-danger" : item.DayType == "Weekend" ? "badge-warning" : "badge-info")">
+                                    @item.DayType
+                                </span>
+                            </td>
+                            <td>@item.MinHours - @item.MaxHours</td>
+                            <td>
+                                @(item.RateType == "MULTIPLIER" ? item.RateValue + "x" : "Rs." + item.RateValue)
+                            </td>
+                            <td>
+                                @if(item.IsActive)
+                                {
+                                    <span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: #10B981;">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge" style="background: rgba(239, 68, 68, 0.1); color: #EF4444;">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="table-actions">
+                                    <a asp-action="Edit" asp-route-id="@item.OvertimeId" class="btn btn-icon btn-sm" title="Edit">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                        </svg>
+                                    </a>
+
+                                    <form asp-action="Delete" asp-route-id="@item.OvertimeId" method="post" style="display:inline;"
+                                          onsubmit="return confirm('Are you sure you want to delete this policy?');">
+                                        <button class="btn btn-icon btn-sm text-danger" type="submit" title="Delete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6" />
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            No policies found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination-wrapper mt-4">
+        @Html.PagedListPager(Model, page => Url.Action("Index", new { page, search = ViewBag.CurrentSearch }))
+    </div>
+    </div>
+</div>

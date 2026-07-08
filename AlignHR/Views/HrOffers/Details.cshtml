@@ -1,0 +1,281 @@
+@model AlignHR.Models.HrOfferDetailsViewModel
+
+@{
+    ViewData["Title"] = "Offer — " + Model.OfferNumber;
+    ViewBag.ActivePage = "HrOffers";
+
+    var statusClass = Model.Status switch
+    {
+        "Approved"        => "badge-success",
+        "Accepted"        => "badge-success",
+        "PendingApproval" => "badge-warning",
+        "Sent"            => "badge-warning",
+        "Rejected"        => "badge-danger",
+        "Expired"         => "badge-danger",
+        "Cancelled"       => "badge-danger",
+        "Withdrawn"       => "badge-secondary",
+        _                 => "badge-secondary"
+    };
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small">
+        @TempData["Error"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        @* ── Header ── *@
+        <div class="d-flex align-items-start justify-content-between mb-3 gap-2 flex-wrap">
+            <div>
+                <span class="fw-bold fs-6">@Model.OfferNumber</span>
+                <span class="status-badge @statusClass ms-2">@Model.Status</span>
+                <div class="small text-muted mt-1">
+                    @Model.CandidateName
+                    @if (!string.IsNullOrEmpty(Model.CandidateEmail)) { <span class="ms-1">· @Model.CandidateEmail</span> }
+                    @if (!string.IsNullOrEmpty(Model.JobTitle)) { <span class="ms-1">· @Model.JobTitle</span> }
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="history.back()">Back</button>
+
+                @if (Model.Status == "Draft")
+                {
+                    <form asp-action="SubmitForApproval" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-primary btn-sm">Submit for Approval</button>
+                    </form>
+                }
+
+                @if (Model.Status == "PendingApproval" || Model.Status == "Approved")
+                {
+                    var withdrawMsg = Model.Status == "PendingApproval"
+                        ? "Withdraw this offer from approval? All pending approvals will be removed."
+                        : "Withdraw this approved offer? This cannot be undone.";
+                    <form asp-action="Withdraw" asp-route-id="@Model.Id" method="post" class="d-inline"
+                          onsubmit="return confirm('@withdrawMsg');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-warning btn-sm">Withdraw</button>
+                    </form>
+                }
+
+@if (Model.Status == "Sent")
+                {
+                    <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-inline"
+                          onsubmit="return confirm('Cancel this offer? The candidate\'s response link will be invalidated. You will need to create a new corrected offer.');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Cancel Offer</button>
+                    </form>
+                }
+
+                @if (Model.Status == "Accepted")
+                {
+                    <form asp-controller="HrOnboarding" asp-action="Start" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="offerId" value="@Model.Id" />
+                        <button type="submit" class="btn btn-success btn-sm">Start Onboarding</button>
+                    </form>
+                }
+
+            </div>
+        </div>
+
+        @* ── Core Fields ── *@
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Proposed Salary</div>
+                <div class="fw-bold fs-6">@Model.ProposedSalary.ToString("N0")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Joining Date</div>
+                <div>@(Model.CandidateJoiningDate?.ToString("dd MMM yyyy") ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Expiry Date</div>
+                <div>@(Model.ExpiryDate?.ToString("dd MMM yyyy") ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Created</div>
+                <div class="small">@Model.CreatedBy — @Model.CreatedOn?.ToString("dd MMM yyyy")</div>
+            </div>
+        </div>
+
+        @* ── Offer Notes ── *@
+        @if (!string.IsNullOrWhiteSpace(Model.Notes))
+        {
+            var noteLines = Model.Notes.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(n => n.TrimStart('•').Trim()).Where(n => n.Length > 0).ToList();
+            if (noteLines.Any())
+            {
+                <div style="border:1px solid var(--ahr-border);border-radius:6px;padding:12px 16px;background:var(--ahr-surface);margin-bottom:16px;">
+                    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--ahr-text-tertiary);margin-bottom:8px;">Offer Notes</div>
+                    <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;">
+                        @foreach (var note in noteLines)
+                        {
+                            <li style="font-size:13px;color:var(--ahr-text);">@note</li>
+                        }
+                    </ul>
+                </div>
+            }
+        }
+
+        @* ── Hiring Decision Banner ── *@
+        @if (Model.HiringDecision != null)
+        {
+            var hdClass = Model.HiringDecision.Decision switch
+            {
+                "Hired"    => "alert-success",
+                "Rejected" => "alert-danger",
+                "Hold"     => "alert-warning",
+                _          => "alert-secondary"
+            };
+            <div class="alert @hdClass py-2 small mb-3">
+                <strong>Hiring Decision:</strong> @Model.HiringDecision.Decision
+                @if (!string.IsNullOrEmpty(Model.HiringDecision.Remarks)) { <span> — @Model.HiringDecision.Remarks</span> }
+                <span class="text-muted ms-2">by @(Model.HiringDecision.DecisionByName ?? "—") on @Model.HiringDecision.DecisionDate?.ToString("dd MMM yyyy")</span>
+            </div>
+        }
+
+        <hr class="my-3 opacity-25" />
+
+        @* ── Approval Section ── *@
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="fw-semibold small">Offer Approvals</div>
+        </div>
+
+        @if (Model.Approvals.Any())
+        {
+            <table class="table table-sm erp-table mb-3">
+                <thead>
+                    <tr>
+                        <th>Level</th>
+                        <th>Approver</th>
+                        <th>Status</th>
+                        <th>Comments</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model.Approvals)
+                    {
+                        var apClass = a.Status switch { "Approved" => "badge-success", "Rejected" => "badge-danger", _ => "badge-secondary" };
+                        <tr>
+                            <td>Level @a.ApprovalLevel</td>
+                            <td>@(a.ApproverName ?? "—")</td>
+                            <td><span class="status-badge @apClass">@a.Status</span></td>
+                            <td class="text-muted small">@(a.Comments ?? "—")</td>
+                            <td class="small">@(a.ActionDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="small text-muted mb-3">No approvers added yet.</p>
+        }
+
+        @if (Model.Status == "Draft")
+        {
+            <form asp-action="AddApprover" method="post" class="d-flex gap-2 align-items-end mb-4 flex-wrap">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="OfferId" value="@Model.Id" />
+                <div>
+                    <label class="form-label small fw-semibold">Approver</label>
+                    <select name="ApproverEmployeeId" asp-items="ViewBag.Approvers"
+                            class="form-select form-select-sm" style="min-width:260px;">
+                        <option value="">— Select Employee —</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label small fw-semibold">Level</label>
+                    <input type="number" name="ApprovalLevel" value="@(Model.Approvals.Count + 1)"
+                           class="form-control form-control-sm" style="width:80px;" readonly />
+                </div>
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                    <i class="fa-solid fa-plus me-1"></i>Add Approver
+                </button>
+            </form>
+        }
+
+        <hr class="my-3 opacity-25" />
+
+        @* ── Candidate Response ── *@
+        @if (Model.ResponseDate.HasValue)
+        {
+            <div class="row g-3 mb-3">
+                <div class="col-6 col-md-3">
+                    <div class="small text-muted">Response Date</div>
+                    <div>@Model.ResponseDate.Value.ToString("dd MMM yyyy")</div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.ResponseComments))
+                {
+                    <div class="col-12 col-md-9">
+                        <div class="small text-muted">Candidate Comments</div>
+                        <div class="small">@Model.ResponseComments</div>
+                    </div>
+                }
+            </div>
+        }
+
+        <hr class="my-3 opacity-25" />
+
+        @* ── Documents ── *@
+        <div class="fw-semibold small mb-2">Offer Documents</div>
+        @if (Model.Documents.Any())
+        {
+            <table class="table table-sm erp-table mb-3">
+                <thead>
+                    <tr><th>File</th><th>Generated</th><th class="text-end sticky-actions">Actions</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model.Documents)
+                    {
+                        <tr>
+                            <td><i class="fa-solid fa-file-pdf text-danger me-1"></i>@d.FileName</td>
+                            <td class="small">@(d.GeneratedDate?.ToString("dd MMM yyyy HH:mm") ?? "—")</td>
+                            <td class="text-end sticky-actions">
+                                <a asp-action="DownloadDocument" asp-route-path="@d.FilePath"
+                                   class="btn btn-icon btn-sm btn-icon-primary" title="Download">
+                                    <i class="fa-solid fa-download"></i>
+                                </a>
+                                <form asp-action="DeleteDocument" method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete document?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="documentId" value="@d.Id" />
+                                    <input type="hidden" name="offerId" value="@Model.Id" />
+                                    <button class="btn btn-icon btn-sm btn-icon-danger" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+
+        <form asp-action="UploadDocument" method="post" enctype="multipart/form-data"
+              class="d-flex gap-2 align-items-end">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="offerId" value="@Model.Id" />
+            <div>
+                <label class="form-label small fw-semibold">Upload Document</label>
+                <input type="file" name="file" class="form-control form-control-sm" />
+            </div>
+            <button type="submit" class="btn btn-outline-primary btn-sm">
+                <i class="fa-solid fa-upload me-1"></i>Upload
+            </button>
+        </form>
+
+    </div>
+</div>

@@ -1,0 +1,137 @@
+@model AlignHR.Models.MasterLoanAdvance
+@using AlignHR.Services
+@inject IPayrollLockService LockService
+
+@{
+    ViewData["Title"] = "Loan Details";
+    // Master loan records are usually not hard-locked by period unless specifically requested,
+    // but we can check if it's already fully disbursed or similar.
+}
+
+<div class="page-header animate-fade-in">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a href="/MasterLoanAdvance">Loans & Advances</a>
+        <span>/</span>
+        <span>Details</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Loan Request Details</h1>
+            <p class="page-subtitle">Transaction ID: #@Model.id | Requested on @Model.RequestDate.ToString("dd MMM yyyy")</p>
+        </div>
+
+        <div class="flex gap-12">
+             <div class="status-badge @(Model.Status == AlignHR.Models.LoanStatus.Approved ? "active" : "pending")">
+                <i class="fas @(Model.Status == AlignHR.Models.LoanStatus.Approved ? "fa-check-circle" : "fa-clock")"></i>
+                <span>@Model.Status.ToString().ToUpper()</span>
+            </div>
+            <a asp-action="Edit" asp-route-id="@Model.id" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i>
+                Edit Request
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="details-grid animate-slide-up">
+    <!-- Borrower Info -->
+    <div class="erp-card">
+        <div class="card-header-premium">
+            <i class="fas fa-user-tie"></i>
+            <span>Borrower Profile</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-group">
+                <label>Employee</label>
+                <div class="value-highlight">@Model.Employee?.FirstName @Model.Employee?.LastName</div>
+                <div class="value small text-muted">Code: @Model.Employee?.Code</div>
+            </div>
+            <hr class="divider" />
+            <div class="info-group">
+                <label>Department</label>
+                <div class="value">@Model.Employee?.Department?.Name</div>
+            </div>
+            <div class="info-group">
+                <label>Designation</label>
+                <div class="value">@Model.Employee?.Designation?.Name</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loan Terms -->
+    <div class="erp-card">
+        <div class="card-header-premium financial">
+            <i class="fas fa-file-contract"></i>
+            <span>Financial Terms</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-row">
+                <div class="info-item">
+                    <label>Transaction Type</label>
+                    <div class="value">
+                        <span class="badge-type @Model.TransactionType.ToString().ToLower()">@Model.TransactionType</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <label>Total Amount</label>
+                    <div class="value highlight">PKR @Model.TotalAmount.ToString("N0")</div>
+                </div>
+            </div>
+            <hr class="divider" />
+            @if (Model.TransactionType == AlignHR.Models.TransactionType.Loan)
+            {
+                <div class="info-row">
+                    <div class="info-item">
+                        <label>Tenure</label>
+                        <div class="value">@Model.TenureMonths Months</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Monthly EMI</label>
+                        <div class="value secondary highlight">PKR @Model.MonthlyInstallment.ToString("N0")</div>
+                    </div>
+                </div>
+                <div class="info-group mt-20">
+                    <label>Interest Rate</label>
+                    <div class="value">@Model.InterestRate% (Annual)</div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Reason Section -->
+    <div class="erp-card span-all">
+        <div class="card-header-premium">
+            <i class="fas fa-align-left"></i>
+            <span>Purpose & Comments</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="reason-text">
+                @(string.IsNullOrEmpty(Model.Reason) ? "No justification provided for this request." : Model.Reason)
+            </div>
+        </div>
+    </div>
+
+    <!-- Audit Footer -->
+    <div class="erp-card span-all">
+        <div class="card-body-premium footer-meta">
+            <div class="meta-item">
+                <label>Created At</label>
+                <span>@Model.createat.ToString("f")</span>
+            </div>
+            <div class="meta-item">
+                <label>Last Updated</label>
+                <span>@(Model.updatedby > 0 ? Model.updateat.ToString("f") : "Never")</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-actions-footer span-all">
+        <a href="/MasterLoanAdvance" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i>
+            Back to List
+        </a>
+    </div>
+</div>

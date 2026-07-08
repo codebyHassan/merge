@@ -1,0 +1,108 @@
+@model IPagedList<AlignHR.Models.EmployeeLeavePolicy>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Employee Policy Assignment";
+    ViewBag.ActivePage = "EmployeeLeavePolicies";
+    var currentFilter = ViewData["CurrentFilter"]?.ToString();
+}
+
+<section class="filter-bar mb-2" aria-label="Employee leave policies filters">
+    <div class="input-group input-group-sm me-auto" style="width: auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="searchQuery"
+               value="@currentFilter"
+               placeholder="Search employee or policy"
+               aria-label="Search records"
+               hx-get="@Url.Action("Index")"
+               hx-target="#employee-leave-policies-index-page"
+               hx-select="#employee-leave-policies-index-page"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-include="[name='searchQuery']"
+               hx-push-url="true"
+               form="none" />
+    </div>
+    <div class="filter-group">
+        <a class="btn btn-primary btn-sm" asp-action="Create"><i class="fa-solid fa-plus me-1"></i>Assign</a>
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table id="employee-leave-policies-index-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="1">Code</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="2">Name</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="3">Policy</button></th>
+                    <th scope="col">Assigned Date</th>
+                    <th scope="col">Emp Status</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var name = item.Employee?.FullName ?? "-";
+                    var isEmpActive = !(item.Employee?.IsServiceEnded ?? false);
+
+                    <tr style="@(!isEmpActive ? "opacity:0.55;" : "")"  >
+                        <td data-label="Code"><span class="fw-semibold">@(item.Employee?.Code ?? "-")</span></td>
+                        <td data-label="Name"><span class="fw-semibold">@name</span></td>
+                        <td data-label="Policy">
+                            @if (item.LeavePolicy != null)
+                            {
+                                <span class="status-badge badge-info">@item.LeavePolicy.PolicyName</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
+                        <td data-label="Assigned Date">@item.AssignedAt.ToString("dd MMM yyyy")</td>
+                        <td data-label="Emp Status">
+                            <span class="status-badge @(isEmpActive ? "status-active" : "status-risk")">
+                                @(isEmpActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td data-label="Status">
+                            <span class="status-badge @(item.IsActive ? "status-active" : "status-risk")">
+                                @(item.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Edit" asp-route-id="@item.Id" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-inbox"></i>
+                <h3 class="h6 mt-2 mb-1">No records match the current filters</h3>
+                <p class="text-muted mb-0">Adjust search or assign a new policy.</p>
+            </div>
+        }
+    </div>
+
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage-@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav aria-label="Employee leave policies pagination">
+            @Html.PagedListPager(Model, page => Url.Action("Index", new { page, searchQuery = currentFilter }), new PagedListRenderOptions
+            {
+                UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" }
+            })
+        </nav>
+    </div>
+</section>

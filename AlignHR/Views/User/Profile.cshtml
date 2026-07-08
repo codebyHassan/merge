@@ -1,0 +1,795 @@
+@model AlignHR.Models.User
+@{
+    ViewData["Title"] = "My Profile";
+    ViewBag.ActivePage = "User";
+
+    var initials = "";
+    if (!string.IsNullOrEmpty(Model.FirstName)) initials += Model.FirstName.Substring(0, 1).ToUpper();
+    if (!string.IsNullOrEmpty(Model.LastName))  initials += Model.LastName.Substring(0, 1).ToUpper();
+    if (string.IsNullOrEmpty(initials)) initials = "US";
+
+    var hasEmployee = Model.Employee != null;
+    var emp = Model.Employee;
+
+    bool   hasDms       = ViewBag.HasDmsDefinition  == true;
+    string dmsName      = ViewBag.DmsDefinitionName ?? "";
+    double dmsProgress  = ViewBag.DmsProgress       ?? 0.0;
+
+    var checklistItems  = ViewBag.ChecklistItems    as List<AlignHR.Models.DmsDefinationFile>  ?? new List<AlignHR.Models.DmsDefinationFile>();
+    var uploadedDocs    = ViewBag.UploadedDocuments  as List<AlignHR.Models.Document>           ?? new List<AlignHR.Models.Document>();
+
+    // Which tab should be active?
+    var activeTab = (string)(ViewData["activeTab"] ?? Context.Request.Query["activeTab"].ToString());
+    bool isDocTab  = activeTab == "documents";
+    bool isEmpTab  = activeTab == "employee";
+}
+
+@* ── Alert banners ──────────────────────────────────────────────────────── *@
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-3" role="alert">
+        <i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="employee-create-grid">
+    <!-- ═══════════════════ Left Column: Profile Panel ═══════════════════ -->
+    <aside class="employee-profile-panel">
+
+        <!-- Avatar + basic info -->
+        <div class="profile-card-compact text-center p-3">
+            <div class="profile-avatar-upload mx-auto mb-3"
+                 style="pointer-events:none;width:90px;height:90px;border-radius:50%;display:flex;
+                        align-items:center;justify-content:center;background:var(--ahr-accent,#111827);
+                        color:#fff;font-size:28px;font-weight:bold;overflow:hidden;
+                        border:3px solid var(--ahr-border,#E5E7EB);">
+                @if (hasEmployee && !string.IsNullOrEmpty(emp.ProfileImage))
+                {
+                    <span style="background-image:url('/uploads/employees/@emp.ProfileImage');
+                                 background-size:cover;background-position:center;
+                                 width:100%;height:100%;display:block;"></span>
+                }
+                else
+                {
+                    <span>@initials</span>
+                }
+            </div>
+            <h4 class="mb-1 fw-bold text-dark">@Model.FirstName @Model.LastName</h4>
+            <p class="text-muted small mb-2">@Model.Email</p>
+            <span class="status-badge badge-info mb-2">@ViewBag.RoleName</span>
+            <div>
+                @if (Model.UsrIsActive == "Yes")
+                {
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1 small">Active User</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-2 py-1 small">Inactive User</span>
+                }
+            </div>
+        </div>
+
+        <!-- DMS Progress bar (only when a DMS definition is assigned) -->
+        @if (hasEmployee && hasDms)
+        {
+            var progressColor = dmsProgress >= 100 ? "success" : (dmsProgress >= 60 ? "info" : (dmsProgress >= 30 ? "warning" : "danger"));
+            <div class="policy-note mt-3 p-3 rounded border bg-light shadow-sm text-start">
+                <div class="d-flex align-items-center gap-2 mb-2 text-secondary">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span class="small fw-semibold">Document Checklist</span>
+                </div>
+                <div class="text-muted small mb-1 text-truncate" title="@dmsName">@dmsName</div>
+                <div class="progress" style="height:10px;" title="@dmsProgress% complete">
+                    <div class="progress-bar bg-@progressColor progress-bar-striped @(dmsProgress < 100 ? "progress-bar-animated" : "")"
+                         role="progressbar" style="width:@dmsProgress%;"
+                         aria-valuenow="@dmsProgress" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-1">
+                    <span class="text-muted" style="font-size:11px;">
+                        @uploadedDocs.Count uploaded
+                        / @checklistItems.Count required
+                    </span>
+                    <span class="fw-bold small text-@progressColor">@dmsProgress%</span>
+                </div>
+                @if (dmsProgress >= 100)
+                {
+                    <div class="mt-2">
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success small">
+                            <i class="fa-solid fa-circle-check me-1"></i>Complete
+                        </span>
+                    </div>
+                }
+            </div>
+        }
+
+        <!-- Session info -->
+        <div class="policy-note mt-3 p-3 rounded border bg-light shadow-sm text-start">
+            <div class="d-flex align-items-center gap-2 mb-2 text-secondary">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span class="small fw-semibold">Session info</span>
+            </div>
+            <div class="text-muted small">
+                <div>Created: @Model.createat.ToString("dd MMM yyyy")</div>
+                <div>Updated: @Model.updateat.ToString("dd MMM yyyy")</div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ═══════════════════ Right Column: Tabs ═══════════════════ -->
+    <main class="employee-form-main">
+        <ul class="nav nav-tabs border-0 mb-0" id="profileTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link @(!isDocTab && !isEmpTab ? "active" : "")"
+                        id="account-tab" data-bs-toggle="tab" data-bs-target="#account-pane"
+                        type="button" role="tab">
+                    <i class="fa-solid fa-user-gear me-1"></i>Account Details
+                </button>
+            </li>
+            @if (hasEmployee)
+            {
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(isEmpTab ? "active" : "")"
+                            id="employee-tab" data-bs-toggle="tab" data-bs-target="#employee-pane"
+                            type="button" role="tab">
+                        <i class="fa-solid fa-id-card-clip me-1"></i>Employee Record
+                    </button>
+                </li>
+                @if (hasDms)
+                {
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link @(isDocTab ? "active" : "")"
+                                id="documents-tab" data-bs-toggle="tab" data-bs-target="#documents-pane"
+                                type="button" role="tab">
+                            <i class="fa-solid fa-folder-open me-1"></i>Documents
+                            @if (dmsProgress < 100)
+                            {
+                                <span class="badge bg-warning text-dark ms-1" style="font-size:10px;">Pending</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success ms-1" style="font-size:10px;">Complete</span>
+                            }
+                        </button>
+                    </li>
+                }
+            }
+        </ul>
+
+        <div class="tab-content border rounded-bottom border-top-0 bg-white p-3 p-md-4 shadow-sm"
+             id="profileTabsContent">
+
+            <!-- ── Tab 1: Account Details ────────────────────────────────── -->
+            <div class="tab-pane fade @(!isDocTab && !isEmpTab ? "show active" : "")"
+                 id="account-pane" role="tabpanel">
+                <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">User Account</h5>
+                <div class="row g-3">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label text-muted small fw-semibold mb-0">First Name</label>
+                        <div class="text-dark small fw-medium mt-1">@Model.FirstName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label text-muted small fw-semibold mb-0">Last Name</label>
+                        <div class="text-dark small fw-medium mt-1">@Model.LastName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label text-muted small fw-semibold mb-0">Email / Username</label>
+                        <div class="text-dark small fw-medium mt-1">@Model.Email</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label text-muted small fw-semibold mb-0">Role</label>
+                        <div class="text-dark small fw-medium mt-1">@ViewBag.RoleName</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label text-muted small fw-semibold mb-0">DMS Definition</label>
+                        <div class="text-dark small fw-medium mt-1">
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info">
+                                <i class="fa-solid fa-folder-tree me-1"></i>@(ViewBag.DmsDefinitionName ?? "None")
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="form-label text-muted small fw-semibold mb-0">Linked Employee</label>
+                        <div class="text-dark small fw-medium mt-1">
+                            @if (hasEmployee)
+                            {
+                                <span class="text-success fw-bold">
+                                    <i class="fa-solid fa-link me-1"></i>@emp.FullName (@emp.Code)
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">
+                                    <i class="fa-solid fa-link-slash me-1"></i>None (No linked employee profile)
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (hasEmployee)
+            {
+                <!-- ── Tab 3: Employee Details ─────────────────────────────── -->
+                <div class="tab-pane fade @(isEmpTab ? "show active" : "")"
+                     id="employee-pane" role="tabpanel">
+                    <ul class="nav nav-pills mb-3 border-bottom pb-2" id="employeeSections" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active py-1 px-3 me-2 small"
+                                    id="emp-identity-tab" data-bs-toggle="pill"
+                                    data-bs-target="#emp-identity" type="button" role="tab">
+                                <i class="fa-solid fa-id-card me-1"></i>Identity
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link py-1 px-3 me-2 small"
+                                    id="emp-employment-tab" data-bs-toggle="pill"
+                                    data-bs-target="#emp-employment" type="button" role="tab">
+                                <i class="fa-solid fa-briefcase me-1"></i>Employment
+                            </button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link py-1 px-3 small"
+                                    id="emp-payroll-tab" data-bs-toggle="pill"
+                                    data-bs-target="#emp-payroll" type="button" role="tab">
+                                <i class="fa-solid fa-money-bill-wave me-1"></i>Payroll &amp; Statutory
+                            </button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="employeeSectionsContent">
+                        <!-- Employee Section 1: Identity -->
+                        <div class="tab-pane fade show active" id="emp-identity" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Employee Code</label>
+                                    <div class="fw-bold text-dark small mt-1">@emp.Code</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">First Name</label>
+                                    <div class="text-dark small fw-medium mt-1">@emp.FirstName</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Last Name</label>
+                                    <div class="text-dark small fw-medium mt-1">@emp.LastName</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Reporting Line Manager</label>
+                                    <div class="text-dark small fw-medium mt-1">@(ViewBag.LineManagerName ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Leave Approver</label>
+                                    <div class="text-dark small fw-medium mt-1">@(ViewBag.LeaveApproverName ?? "—")</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employee Section 2: Employment -->
+                        <div class="tab-pane fade" id="emp-employment" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Department</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.Department?.Name ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Designation</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.Designation?.Name ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Joining Date</label>
+                                    <div class="text-dark small fw-bold mt-1">@emp.Dateofjoin.ToString("dd MMM yyyy")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Employment Type</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.EmploymentType?.Name ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Employment Status</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.EmploymentStatus?.Name ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Work Location</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.Location?.Name ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Sub Department</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.SubDepartment?.Name ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Division</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.Division?.Name ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Grade</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.Grade?.Name ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Leave Permissions</label>
+                                    <div class="mt-1">
+                                        <span class="badge @(emp.CanApplyForOthers ? "bg-success" : "bg-secondary") bg-opacity-10 @(emp.CanApplyForOthers ? "text-success" : "text-secondary") border @(emp.CanApplyForOthers ? "border-success" : "border-secondary")">
+                                            <i class="fa-solid @(emp.CanApplyForOthers ? "fa-check" : "fa-user") me-1"></i>
+                                            @(emp.CanApplyForOthers ? "Can Apply for Others" : "Standard")
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employee Section 3: Payroll & Statutory -->
+                        <div class="tab-pane fade" id="emp-payroll" role="tabpanel">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Bank Name</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.BankName?.Name ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Account Holder</label>
+                                    <div class="text-dark small fw-medium mt-1">@(emp.BankHolderName ?? "—")</div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">IBAN / Account Number</label>
+                                    <div class="text-dark small fw-medium mt-1" style="font-family:var(--bs-font-monospace);">
+                                        @(emp.AccountNumber ?? "—")
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Salary Status</label>
+                                    <div class="mt-1">
+                                        <span class="badge @(emp.SalaryStatus == "Active" ? "bg-success" : "bg-danger") bg-opacity-10 @(emp.SalaryStatus == "Active" ? "text-success" : "text-danger") border @(emp.SalaryStatus == "Active" ? "border-success" : "border-danger")">
+                                            @emp.SalaryStatus
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Service Controls</label>
+                                    <div class="d-flex gap-2 flex-wrap mt-1">
+                                        <span class="badge @(emp.IsServiceEnded ? "bg-danger" : "bg-success") bg-opacity-10 @(emp.IsServiceEnded ? "text-danger" : "text-success") border @(emp.IsServiceEnded ? "border-danger" : "border-success")">
+                                            <i class="fa-solid @(emp.IsServiceEnded ? "fa-circle-xmark" : "fa-circle-check") me-1"></i>
+                                            @(emp.IsServiceEnded ? "Service Ended" : "In Service")
+                                        </span>
+                                        <span class="badge @(emp.IsSalaryStopped ? "bg-danger" : "bg-success") bg-opacity-10 @(emp.IsSalaryStopped ? "text-danger" : "text-success") border @(emp.IsSalaryStopped ? "border-danger" : "border-success")">
+                                            <i class="fa-solid @(emp.IsSalaryStopped ? "fa-circle-xmark" : "fa-circle-check") me-1"></i>
+                                            @(emp.IsSalaryStopped ? "Salary Stopped" : "Salary Active")
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-12"><hr class="text-muted opacity-25 my-2" /></div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Tax Setup</label>
+                                    <div class="d-flex gap-2 flex-wrap mt-1">
+                                        <span class="badge @(emp.IsFiler ? "bg-success" : "bg-secondary") bg-opacity-10 @(emp.IsFiler ? "text-success" : "text-secondary") border @(emp.IsFiler ? "border-success" : "border-secondary")">
+                                            <i class="fa-solid @(emp.IsFiler ? "fa-check" : "fa-xmark") me-1"></i>@(emp.IsFiler ? "Filer" : "Non-Filer")
+                                        </span>
+                                        @if (emp.TaxExempted)  { <span class="badge bg-info bg-opacity-10 text-info border border-info">Exempted</span> }
+                                        @if (emp.ZakatDeduction){ <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">Zakat Declar.</span> }
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(emp.NTN))
+                                    {
+                                        <div class="mt-2">
+                                            <span class="text-muted small me-1">NTN:</span>
+                                            <span class="fw-medium text-dark small" style="font-family:var(--bs-font-monospace);">@emp.NTN</span>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">Statutory Deductions</label>
+                                    <div class="d-flex flex-column gap-2 mt-1">
+                                        <span class="badge @(emp.isEobi ? "bg-success" : "bg-secondary") bg-opacity-10 @(emp.isEobi ? "text-success" : "text-secondary") border @(emp.isEobi ? "border-success" : "border-secondary") text-start d-inline-block w-auto" style="max-width:fit-content;">
+                                            EOBI: @(emp.isEobi ? (emp.EobiNumber?.ToString() ?? "Active") : "Not Enrolled")
+                                        </span>
+                                        <span class="badge @(emp.isSocailSecuirty ? "bg-success" : "bg-secondary") bg-opacity-10 @(emp.isSocailSecuirty ? "text-success" : "text-secondary") border @(emp.isSocailSecuirty ? "border-success" : "border-secondary") text-start d-inline-block w-auto" style="max-width:fit-content;">
+                                            SS: @(emp.isSocailSecuirty ? (emp.SocailSecuirty?.ToString() ?? "Active") : "Not Enrolled")
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-6 col-xl-4">
+                                    <label class="form-label text-muted small fw-semibold mb-0">PF &amp; Overtime</label>
+                                    <div class="d-flex flex-column gap-2 mt-1">
+                                        <span class="badge @(emp.isOverTime ? "bg-success" : "bg-secondary") bg-opacity-10 @(emp.isOverTime ? "text-success" : "text-secondary") border @(emp.isOverTime ? "border-success" : "border-secondary") text-start d-inline-block w-auto" style="max-width:fit-content;">
+                                            OT: @(emp.isOverTime ? (emp.OvertimePolicy?.PolicyName ?? "Active") : "No Overtime")
+                                        </span>
+                                        <span class="badge @(emp.isPfMember ? "bg-success" : "bg-secondary") bg-opacity-10 @(emp.isPfMember ? "text-success" : "text-secondary") border @(emp.isPfMember ? "border-success" : "border-secondary") text-start d-inline-block w-auto" style="max-width:fit-content;">
+                                            PF: @(emp.isPfMember ? $"Member (#{emp.pfmembernumber})" : "Non-Member")
+                                        </span>
+                                        @if (emp.IsFixedPFAmount && emp.PFAmount.HasValue)
+                                        {
+                                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary text-start d-inline-block w-auto" style="max-width:fit-content;">
+                                                Fixed PF: @emp.PFAmount.Value.ToString("N2")
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @if (hasDms)
+                {
+                    <!-- ── Tab 4: Documents (DMS Checklist) ───────────────────── -->
+                    <div class="tab-pane fade @(isDocTab ? "show active" : "")"
+                         id="documents-pane" role="tabpanel">
+
+                        @* ── Progress Summary bar ─────────────────────────────── *@
+                        @{
+                            var pColor = dmsProgress >= 100 ? "success" : (dmsProgress >= 60 ? "info" : (dmsProgress >= 30 ? "warning" : "danger"));
+                        }
+                        <div class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2">
+                            <div>
+                                <h5 class="fw-bold mb-0 text-dark">Document Checklist</h5>
+                                <span class="text-muted small">@dmsName</span>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold fs-5 text-@pColor">@dmsProgress%</div>
+                                <span class="text-muted small">@uploadedDocs.Count / @checklistItems.Count submitted</span>
+                            </div>
+                        </div>
+                        <div class="progress mb-4" style="height:12px;">
+                            <div class="progress-bar bg-@pColor progress-bar-striped @(dmsProgress < 100 ? "progress-bar-animated" : "")"
+                                 role="progressbar" style="width:@dmsProgress%;"
+                                 aria-valuenow="@dmsProgress" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+
+                        @* ── Checklist Grid ───────────────────────────────────── *@
+                        @if (!checklistItems.Any())
+                        {
+                            <div class="text-center text-muted py-5">
+                                <i class="fa-solid fa-folder-open fa-3x mb-3 opacity-25"></i>
+                                <div>No documents are required by your checklist definition.</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle small border rounded">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Category</th>
+                                            <th>Document Type</th>
+                                            <th class="text-center">Weight</th>
+                                            <th class="text-center">Status</th>
+                                            <th class="text-center">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @{int rowNum = 0;}
+                                        @foreach (var item in checklistItems)
+                                        {
+                                            rowNum++;
+                                            var alreadyUploaded = uploadedDocs.Any(d =>
+                                                d.CategoryID == item.CategoryID &&
+                                                d.DocumentTypeID == item.DocumentTypeID);
+                                            var uploadedFile = uploadedDocs.FirstOrDefault(d =>
+                                                d.CategoryID == item.CategoryID &&
+                                                d.DocumentTypeID == item.DocumentTypeID);
+
+                                            var approvalInstances = ViewBag.ApprovalInstances as List<AlignHR.Models.DocApprovalInstance>;
+                                            var approvalInstance = uploadedFile != null ? approvalInstances?.FirstOrDefault(i => i.DocumentID == uploadedFile.DocumentID) : null;
+                                            var approvalHistory = approvalInstance?.InstanceSteps?.OrderBy(s => s.StepNo).ThenBy(s => s.Id).ToList() ?? new List<AlignHR.Models.DocApprovalInstanceStep>();
+                                            var auditDocumentTitle = uploadedFile?.Title ?? item.DocumentType?.TypeName ?? "Document";
+
+                                            <tr>
+                                                <td class="text-muted">@rowNum</td>
+                                                <td>@(item.Category?.CategoryName ?? "—")</td>
+                                                <td>@(item.DocumentType?.TypeName ?? "—")</td>
+                                                <td class="text-center">
+                                                    @if (!string.IsNullOrWhiteSpace(item.Percentage))
+                                                    {
+                                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary">
+                                                            @item.Percentage%
+                                                        </span>
+                                                    }
+                                                    else { <span class="text-muted">—</span> }
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (alreadyUploaded)
+                                                    {
+                                                        if (item.DocumentType != null && item.DocumentType.RequiresApproval)
+                                                        {
+                                                            if (approvalInstance != null)
+                                                            {
+                                                                var statusBadgeClass = approvalInstance.Status == "Approved" ? "bg-success bg-opacity-10 text-success border border-success"
+                                                                    : approvalInstance.Status == "Rejected" ? "bg-danger bg-opacity-10 text-danger border border-danger"
+                                                                    : "bg-warning bg-opacity-10 text-warning border border-warning";
+                                                                if (approvalInstance.Status == "Pending")
+                                                                {
+                                                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning" title="Pending approver action">
+                                                                        <i class="fa-solid fa-hourglass-half me-1"></i>Pending Step @(approvalInstance.CurrentStep)/@(approvalInstance.InstanceSteps?.Count ?? 0)
+                                                                    </span>
+                                                                }
+                                                                else if (approvalInstance.Status == "Approved")
+                                                                {
+                                                                    <span class="badge bg-success bg-opacity-10 text-success border border-success" title="Fully Approved">
+                                                                        <i class="fa-solid fa-circle-check me-1"></i>Approved
+                                                                    </span>
+                                                                }
+                                                                else if (approvalInstance.Status == "Rejected")
+                                                                {
+                                                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger" title="Rejected: @uploadedFile.Remarks">
+                                                                        <i class="fa-solid fa-circle-xmark me-1"></i>Rejected
+                                                                    </span>
+                                                                }
+                                                                <div class="mt-2">
+                                                                    <button class="btn btn-outline-secondary btn-sm py-0 px-2" type="button"
+                                                                            data-bs-toggle="collapse"
+                                                                            data-bs-target="#audit-@uploadedFile.DocumentID"
+                                                                            aria-expanded="false"
+                                                                            aria-controls="audit-@uploadedFile.DocumentID">
+                                                                        <i class="fa-solid fa-clock-rotate-left me-1"></i>Audit
+                                                                    </button>
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge bg-info bg-opacity-10 text-info border border-info" title="Requires setup">
+                                                                    <i class="fa-solid fa-triangle-exclamation me-1"></i>Pending Assignment
+                                                                </span>
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                                                                <i class="fa-solid fa-circle-check me-1"></i>Uploaded
+                                                            </span>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">
+                                                            <i class="fa-solid fa-triangle-exclamation me-1"></i>Pending Upload
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td class="text-center">
+                                                    @if (alreadyUploaded && uploadedFile != null)
+                                                    {
+                                                        var isRejected = approvalInstance != null && approvalInstance.Status == "Rejected";
+                                                        if (isRejected)
+                                                        {
+                                                            <button type="button"
+                                                                    class="btn btn-primary btn-sm py-0 px-2"
+                                                                    title="Re-upload document"
+                                                                    data-bs-toggle="modal"
+                                                                    data-bs-target="#uploadDocModal"
+                                                                    data-catid="@item.CategoryID"
+                                                                    data-doctypeid="@item.DocumentTypeID"
+                                                                    data-category="@(item.Category?.CategoryName ?? "—")"
+                                                                    data-type="@(item.DocumentType?.TypeName ?? "—")"
+                                                                    data-label="@(item.Category?.CategoryName) / @(item.DocumentType?.TypeName)">
+                                                                <i class="fa-solid fa-upload me-1"></i>Re-upload
+                                                            </button>
+                                                        }
+                                                        else
+                                                        {
+                                                            <a href="@uploadedFile.FilePath" target="_blank"
+                                                               class="btn btn-outline-success btn-sm py-0 px-2"
+                                                               title="View uploaded file">
+                                                                <i class="fa-solid fa-eye"></i>
+                                                            </a>
+                                                            <div class="mt-2">
+                                                                <button class="btn btn-outline-secondary btn-sm py-0 px-2" type="button"
+                                                                        data-bs-toggle="collapse"
+                                                                        data-bs-target="#audit-@uploadedFile.DocumentID"
+                                                                        aria-expanded="false"
+                                                                        aria-controls="audit-@uploadedFile.DocumentID">
+                                                                    <i class="fa-solid fa-clock-rotate-left me-1"></i>Audit
+                                                                </button>
+                                                            </div>
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-primary btn-sm py-0 px-2"
+                                                                title="Upload document"
+                                                                data-bs-toggle="modal"
+                                                                data-bs-target="#uploadDocModal"
+                                                                data-catid="@item.CategoryID"
+                                                                data-doctypeid="@item.DocumentTypeID"
+                                                                data-category="@(item.Category?.CategoryName ?? "—")"
+                                                                data-type="@(item.DocumentType?.TypeName ?? "—")"
+                                                                data-label="@(item.Category?.CategoryName) / @(item.DocumentType?.TypeName)">
+                                                            <i class="fa-solid fa-upload me-1"></i>Upload
+                                                        </button>
+                                                    }
+                                                </td>
+                                            </tr>
+                                            @if (approvalInstance != null)
+                                            {
+                                                <tr class="collapse" id="audit-@uploadedFile.DocumentID">
+                                                    <td colspan="6" class="bg-light">
+                                                        <div class="p-3">
+                                                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                                                <div>
+                                                                    <div class="fw-semibold">Approval Audit Trail</div>
+                                                                    <div class="text-muted small">Document: @auditDocumentTitle | Workflow: @(approvalInstance.Workflow?.TemplateName ?? "—")</div>
+                                                                </div>
+                                                                <div class="text-end">
+                                                                    <span class="badge @(approvalInstance.Status == "Approved" ? "bg-success bg-opacity-10 text-success border border-success" : approvalInstance.Status == "Rejected" ? "bg-danger bg-opacity-10 text-danger border border-danger" : "bg-warning bg-opacity-10 text-warning border border-warning")">@approvalInstance.Status</span>
+                                                                    @if (approvalInstance.CompletedAt.HasValue)
+                                                                    {
+                                                                        <div class="text-muted small mt-1">Completed @approvalInstance.CompletedAt.Value.ToString("dd MMM yyyy HH:mm")</div>
+                                                                    }
+                                                                </div>
+                                                            </div>
+
+                                                            @if (approvalHistory.Any())
+                                                            {
+                                                                <div class="table-responsive">
+                                                                    <table class="table table-sm align-middle mb-0">
+                                                                        <thead class="table-secondary small text-uppercase">
+                                                                            <tr>
+                                                                                <th style="width: 8%">Step</th>
+                                                                                <th style="width: 18%">Workflow Step</th>
+                                                                                <th style="width: 18%">Approver</th>
+                                                                                <th style="width: 14%">Role</th>
+                                                                                <th style="width: 14%">Action</th>
+                                                                                <th style="width: 16%">Action Time</th>
+                                                                                <th>Comments</th>
+                                                                            </tr>
+                                                                        </thead>
+                                                                        <tbody>
+                                                                            @foreach (var audit in approvalHistory)
+                                                                            {
+                                                                                <tr>
+                                                                                    <td class="text-muted">@audit.StepNo</td>
+                                                                                    <td>@(audit.TemplateStep?.StepLabel ?? $"Step {audit.StepNo}")</td>
+                                                                                    <td>@(audit.Approver != null ? $"{audit.Approver.FirstName} {audit.Approver.LastName}" : "—")</td>
+                                                                                    <td>@(audit.TemplateStep?.Role?.Name ?? "—")</td>
+                                                                                    <td>
+                                                                                        <span class="badge @(audit.Action == "Approved" ? "bg-success" : audit.Action == "Rejected" ? "bg-danger" : audit.Action == "Skipped" ? "bg-secondary" : "bg-warning text-dark")">
+                                                                                            @audit.Action
+                                                                                        </span>
+                                                                                    </td>
+                                                                                    <td>@(audit.ActionAt.HasValue ? audit.ActionAt.Value.ToString("dd MMM yyyy HH:mm") : "—")</td>
+                                                                                    <td class="text-muted small">@(string.IsNullOrWhiteSpace(audit.Comments) ? "—" : audit.Comments)</td>
+                                                                                </tr>
+                                                                            }
+                                                                        </tbody>
+                                                                    </table>
+                                                                </div>
+                                                            }
+                                                            else
+                                                            {
+                                                                <div class="text-muted small">No approval actions recorded yet.</div>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </main>
+</div>
+
+@* ── Upload Document Modal ─────────────────────────────────────────────────── *@
+@if (hasEmployee && hasDms)
+{
+    <div class="modal fade" id="uploadDocModal" tabindex="-1" aria-labelledby="uploadDocModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h6 class="modal-title fw-bold" id="uploadDocModalLabel">
+                        <i class="fa-solid fa-upload me-2 text-primary"></i>Upload Document
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form asp-action="UploadChecklistFile" asp-controller="User"
+                      method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="EmployeeID" value="@emp.Id" />
+                    <input type="hidden" name="CategoryID"    id="modal_catid" />
+                    <input type="hidden" name="DocumentTypeID" id="modal_doctypeid" />
+                    <div class="modal-body pt-2">
+                        <p class="text-muted small mb-3" id="modal_label_text"></p>
+                        
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-muted small fw-semibold">Category</label>
+                                <input type="text" id="modal_category" class="form-control form-control-sm bg-light text-muted" readonly />
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-muted small fw-semibold">Document Type</label>
+                                <input type="text" id="modal_type" class="form-control form-control-sm bg-light text-muted" readonly />
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-semibold">Document Title <span class="text-danger">*</span></label>
+                                <input type="text" name="Title" id="modal_title" class="form-control form-control-sm"
+                                       placeholder="e.g. National ID Front" required />
+                                <div class="invalid-feedback">Please enter a document title.</div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-semibold">Select File <span class="text-danger">*</span></label>
+                                <input type="file" name="File" class="form-control form-control-sm" required
+                                       accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" />
+                                <div class="form-text small text-muted">Accepted: PDF, Images, Word, Excel. Max 10MB.</div>
+                                <div class="invalid-feedback">Please choose a valid file to upload.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-semibold">Description <span class="text-danger">*</span></label>
+                                <textarea name="Description" class="form-control form-control-sm" rows="2" placeholder="Provide a description of the document" required></textarea>
+                                <div class="invalid-feedback">Please enter a description.</div>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-muted small fw-semibold">Effective Date <span class="text-danger">*</span></label>
+                                <input type="date" name="EffectiveDate" class="form-control form-control-sm" required />
+                                <div class="invalid-feedback">Please select an effective date.</div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="form-label text-muted small fw-semibold">Expiry Date <span class="text-danger">*</span></label>
+                                <input type="date" name="ExpiryDate" class="form-control form-control-sm" required />
+                                <div class="invalid-feedback">Please select an expiry date.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-semibold">Remarks <span class="text-danger">*</span></label>
+                                <textarea name="Remarks" class="form-control form-control-sm" rows="2" placeholder="Enter remarks" required></textarea>
+                                <div class="invalid-feedback">Please enter remarks.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 pt-0">
+                        <button type="button" class="btn btn-light btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary btn-sm px-4">
+                            <i class="fa-solid fa-cloud-arrow-up me-1"></i>Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script>
+            // Populate modal with the row's CategoryID / DocumentTypeID / labels
+            document.getElementById('uploadDocModal').addEventListener('show.bs.modal', function (event) {
+                var btn = event.relatedTarget;
+                document.getElementById('modal_catid').value     = btn.getAttribute('data-catid');
+                document.getElementById('modal_doctypeid').value = btn.getAttribute('data-doctypeid');
+                document.getElementById('modal_category').value  = btn.getAttribute('data-category');
+                document.getElementById('modal_type').value      = btn.getAttribute('data-type');
+                
+                var typeName = btn.getAttribute('data-type');
+                document.getElementById('modal_title').value     = typeName || '';
+                
+                document.getElementById('modal_label_text').textContent =
+                    'Uploading for checklist requirement:';
+
+                // Reset validation state
+                var form = document.querySelector('#uploadDocModal form');
+                form.classList.remove('was-validated');
+            });
+
+            // Handle client-side validation
+            document.addEventListener('DOMContentLoaded', function () {
+                var form = document.querySelector('#uploadDocModal form');
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                }, false);
+            });
+        </script>
+    }
+}

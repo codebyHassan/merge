@@ -1,0 +1,676 @@
+@model AlignHR.Models.EmployeeShifts
+@{
+    ViewData["Title"] = "Assign Employee Shift";
+    ViewBag.ActivePage = "EmployeeShifts";
+    var selectedEmployees = ViewBag.SelectedEmployees as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+                            ?? Enumerable.Empty<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>();
+    var selectedCount = selectedEmployees.Count();
+}
+
+@section Styles {
+    <style>
+        .assignment-panel {
+            height: 100%;
+            border: 1px solid var(--erp-border);
+            border-radius: 0.8rem;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+        }
+
+        .assignment-panel__header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.7rem;
+            padding: 0.7rem 0.85rem 0.62rem;
+            border-bottom: 1px solid var(--erp-border);
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.08), rgba(15, 23, 42, 0.03));
+        }
+
+        .assignment-panel__eyebrow {
+            margin: 0 0 0.2rem;
+            color: var(--erp-primary);
+            font-size: 0.63rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .assignment-panel__title {
+            margin: 0;
+            color: var(--erp-text);
+            font-family: "Plus Jakarta Sans", sans-serif;
+            font-size: 0.84rem;
+            font-weight: 800;
+        }
+
+        .assignment-panel__subtitle {
+            margin: 0.1rem 0 0;
+            color: var(--erp-muted);
+            font-size: 0.68rem;
+        }
+
+        .assignment-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 0.25rem 0.58rem;
+            font-size: 0.63rem;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            line-height: 1;
+        }
+
+        .assignment-pill--live {
+            background: rgba(17, 24, 39, 0.12);
+            color: var(--erp-primary);
+        }
+
+        .assignment-pill--aligned {
+            background: rgba(100, 116, 139, 0.12);
+            color: #475569;
+        }
+
+        .assignment-pill--count {
+            min-width: 2rem;
+            background: rgba(15, 23, 42, 0.08);
+            color: var(--erp-text);
+        }
+
+        .assignment-panel__body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            padding: 0.82rem;
+        }
+
+        .assignment-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.22rem;
+        }
+
+        .assignment-field .form-label {
+            margin-bottom: 0;
+        }
+
+        .selection-control {
+            min-height: 37px;
+            border-radius: 0.72rem;
+            border-color: var(--erp-border);
+            padding-inline: 0.72rem;
+            font-size: 0.8rem;
+        }
+
+        .selection-control:focus {
+            border-color: var(--erp-primary);
+            box-shadow: 0 0 0 0.18rem rgba(17, 24, 39, 0.14);
+        }
+
+        .employee-search-wrap {
+            position: relative;
+            z-index: 20;
+            overflow: visible;
+        }
+
+        .employee-search-loader {
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 10;
+        }
+
+        .employee-results-shell {
+            display: block;
+            position: absolute;
+            top: calc(100% + 0.28rem);
+            left: 0;
+            right: 0;
+            z-index: 1050;
+        }
+
+        .assignment-note {
+            margin: 0;
+            color: var(--erp-muted);
+            font-size: 0.69rem;
+        }
+
+        .selected-employee-shell {
+            display: flex;
+            flex-wrap: nowrap;
+            align-items: center;
+            gap: 0.45rem;
+            min-height: 78px;
+            border: 1px solid var(--erp-border);
+            border-radius: 0.8rem;
+            background: #ffffff;
+            padding: 0.65rem;
+            overflow-x: auto;
+            overflow-y: hidden;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+        }
+
+        .selected-employee-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex: 0 0 auto;
+            max-width: 100%;
+            border-radius: 999px;
+            padding: 0.28rem 0.5rem 0.28rem 0.7rem;
+            background: rgba(37, 99, 235, 0.1);
+            color: #1d4ed8;
+            font-size: 0.66rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .selected-employee-chip__name {
+            max-width: 220px;
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .selected-employee-chip__remove {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.05rem;
+            height: 1.05rem;
+            border: 0;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.14);
+            color: inherit;
+            padding: 0;
+        }
+
+        .selected-empty-state {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.15rem 0.05rem;
+            color: var(--erp-muted);
+        }
+
+        .selected-empty-state__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.1);
+            color: var(--erp-primary);
+            flex-shrink: 0;
+        }
+
+        .selected-empty-state__title {
+            color: var(--erp-text);
+            font-size: 0.75rem;
+            font-weight: 800;
+        }
+
+        .selected-empty-state__text {
+            font-size: 0.68rem;
+        }
+
+        @@media (max-width: 991.98px) {
+            .assignment-grid-tight {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .assignment-grid-tight {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.72rem;
+        }
+
+        @@media (max-width: 575.98px) {
+            .assignment-panel__header {
+                flex-direction: column;
+            }
+        }
+
+        .assignment-form-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+            gap: 0.9rem;
+        }
+
+        @@media (max-width: 1199.98px) {
+            .assignment-form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .assignment-section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.65rem;
+        }
+
+        .shift-search-results {
+            display: flex;
+            flex-direction: column;
+            max-height: 210px;
+            overflow-y: auto;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 0.85rem;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .shift-search-results__head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            padding: 0.55rem 0.7rem;
+            border-bottom: 1px solid var(--border-light);
+            background: rgba(15, 23, 42, 0.04);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .shift-search-results__label {
+            color: var(--text);
+            font-size: 0.64rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .shift-search-results__addall {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 0;
+            border-radius: 999px;
+            padding: 0.3rem 0.6rem;
+            background: rgba(17, 24, 39, 0.12);
+            color: var(--primary);
+            font-size: 0.68rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .shift-search-result-card__line {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            min-width: 0;
+            flex-wrap: nowrap;
+            overflow: hidden;
+        }
+
+        .shift-search-result-card__name {
+            color: var(--text);
+            font-size: 0.8rem;
+            font-weight: 800;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .shift-search-result-card {
+            gap: 0.7rem;
+            padding: 0.6rem 0.7rem;
+            margin: 0.35rem 0.45rem 0;
+            border: 1px solid rgba(226, 232, 240, 0.95);
+            border-radius: 0.85rem;
+            background: #fff;
+            box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+        }
+
+        .shift-search-result-card:last-child {
+            margin-bottom: 0.45rem;
+        }
+
+        .shift-search-result-card__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.12);
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 800;
+            flex: 0 0 auto;
+        }
+
+        .shift-search-result-card__body {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.16rem;
+        }
+
+        .shift-search-result-card__cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.8rem;
+            height: 1.8rem;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.12);
+            color: var(--primary);
+            font-size: 0.74rem;
+            flex: 0 0 auto;
+        }
+
+        .shift-search-result-card__cta button {
+            border: 0;
+            background: transparent;
+            color: inherit;
+            padding: 0;
+        }
+
+        .shift-search-results__empty {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            padding: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .shift-search-results__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2rem;
+            height: 2rem;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.1);
+            color: var(--primary);
+            flex-shrink: 0;
+        }
+
+        .shift-search-results__title {
+            color: var(--text);
+            font-size: 0.76rem;
+            font-weight: 800;
+        }
+
+        .shift-search-results__text {
+            font-size: 0.68rem;
+        }
+    </style>
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" id="createEmployeeShiftForm" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="assignment-form-grid">
+                <div class="assignment-panel">
+                    <div class="assignment-panel__header">
+                        <div>
+                            <div class="assignment-panel__eyebrow">Step 1</div>
+                            <h2 class="assignment-panel__title">Employee Search</h2>
+                            <p class="assignment-panel__subtitle">Find employees by name or code, then click one to add it.</p>
+                        </div>
+                        <span class="assignment-pill assignment-pill--live">Live</span>
+                    </div>
+
+                    <div class="assignment-panel__body">
+                        <div class="assignment-grid-tight">
+                            <div class="assignment-field">
+                                <label class="form-label small fw-semibold" for="deptFilter">Department</label>
+                                <select id="deptFilter"
+                                        class="form-select selection-control form-select-sm"
+                                        hx-get="/EmployeeShifts/SearchEmployees"
+                                        hx-trigger="change"
+                                        hx-target="#searchResults"
+                                        hx-swap="innerHTML"
+                                        hx-include="#employeeSearch, #deptFilter"
+                                        hx-indicator="#microLoader"
+                                        name="deptId">
+                                    <option value="">All departments</option>
+                                    @foreach (var d in ViewBag.Departments as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)
+                                    {
+                                        <option value="@d.Value">@d.Text</option>
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="assignment-field">
+                                <label class="form-label small fw-semibold" for="employeeSearch">Search</label>
+                                <div class="employee-search-wrap">
+                                    <input type="text"
+                                           id="employeeSearch"
+                                           class="form-control selection-control form-control-sm"
+                                           placeholder="Name or code"
+                                           hx-get="/EmployeeShifts/SearchEmployees"
+                                           hx-trigger="keyup changed delay:300ms"
+                                           hx-target="#searchResults"
+                                           hx-swap="innerHTML"
+                                           hx-include="#employeeSearch, #deptFilter"
+                                           hx-indicator="#microLoader"
+                                           name="q"
+                                           autocomplete="off" />
+                                    <span id="microLoader" class="htmx-indicator position-absolute employee-search-loader">
+                                        <div class="spinner-border spinner-border-sm text-primary" role="status" style="width: 0.85rem; height: 0.85rem; border-width: 1.5px;"></div>
+                                    </span>
+                                    <div id="searchResults" class="search-results-container employee-results-shell shadow-lg"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <p class="assignment-note">Search is live. Keep the department filter set to narrow the result list.</p>
+                    </div>
+                </div>
+
+                <div class="assignment-panel">
+                    <div class="assignment-panel__header">
+                        <div>
+                            <div class="assignment-panel__eyebrow">Step 2</div>
+                            <h2 class="assignment-panel__title">Shift Details</h2>
+                            <p class="assignment-panel__subtitle">Pick the shift and date range for this assignment.</p>
+                        </div>
+                        <span class="assignment-pill assignment-pill--aligned">Compact</span>
+                    </div>
+
+                    <div class="assignment-panel__body">
+                        <div class="assignment-field">
+                            <label asp-for="ShiftId" class="form-label small fw-semibold">Shift <span class="text-danger">*</span></label>
+                            <select asp-for="ShiftId" class="form-select selection-control form-select-sm" required>
+                                <option value="">-- Select Shift --</option>
+                                @foreach (var s in ViewBag.Shifts as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)
+                                {
+                                    <option value="@s.Value">@s.Text</option>
+                                }
+                            </select>
+                            <span asp-validation-for="ShiftId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="assignment-grid-tight">
+                            <div class="assignment-field">
+                                <label asp-for="RestDay" class="form-label small fw-semibold">Rest Day <span class="text-danger">*</span></label>
+                                <select asp-for="RestDay" class="form-select selection-control form-select-sm" required>
+                                    @foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                                    {
+                                        <option value="@day">@day</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="RestDay" class="text-danger small"></span>
+                            </div>
+
+                            <div class="assignment-field">
+                                <label asp-for="EffiectiveForm" class="form-label small fw-semibold">Effective From <span class="text-danger">*</span></label>
+                                <input asp-for="EffiectiveForm" type="date" class="form-control selection-control form-control-sm" required value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                                <span asp-validation-for="EffiectiveForm" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="assignment-field">
+                            <label asp-for="EffiectiveTo" class="form-label small fw-semibold">Effective To</label>
+                            <input asp-for="EffiectiveTo" type="date" class="form-control selection-control form-control-sm" />
+                            <span asp-validation-for="EffiectiveTo" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="assignment-panel" style="grid-column: 1 / -1;">
+                    <div class="assignment-panel__header">
+                        <div>
+                            <div class="assignment-panel__eyebrow">Step 3</div>
+                            <h2 class="assignment-panel__title">Selected Employees</h2>
+                            <p class="assignment-panel__subtitle">Review the employees that will receive this shift assignment.</p>
+                        </div>
+                        <span id="selectionCount" class="assignment-pill assignment-pill--count">@selectedCount</span>
+                    </div>
+
+                    <div class="assignment-panel__body">
+                        <div id="selectedEmployees" class="selected-employee-shell">
+                            <partial name="_SelectedEmployees" model="selectedEmployees" />
+                        </div>
+                        <div id="hiddenEmployeeInputs"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm" id="submitBtn" disabled>Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const employeeMap = new Map();
+
+        @if (ViewBag.SelectedEmployees != null)
+        {
+            foreach (var emp in ViewBag.SelectedEmployees as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>)
+            {
+                <text>employeeMap.set('@emp.Value', '@Html.Raw(System.Web.HttpUtility.JavaScriptStringEncode(emp.Text))');</text>
+            }
+            <text>
+            document.addEventListener('DOMContentLoaded', function() { renderSelected(); });
+            </text>
+        }
+
+        function selectEmployee(id, name) {
+            if (employeeMap.has(id.toString())) return;
+            employeeMap.set(id.toString(), name);
+            renderSelected();
+        }
+
+        function removeEmployee(id) {
+            employeeMap.delete(id.toString());
+            renderSelected();
+        }
+
+        function addAllEmployeesFromSearch() {
+            const resultItems = document.querySelectorAll('#searchResults .search-result-item[data-id]');
+            if (resultItems.length === 0) {
+                return;
+            }
+
+            resultItems.forEach(item => {
+                const id = item.dataset.id;
+                const name = item.dataset.name || '';
+                if (id && name && !employeeMap.has(id.toString())) {
+                    employeeMap.set(id.toString(), name);
+                }
+            });
+
+            renderSelected();
+            document.getElementById('searchResults').innerHTML = '';
+            document.getElementById('employeeSearch').value = '';
+        }
+
+        document.addEventListener('focusin', function (e) {
+            if (e.target && e.target.id === 'employeeSearch') {
+                const currentQuery = e.target.value || '';
+                const deptValue = document.getElementById('deptFilter')?.value || '';
+                if (!currentQuery && !deptValue) {
+                    htmx.ajax('GET', '/EmployeeShifts/SearchEmployees', {
+                        target: '#searchResults',
+                        swap: 'innerHTML',
+                        values: { q: '', deptId: '' }
+                    });
+                }
+            }
+        });
+
+        function renderSelected() {
+            const container = document.getElementById('selectedEmployees');
+            const hiddenContainer = document.getElementById('hiddenEmployeeInputs');
+            const submitBtn = document.getElementById('submitBtn');
+            const countLabel = document.getElementById('selectionCount');
+
+            if (employeeMap.size === 0) {
+                container.innerHTML = '<div class="selected-empty-state w-100"><div class="selected-empty-state__icon"><i class="fa-solid fa-user-check"></i></div><div><div class="selected-empty-state__title">No employees selected</div><div class="selected-empty-state__text">Search and click employees to add them to this shift assignment.</div></div></div>';
+                hiddenContainer.innerHTML = '';
+                submitBtn.disabled = true;
+                countLabel.innerText = "0";
+                return;
+            }
+
+            submitBtn.disabled = false;
+            countLabel.innerText = employeeMap.size;
+
+            let html = '';
+            let hiddenHtml = '';
+            employeeMap.forEach((name, id) => {
+                html += `<div class="selected-employee-chip">
+                            <span class="selected-employee-chip__name">${name}</span>
+                            <button type="button" class="selected-employee-chip__remove" onclick="removeEmployee('${id}')" aria-label="Remove ${name}">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                         </div>`;
+                hiddenHtml += `<input type="hidden" name="EmployeeIds" value="${id}" />`;
+            });
+
+            container.innerHTML = html;
+            hiddenContainer.innerHTML = hiddenHtml;
+        }
+
+        document.addEventListener('click', function (e) {
+            const resultItem = e.target.closest('.search-result-item');
+            if (resultItem && resultItem.dataset.id) {
+                const id = resultItem.dataset.id;
+                const name = resultItem.dataset.name || '';
+                selectEmployee(id, name);
+                document.getElementById('searchResults').innerHTML = '';
+                document.getElementById('employeeSearch').value = '';
+            }
+        });
+
+        document.addEventListener('click', function (e) {
+            const searchResults = document.getElementById('searchResults');
+            const searchInput = document.getElementById('employeeSearch');
+            const deptFilter = document.getElementById('deptFilter');
+            const microLoader = document.getElementById('microLoader');
+            if (searchResults && !searchResults.contains(e.target) &&
+                e.target !== searchInput && e.target !== deptFilter &&
+                (!microLoader || !microLoader.contains(e.target))) {
+                searchResults.innerHTML = '';
+            }
+        });
+    </script>
+}

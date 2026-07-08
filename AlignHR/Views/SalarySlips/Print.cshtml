@@ -1,0 +1,656 @@
+@model AlignHR.Models.SalarySlipMaster
+
+@{
+    Layout = null; // No layout for print page
+    var earnings = Model.Details.Where(d => d.Type == AlignHR.Models.PayrollComponentType.Earning).ToList();
+    var deductions = Model.Details.Where(d => d.Type == AlignHR.Models.PayrollComponentType.Deduction).ToList();
+    
+    // Determine the Document Number
+    string docNumber = $"PS-{Model.SalaryPeriod?.StartDate.ToString("yyyy-MMM").ToUpper()}-{Model.EmployeeID.ToString("D5")}";
+}
+
+@functions {
+    public static string NumberToWords(int number)
+    {
+        if (number == 0) return "Zero";
+        
+        if (number < 0) return "Minus " + NumberToWords(Math.Abs(number));
+        
+        string words = "";
+        
+        if ((number / 1000000) > 0)
+        {
+            words += NumberToWords(number / 1000000) + " Million ";
+            number %= 1000000;
+        }
+        
+        if ((number / 1000) > 0)
+        {
+            words += NumberToWords(number / 1000) + " Thousand ";
+            number %= 1000;
+        }
+        
+        if ((number / 100) > 0)
+        {
+            words += NumberToWords(number / 100) + " Hundred ";
+            number %= 100;
+        }
+        
+        if (number > 0)
+        {
+            if (words != "") words += "and ";
+            
+            var unitsMap = new[] { "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen" };
+            var tensMap = new[] { "Zero", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety" };
+            
+            if (number < 20)
+                words += unitsMap[number];
+            else
+            {
+                words += tensMap[number / 10];
+                if ((number % 10) > 0)
+                    words += "-" + unitsMap[number % 10];
+            }
+        }
+        
+        return words;
+    }
+
+    public static string DecimalToWords(decimal amount)
+    {
+        int wholePart = (int)Math.Truncate(amount);
+        int fractionalPart = (int)((amount - wholePart) * 100);
+        
+        string words = NumberToWords(wholePart) + " Rupees Only"; // Replace Rupees with appropriate currency if needed
+        return words;
+    }
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Salary Slip - @Model.EmployeeNameSnapshot</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1E3A8A;
+            --text-dark: #111827;
+            --text-main: #374151;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+            --bg-light: #F9FAFB;
+            --success-bg: #DCFCE7;
+            --success-text: #166534;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #F3F4F6;
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .slip-container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 50px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        /* HEADER SECTION */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 20px;
+        }
+
+        .header-left h1 {
+            margin: 0 0 5px 0;
+            font-size: 28px;
+            color: var(--text-dark);
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-left p {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .company-name {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .confidential-watermark {
+            font-size: 32px;
+            font-weight: 800;
+            color: #F3F4F6;
+            letter-spacing: 2px;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+        }
+
+        .doc-number-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin: 0 0 4px 0;
+        }
+
+        .doc-number {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin: 0;
+        }
+
+        /* EMPLOYEE DETAILS BOX */
+        .employee-box {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .emp-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            width: 30%;
+        }
+
+        .emp-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            background-color: var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: var(--text-muted);
+            overflow: hidden;
+        }
+        .emp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .emp-info h3 { margin: 0 0 4px 0; font-size: 18px; color: var(--text-dark); }
+        .emp-info p { margin: 0; font-size: 13px; color: var(--text-muted); }
+
+        .emp-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px 40px;
+            width: 65%;
+            border-left: 1px solid var(--border);
+            padding-left: 30px;
+        }
+
+        .meta-group label {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .meta-group span {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* TABLES SECTION */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .table-wrap {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .slip-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .slip-table th {
+            background-color: var(--bg-light);
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-dark);
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .slip-table td {
+            padding: 12px 15px;
+            font-size: 14px;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .slip-table tr:last-child td { border-bottom: none; }
+        
+        .amt-col { text-align: right; font-weight: 600; }
+        .deduction-amt { color: #DC2626; }
+
+        .table-footer {
+            background-color: var(--bg-light);
+            display: flex;
+            justify-content: space-between;
+            padding: 15px;
+            border-top: 1px solid var(--border);
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        /* NET PAY BLOCK */
+        .net-pay-block {
+            background-color: var(--text-dark);
+            color: #fff;
+            border-radius: 8px;
+            padding: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .net-pay-left label {
+            display: block;
+            font-size: 12px;
+            color: #9CA3AF;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .net-pay-left p {
+            margin: 0;
+            font-size: 16px;
+            font-style: italic;
+            color: #D1D5DB;
+        }
+
+        .net-pay-right {
+            text-align: right;
+        }
+
+        .net-pay-right h2 {
+            margin: 0 0 10px 0;
+            font-size: 42px;
+            font-weight: 800;
+            letter-spacing: -1px;
+        }
+
+        .badge-deposited {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: var(--success-bg);
+            color: var(--success-text);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* FOOTER */
+        .footer {
+            border-top: 1px solid var(--border);
+            padding-top: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .signature-line {
+            width: 250px;
+            border-bottom: 1px solid var(--text-dark);
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+        }
+
+        .signature-label {
+            font-size: 13px;
+            font-style: italic;
+            color: var(--text-muted);
+        }
+
+        .footer-note {
+            text-align: right;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .footer-note p { margin: 0 0 5px 0; }
+        .company-hq { font-weight: 600; text-transform: uppercase; font-size: 10px; color: var(--text-main); }
+
+        .copyright {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 12px;
+            color: #9CA3AF;
+        }
+
+        /* CONTROLS (Hide on print) */
+        .controls {
+            max-width: 850px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background-color: #fff;
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .btn:hover { background-color: var(--bg-light); border-color: #D1D5DB; }
+        .btn-dark { background-color: var(--text-dark); color: #fff; border-color: var(--text-dark); }
+        .btn-dark:hover { background-color: #1F2937; border-color: #1F2937; color: #fff; }
+
+        .summary-card {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+            color: var(--text-main);
+        }
+        .summary-row.total {
+            border-top: 1px solid var(--border);
+            margin-top: 10px;
+            padding-top: 10px;
+            font-weight: 700;
+            font-size: 15px;
+            color: var(--text-dark);
+        }
+        .summary-row.small {
+            font-size: 12px;
+            color: #64748b;
+        }
+        .summary-row.carry-forward {
+            margin-top: 10px;
+            font-style: italic;
+            font-size: 12px;
+            color: #475569;
+            border-top: 1px dashed var(--border);
+            padding-top: 10px;
+        }
+
+        @@media print {
+            body { background: #fff; padding: 0; }
+            .slip-container { box-shadow: none; padding: 0; max-width: 100%; }
+            .controls { display: none; }
+            .net-pay-block { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .employee-box { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .table-wrap { border: 1px solid #000; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <button onclick="window.print()" class="btn btn-dark">
+            <i class="fas fa-file-pdf"></i> Print / Download PDF
+        </button>
+        <button onclick="alert('Share functionality to be implemented')" class="btn">
+            <i class="fas fa-share-alt"></i> Share
+        </button>
+    </div>
+
+    <div class="slip-container">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <h1>Salary Slip</h1>
+                <p>Pay Period: @Model.SalaryPeriod?.PeriodName</p>
+                <div class="company-name">AlignHR ERP SYSTEMS</div>
+            </div>
+            <div class="header-right">
+                <h2 class="confidential-watermark">CONFIDENTIAL</h2>
+                <p class="doc-number-label">DOCUMENT NUMBER</p>
+                <p class="doc-number">@docNumber</p>
+            </div>
+        </div>
+
+        <!-- EMPLOYEE BOX -->
+        <div class="employee-box">
+            <div class="emp-profile">
+                <div class="emp-avatar">
+                    @if (!string.IsNullOrEmpty(Model.Employee?.ProfileImage))
+                    {
+                        <img src="/uploads/employees/@Model.Employee.ProfileImage" alt="@Model.EmployeeNameSnapshot">
+                    }
+                    else
+                    {
+                        <i class="fas fa-user"></i>
+                    }
+                </div>
+                <div class="emp-info">
+                    <h3>@Model.EmployeeNameSnapshot</h3>
+                    <p>Employee ID: <strong>@Model.Employee?.Code</strong></p>
+                </div>
+            </div>
+            <div class="emp-meta">
+                <div class="meta-group">
+                    <label>Department</label>
+                    <span>@Model.DepartmentSnapshot</span>
+                </div>
+                <div class="meta-group">
+                    <label>Designation</label>
+                    <span>@Model.DesignationSnapshot</span>
+                </div>
+                <div class="meta-group">
+                    <label>Gross Salary</label>
+                    <span style="color: var(--primary); font-weight: 700;">@Model.GrossSalarySnapshot.ToString("N2")</span>
+                </div>
+                <div class="meta-group">
+                    <label>Earned Amount</label>
+                    <span style="color: #2563eb; font-weight: 700;">@Model.AdjustedNetSalary.ToString("N2")</span>
+                </div>
+                <div class="meta-group">
+                    <label>Arrear Amount</label>
+                    <span style="color: #059669;">@Model.ArrearAmount.ToString("N2")</span>
+                </div>
+                <div class="meta-group">
+                    <label>Total Days</label>
+                    <span>@Model.TotalDaysInMonth</span>
+                </div>
+                <div class="meta-group">
+                    <label>Paid Days</label>
+                    <span style="color: #1e293b; font-weight: 600;">@Model.NetPaidDays</span>
+                </div>
+                <div class="meta-group">
+                    <label>PAN / TAX ID</label>
+                    <span>@(!string.IsNullOrEmpty(Model.Employee?.NTN) ? Model.Employee.NTN : "N/A")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABLES -->
+        <div class="tables-grid">
+            <!-- EARNINGS / COMPONENTS TABLE -->
+            <div class="table-wrap">
+                <table class="slip-table">
+                    <thead>
+                        <tr>
+                            <th>Earnings & Allowances</th>
+                            <th class="amt-col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in earnings)
+                        {
+                            <tr>
+                                <td>@item.ComponentName</td>
+                                <td class="amt-col">@item.Amount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="table-footer">
+                    <div>TOTAL EARNINGS</div>
+                    <div>@Model.TotalAllowances.ToString("N2")</div>
+                </div>
+            </div>
+
+            <!-- DEDUCTIONS / SUBTRACTIONS TABLE -->
+            <div class="table-wrap">
+                <table class="slip-table">
+                    <thead>
+                        <tr>
+                            <th>Deductions & Adjustments</th>
+                            <th class="amt-col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in deductions)
+                        {
+                            <tr>
+                                <td>@item.ComponentName</td>
+                                <td class="amt-col deduction-amt">-@item.Amount.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <div class="table-footer">
+                    <div>TOTAL DEDUCTIONS</div>
+                    <div>@Model.TotalDeductions.ToString("N2")</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAYMENT SUMMARY -->
+        <div class="summary-card">
+            <div class="summary-row">
+                <span>Total Allowances:</span>
+                <span>@Model.TotalAllowances.ToString("N2")</span>
+            </div>
+            <div class="summary-row">
+                <span>Total Deductions:</span>
+                <span style="color: #dc2626;">- @Model.TotalDeductions.ToString("N2")</span>
+            </div>
+            <div class="summary-row total">
+                <span>Net Salary (Monthly):</span>
+                <span>@Model.NetSalary.ToString("N2")</span>
+            </div>
+            
+            @if (Model.ArrearAmount > 0 || Model.BonusAmount > 0 || Model.PreviousCarryForward > 0)
+            {
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px dashed #e2e8f0;">
+                    @if (Model.ArrearAmount > 0)
+                    {
+                        <div class="summary-row small">
+                            <span>Arrear Amount:</span>
+                            <span style="color: #059669;">+ @Model.ArrearAmount.ToString("N2")</span>
+                        </div>
+                    }
+                    @if (Model.BonusAmount > 0)
+                    {
+                        <div class="summary-row small">
+                            <span>Bonus Amount:</span>
+                            <span style="color: #3b82f6;">+ @Model.BonusAmount.ToString("N2")</span>
+                        </div>
+                    }
+                    @if (Model.PreviousCarryForward > 0)
+                    {
+                        <div class="summary-row small">
+                            <span>Previous Carry Forward:</span>
+                            <span style="color: #059669;">+ @Model.PreviousCarryForward.ToString("N2")</span>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div class="summary-row carry-forward">
+                <span>Carry Forward to Next Month:</span>
+                <span style="color: #64748b;">@Model.NewCarryForward.ToString("N2")</span>
+            </div>
+        </div>
+
+        <!-- NET PAY BLOCK -->
+        <div class="net-pay-block">
+            <div class="net-pay-left">
+                <label>Net Pay Amount (Take Home)</label>
+                <p>@DecimalToWords(Model.PayableAmount)</p>
+            </div>
+            <div class="net-pay-right">
+                <h2>@Model.PayableAmount.ToString("N2")</h2>
+                <div class="badge-deposited">
+                    <i class="fas fa-check-circle"></i> Deposited
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <div>
+                <div class="signature-line"></div>
+                <div class="signature-label">Employer Signature</div>
+            </div>
+            <div class="footer-note">
+                <p>This is a computer-generated document and does not require a physical signature.</p>
+                <div class="company-hq">ALIGNHR CORPORATE HQ</div>
+            </div>
+        </div>
+
+        <div class="copyright">
+            &copy; @DateTime.Now.Year AlignHR Enterprise Systems. All rights reserved. Confidential Document.
+        </div>
+    </div>
+
+</body>
+</html>

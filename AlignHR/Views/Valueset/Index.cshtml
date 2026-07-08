@@ -1,0 +1,135 @@
+@model IEnumerable<AlignHR.Models.Valueset>
+@using AlignHR.Security
+@{
+    ViewData["Title"] = "Value Sets";
+    ViewBag.ActivePage = "valueset";
+}
+
+<section class="filter-bar mb-2" aria-label="Value Sets filters">
+    <div class="d-flex align-items-center gap-2 me-auto">
+        <select name="groupName" class="form-select form-select-sm" style="width:160px;"
+                hx-get="@Url.Action("Index")"
+                hx-target="#valuesets-table"
+                hx-select="#valuesets-table"
+                hx-include="[name='search']"
+                hx-indicator="#search-loader"
+                hx-trigger="change"
+                hx-push-url="true"
+                form="none">
+            <option value="">All Groups</option>
+            @if (ViewBag.Groups != null)
+            {
+                foreach (var group in (List<string>)ViewBag.Groups)
+                {
+                    <option value="@group" selected="@(ViewBag.SelectedGroup == group)">@group</option>
+                }
+            }
+        </select>
+        <div class="input-group input-group-sm" style="width:auto;position:relative;">
+            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input class="form-control"
+                   type="search"
+                   name="search"
+                   value="@ViewBag.Search"
+                   placeholder="Search by name..."
+                   aria-label="Search value sets"
+                   hx-get="@Url.Action("Index")"
+                   hx-target="#valuesets-table"
+                   hx-select="#valuesets-table"
+                   hx-include="[name='groupName']"
+                   hx-indicator="#search-loader"
+                   hx-trigger="keyup[key=='Enter'], search"
+                   hx-push-url="true"
+                   form="none" />
+            <span id="search-loader" class="htmx-indicator" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:10;">
+                <div class="spinner-border spinner-border-sm text-primary" role="status" style="width:.85rem;height:.85rem;border-width:1.5px;"></div>
+            </span>
+        </div>
+    </div>
+    <div class="filter-group">
+        @if (PermissionHelper.HasActionAccess(Context, "valueset", "Create"))
+        {
+            <a class="btn btn-primary btn-sm" asp-action="Create">
+                <i class="fa-solid fa-plus me-1"></i>Add Value Set
+            </a>
+        }
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table id="valuesets-table">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Group</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model)
+                {
+                    <tr>
+                        <td data-label="#">@l.Id</td>
+                        <td data-label="Group">
+                            <span class="status-badge status-approved">@l.GroupName</span>
+                        </td>
+                        <td data-label="Name" class="fw-semibold">@l.Name</td>
+                        <td data-label="Status">
+                            @if (l.IsActive)
+                            {
+                                <span class="status-badge status-active">Active</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge status-risk">Inactive</span>
+                            }
+                        </td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                @if (PermissionHelper.HasActionAccess(Context, "valueset", "Details"))
+                                {
+                                    <a class="btn btn-icon btn-sm btn-icon-info" asp-action="Details" asp-route-id="@l.Id" title="View Details">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                }
+                                @if (PermissionHelper.HasActionAccess(Context, "valueset", "Edit"))
+                                {
+                                    <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Edit" asp-route-id="@l.Id" title="Edit">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                }
+                                @if (PermissionHelper.HasActionAccess(Context, "valueset", "Delete"))
+                                {
+                                    <form asp-action="Delete" asp-route-id="@l.Id" method="post" class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this value set?');">
+                                        <button class="btn btn-icon btn-sm btn-icon-danger" type="submit" title="Delete">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="empty-state" data-table-empty>
+                                <i class="fa-solid fa-list-ul"></i>
+                                <h3 class="h6 mt-2 mb-1">No value sets found</h3>
+                                <p class="text-muted mb-0">Try adjusting your search or add a new value set.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">@Model.Count() entries</span>
+    </div>
+</section>

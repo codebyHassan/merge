@@ -1,0 +1,108 @@
+@model AlignHR.Models.OverTimeHours
+@{
+    ViewData["Title"] = "Create OverTime Hours";
+    ViewBag.ActivePage = "OverTimeHours";
+}
+
+<!-- Breadcrumb Area -->
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <i class="fas fa-home"></i>
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">OverTime Hours</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Create OverTime Hours</div>
+</div>
+
+<!-- Main Content Card -->
+<div class="form-shell">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" id="createOverTimeHoursForm">
+            @Html.AntiForgeryToken()
+
+            <div class="form-grid">
+                <!-- Row 1 -->
+                <div class="form-item" style="position: relative; z-index: 1001;">
+                    <label class="form-label">Search Employee <span class="required">*</span></label>
+                    <div class="input-with-icon" style="position: relative;">
+                        <i class="fas fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                        <input type="text" id="employeeSearch" name="term" class="form-control" style="padding-left: 2.5rem;" placeholder="Type name or code..." autocomplete="off"
+                               hx-get="/Ajax/SearchEmployees"
+                               hx-trigger="keyup delay:300ms, search"
+                               hx-target="#employeeResults" />
+                    </div>
+                    <div id="employeeResults" class="search-results-container"></div>
+                    <input type="hidden" asp-for="EmployeeId" id="selectedEmployeeId" required />
+                    <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                </div>
+                <div class="form-item">
+                    <label asp-for="SalaryPeriodFK" class="form-label">Salary Period <span class="required">*</span></label>
+                    <select asp-for="SalaryPeriodFK" class="form-control" asp-items="ViewBag.SalaryPeriodFK" required>
+                        <option value="">-- Select Salary Period --</option>
+                    </select>
+                    <span asp-validation-for="SalaryPeriodFK" class="text-danger small"></span>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="form-item">
+                    <label asp-for="OTHours" class="form-label">OverTime Hours <span class="required">*</span></label>
+                    <input asp-for="OTHours" class="form-control" placeholder="e.g. 10.5" required />
+                    <span asp-validation-for="OTHours" class="text-danger small"></span>
+                </div>
+                <div class="form-item">
+                    <label asp-for="Amount" class="form-label">Amount</label>
+                    <input asp-for="Amount" class="form-control" placeholder="e.g. 5000" type="number" />
+                    <span asp-validation-for="Amount" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="form-actions-sticky">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                <button type="submit" class="btn btn-primary btn-sm">Save OverTime Hours</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Clear hidden ID when user types
+        const searchInput = document.getElementById('employeeSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const hiddenInput = document.getElementById('EmployeeId');
+                if (hiddenInput) hiddenInput.value = '';
+            });
+        }
+
+        // Handle Employee Selection
+            document.body.addEventListener('click', function(e) {
+                const row = e.target.closest('.search-result-item');
+                if (row) {
+                    const id = row.dataset.id;
+                    const name = row.dataset.name;
+                    const code = row.dataset.code;
+                    
+                    const hiddenInput = document.getElementById('selectedEmployeeId');
+                    hiddenInput.value = id;
+                    document.getElementById('employeeResults').innerHTML = '';
+                    document.getElementById('employeeSearch').value = name + ' (' + code + ')';
+                }
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                    document.getElementById('employeeResults').innerHTML = '';
+                }
+            });
+        });
+    </script>
+}

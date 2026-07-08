@@ -1,0 +1,130 @@
+@{
+    ViewData["Title"] = "Individual Transfer";
+    ViewBag.ActivePage = "IndividualTransfer";
+}
+
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="ProcessIndividualTransfer" asp-controller="LeaveAccounting" method="post">
+            @Html.AntiForgeryToken()
+
+            <div class="row g-3">
+
+                <!-- Employee Search -->
+                <div class="col-12 col-md-5" style="position:relative;z-index:20;">
+                    <label class="form-label small fw-semibold">Employee <span class="text-danger">*</span></label>
+                    <div id="empSearchWrap">
+                        <input type="text"
+                               id="employeeSearch"
+                               class="form-control form-control-sm"
+                               placeholder="Search by name or code…"
+                               hx-get="@Url.Action("SearchEmployees", "LeaveAccounting")"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-target="#searchResults"
+                               name="term"
+                               autocomplete="off" />
+                        <div id="searchResults" class="la-search-drop"></div>
+                    </div>
+                    <div id="empChip" class="mt-1" style="display:none;">
+                        <span class="status-badge badge-success d-inline-flex align-items-center gap-1">
+                            <i class="fa-solid fa-circle-check" style="font-size:10px;"></i>
+                            <span id="empChipName"></span>
+                            <span class="ms-1 opacity-75 small" id="empChipCode"></span>
+                            <button type="button" class="btn-close btn-close-white ms-1"
+                                    style="font-size:8px;" onclick="clearSelection()"></button>
+                        </span>
+                    </div>
+                    <input type="hidden" id="empCode" name="empCode" />
+                </div>
+
+                <!-- Target Year -->
+                <div class="col-12 col-md-3">
+                    <label for="year" class="form-label small fw-semibold">Target Year</label>
+                    <input type="number" class="form-control form-control-sm" id="year" name="year"
+                           value="@DateTime.Now.Year" min="2000" max="@DateTime.Now.Year" required />
+                    <div class="form-text">Initializes ledger balances for this year.</div>
+                </div>
+
+            </div>
+
+            <p class="text-muted small mt-2 mb-0">
+                <i class="fa-solid fa-circle-info me-1"></i>
+                Annual quota is automatically <strong>prorated</strong> based on the employee's join date if they joined mid-year.
+            </p>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-bolt me-1"></i>Process Allocation
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+<style>
+.la-search-drop {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    z-index: 9999;
+    background: var(--erp-surface);
+    border: 1px solid var(--erp-border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(16,24,40,0.12);
+    max-height: 240px;
+    overflow-y: auto;
+}
+.la-search-drop:empty { display: none; }
+.la-result-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid var(--erp-border);
+    transition: background 0.12s;
+}
+.la-result-item:last-child { border-bottom: none; }
+.la-result-item:hover { background: var(--erp-surface-subtle); }
+.la-result-avatar {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: var(--erp-primary-soft);
+    color: var(--erp-primary);
+    font-weight: 700; font-size: 11px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+</style>
+}
+
+@section Scripts {
+<script>
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('#empSearchWrap')) {
+            document.getElementById('searchResults').innerHTML = '';
+        }
+    });
+
+    function selectEmployee(code, name) {
+        document.getElementById('empCode').value = code;
+        document.getElementById('empChipName').textContent = name;
+        document.getElementById('empChipCode').textContent = code;
+        document.getElementById('empChip').style.display = 'block';
+        document.getElementById('empSearchWrap').style.display = 'none';
+        document.getElementById('searchResults').innerHTML = '';
+    }
+
+    function clearSelection() {
+        document.getElementById('empCode').value = '';
+        document.getElementById('empChip').style.display = 'none';
+        document.getElementById('empSearchWrap').style.display = '';
+        document.getElementById('employeeSearch').value = '';
+        document.getElementById('employeeSearch').focus();
+    }
+</script>
+}

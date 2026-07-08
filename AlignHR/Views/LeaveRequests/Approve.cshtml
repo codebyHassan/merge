@@ -1,0 +1,663 @@
+@model AlignHR.Models.LeaveRequest
+@using AlignHR.Models.Enums
+
+@{
+    ViewData["Title"] = "Review Leave Request";
+    ViewBag.ActivePage = "ApprovalInbox";
+    var approvalHistory = ViewData["ApprovalHistory"] as List<AlignHR.Models.LeaveApproval> ?? new List<AlignHR.Models.LeaveApproval>();
+    var currentEmployeeId = ViewData["CurrentEmployeeId"] as int?;
+    var isCurrentApprover = currentEmployeeId.HasValue && Model.CurrentApproverId == currentEmployeeId.Value;
+
+    var statusColor = Model.Status switch {
+        "Approved"  => ("var(--erp-success)",      "var(--erp-success-soft)",  "fa-circle-check"),
+        "Rejected"  => ("var(--erp-danger)",        "var(--erp-danger-soft)",   "fa-circle-xmark"),
+        "Cancelled" => ("var(--erp-muted-strong)",  "#f1f3f7",                  "fa-ban"),
+        _           => ("var(--erp-warning)",        "var(--erp-warning-soft)",  "fa-clock")
+    };
+
+    var stageLabel = Model.CurrentStage switch {
+        WorkflowStage.LineManager      => "Line Manager",
+        WorkflowStage.HigherManagement => "Higher Management",
+        WorkflowStage.HR               => "HR / Final",
+        WorkflowStage.FinalApproved    => "Final Approved",
+        WorkflowStage.Rejected         => "Rejected",
+        _                              => Model.CurrentStage.ToString()
+    };
+
+    var statusBadgeClass = Model.Status switch {
+        "Approved"  => "badge-success",
+        "Rejected"  => "badge-danger",
+        "Cancelled" => "badge-secondary",
+        _           => "badge-warning"
+    };
+
+    var emp = Model.Employee;
+    var empInitials = (emp != null) ? string.Concat(emp.FirstName?[0], emp.LastName?[0]).ToUpper() : "??";
+}
+
+@section Styles {
+<style>
+/* ════════════════════════════════════════════════════════════
+   LEAVE APPROVAL · REVIEW PAGE — Premium Layout
+   ════════════════════════════════════════════════════════════ */
+
+.lra-page {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 310px;
+    gap: 0.85rem;
+    align-items: start;
+}
+
+/* ── Hero ───────────────────────────────────────────────── */
+.lra-hero {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0.85rem;
+    border-radius: var(--erp-radius-md);
+    background: var(--erp-surface);
+    border: 1px solid var(--erp-border);
+    box-shadow: var(--erp-shadow-sm);
+    display: flex;
+    align-items: stretch;
+    min-height: 88px;
+}
+
+.lra-hero-stripe {
+    width: 5px;
+    flex-shrink: 0;
+    background: var(--lra-status-color);
+}
+
+.lra-hero-body {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.lra-hero-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--lra-status-bg);
+    color: var(--lra-status-color);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.lra-hero-title { font-size: 1rem; font-weight: 700; color: var(--erp-text-primary); margin: 0; }
+.lra-hero-sub   { font-size: 0.75rem; color: var(--erp-text-muted); margin: 0; }
+
+.lra-hero-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
+
+.lra-chip {
+    display: flex; flex-direction: column; align-items: center;
+    padding: 0.35rem 0.85rem;
+    background: var(--erp-surface-subtle);
+    border: 1px solid var(--erp-border);
+    border-radius: 10px;
+    min-width: 70px;
+}
+.lra-chip .lbl { font-size: 10px; color: var(--erp-text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+.lra-chip .val { font-size: 0.8125rem; font-weight: 700; color: var(--erp-text-primary); margin-top: 1px; }
+
+.lra-hero-nav { padding: 0 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+/* ── Cards ──────────────────────────────────────────────── */
+.lra-card {
+    background: var(--erp-surface);
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-md);
+    box-shadow: var(--erp-shadow-sm);
+    margin-bottom: 0.85rem;
+    overflow: hidden;
+}
+.lra-card:last-child { margin-bottom: 0; }
+
+.lra-card-head {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--erp-border);
+    display: flex; align-items: center; gap: 0.5rem;
+    background: var(--erp-surface-subtle);
+}
+.lra-card-head .ttl { font-size: 0.8125rem; font-weight: 600; color: var(--erp-text-primary); }
+.lra-card-head i { color: var(--erp-primary); font-size: 0.82rem; }
+
+.lra-card-body { padding: 1rem; }
+
+/* ── Info grid ──────────────────────────────────────────── */
+.lra-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.85rem; }
+
+.lra-info-item .lbl {
+    font-size: 10px; color: var(--erp-text-muted); font-weight: 500;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;
+}
+.lra-info-item .val { font-size: 0.875rem; font-weight: 600; color: var(--erp-text-primary); }
+
+.lra-reason-box {
+    background: var(--erp-surface-subtle);
+    border: 1px solid var(--erp-border);
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--erp-text-primary);
+    white-space: pre-wrap;
+    line-height: 1.5;
+    margin-top: 0.5rem;
+}
+
+.lra-rejection-block {
+    background: var(--erp-danger-soft);
+    border: 1px solid var(--erp-danger);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    display: flex; gap: 0.5rem; align-items: flex-start;
+}
+.lra-rejection-block i { color: var(--erp-danger); margin-top: 2px; flex-shrink: 0; }
+.lra-rejection-block .r-lbl { font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--erp-danger); letter-spacing: 0.04em; margin-bottom: 3px; }
+.lra-rejection-block .r-txt { font-size: 0.875rem; color: var(--erp-danger); }
+
+/* ── Approval Timeline ──────────────────────────────────── */
+.lra-timeline { display: flex; flex-direction: column; }
+
+.lra-tl-item { display: flex; gap: 0.75rem; }
+
+.lra-tl-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 28px; }
+
+.lra-tl-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    flex-shrink: 0; position: relative; z-index: 1;
+}
+.lra-tl-dot.d-approved  { background: var(--erp-success-soft); color: var(--erp-success); border: 2px solid var(--erp-success); }
+.lra-tl-dot.d-rejected  { background: var(--erp-danger-soft);  color: var(--erp-danger);  border: 2px solid var(--erp-danger); }
+.lra-tl-dot.d-submitted { background: var(--erp-primary-soft); color: var(--erp-primary); border: 2px solid var(--erp-primary); }
+.lra-tl-dot.d-pending   { background: var(--erp-warning-soft); color: var(--erp-warning); border: 2px dashed var(--erp-warning); animation: lraPulse 1.8s ease-in-out infinite; }
+
+@@keyframes lraPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(107, 114, 128,0.3); }
+    50%       { box-shadow: 0 0 0 6px rgba(107, 114, 128,0); }
+}
+
+.lra-tl-line {
+    width: 2px; flex: 1;
+    background: var(--erp-border);
+    min-height: 20px; margin: 2px 0;
+}
+
+.lra-tl-content { flex: 1; padding-bottom: 1rem; }
+
+.lra-tl-action {
+    font-size: 0.8rem; font-weight: 700; color: var(--erp-text-primary);
+    display: flex; align-items: center; gap: 0.4rem; margin-bottom: 2px;
+}
+.lra-tl-level {
+    font-size: 10px; font-weight: 600;
+    background: var(--erp-primary-soft); color: var(--erp-primary);
+    border-radius: 4px; padding: 1px 5px;
+}
+.lra-tl-by   { font-size: 0.75rem; color: var(--erp-text-secondary); }
+.lra-tl-time { font-size: 0.7rem; color: var(--erp-text-muted); margin-top: 1px; }
+.lra-tl-remarks {
+    font-size: 0.75rem;
+    background: var(--erp-surface-subtle);
+    border-left: 3px solid var(--erp-border);
+    border-radius: 0 6px 6px 0;
+    padding: 4px 8px; margin-top: 4px;
+    color: var(--erp-text-secondary);
+}
+
+/* ── Sticky Action Bar ──────────────────────────────────── */
+.lra-action-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 100;
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-md);
+    padding: 0.85rem 1rem;
+    display: flex;
+    align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 0.85rem;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.07);
+}
+
+.lra-action-bar .remarks-wrap { flex: 1; min-width: 200px; }
+.lra-action-bar .remarks-wrap label {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.04em; color: var(--erp-text-muted); margin-bottom: 4px; display: block;
+}
+.lra-action-bar .remarks-wrap textarea { resize: none; height: 52px; font-size: 0.8125rem; }
+
+.lra-action-bar .action-btns { display: flex; gap: 0.5rem; flex-shrink: 0; }
+
+.btn-lra-reject {
+    background: var(--erp-danger); border-color: var(--erp-danger); color: #fff;
+    font-weight: 600; padding: 0.55rem 1.25rem;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    border-radius: 10px; transition: all 0.15s; font-size: 0.875rem;
+}
+.btn-lra-reject:hover { background: #b91c1c; border-color: #b91c1c; color: #fff; }
+
+.btn-lra-approve {
+    background: var(--erp-success); border-color: var(--erp-success); color: #fff;
+    font-weight: 600; padding: 0.55rem 1.25rem;
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    border-radius: 10px; transition: all 0.15s; font-size: 0.875rem;
+}
+.btn-lra-approve:hover { background: #047857; border-color: #047857; color: #fff; }
+
+/* ── Right column ───────────────────────────────────────── */
+.lra-profile-col { position: sticky; top: 1rem; }
+
+.lra-emp-panel {
+    background: var(--erp-surface);
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-md);
+    box-shadow: var(--erp-shadow-sm);
+    overflow: hidden;
+    margin-bottom: 0.85rem;
+}
+.lra-emp-cover {
+    height: 64px;
+    background: linear-gradient(135deg, #111827 0%, #9CA3AF 60%, #D1D5DB 100%);
+    position: relative;
+}
+.lra-emp-avatar-wrap {
+    position: absolute; bottom: -24px; left: 50%; transform: translateX(-50%);
+}
+.lra-emp-avatar {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    border: 3px solid var(--erp-surface);
+    background: var(--erp-primary); color: #fff;
+    font-weight: 700; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+}
+.lra-emp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.lra-emp-identity { padding: 32px 1rem 0.75rem; text-align: center; }
+.lra-emp-name { font-size: 0.9375rem; font-weight: 700; color: var(--erp-text-primary); margin-bottom: 2px; }
+.lra-emp-code { font-size: 0.75rem; color: var(--erp-text-muted); }
+.lra-emp-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; padding: 0 0.75rem 0.75rem; }
+.lra-emp-chip {
+    background: var(--erp-surface-subtle);
+    border: 1px solid var(--erp-border);
+    border-radius: 8px; padding: 0.35rem 0.5rem;
+    display: flex; flex-direction: column;
+}
+.lra-emp-chip .lbl { font-size: 9px; color: var(--erp-text-muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+.lra-emp-chip .val { font-size: 0.7rem; font-weight: 600; color: var(--erp-text-primary); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ── Workflow rows ──────────────────────────────────────── */
+.lra-wf-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0.5rem 0; border-bottom: 1px solid var(--erp-border);
+    font-size: 0.8125rem;
+}
+.lra-wf-row:last-child { border-bottom: none; padding-bottom: 0; }
+.lra-wf-row .lbl { color: var(--erp-text-muted); font-weight: 500; }
+.lra-wf-row .val { font-weight: 600; color: var(--erp-text-primary); text-align: right; }
+.wf-level-pill {
+    background: var(--erp-primary-soft); color: var(--erp-primary);
+    font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px;
+}
+
+@@media (max-width: 768px) {
+    .lra-page { grid-template-columns: 1fr; }
+    .lra-profile-col { position: static; }
+    .lra-info-grid { grid-template-columns: 1fr; }
+    .lra-action-bar { flex-direction: column; align-items: stretch; }
+    .lra-action-bar .action-btns { justify-content: flex-end; }
+}
+</style>
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-2">
+    <ol class="breadcrumb breadcrumb-sm">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a asp-action="ApprovalInbox">Leave Approval</a></li>
+        <li class="breadcrumb-item active">Review Request</li>
+    </ol>
+</nav>
+
+<!-- Hero -->
+<div class="lra-hero" style="--lra-status-color:@statusColor.Item1;--lra-status-bg:@statusColor.Item2;">
+    <div class="lra-hero-stripe"></div>
+    <div class="lra-hero-body">
+        <div class="lra-hero-icon">
+            <i class="fas @statusColor.Item3"></i>
+        </div>
+        <div>
+            <p class="lra-hero-title">@(Model.LeaveType?.Name ?? "Leave Request") &nbsp;&middot;&nbsp; #@Model.Id</p>
+            <p class="lra-hero-sub">@(emp?.FullName ?? "Unknown Employee") &mdash; Submitted @Model.AppliedAt?.ToString("MMMM dd, yyyy")</p>
+        </div>
+        <div class="lra-hero-chips">
+            <div class="lra-chip">
+                <span class="lbl">Duration</span>
+                <span class="val">@Model.DaysCount.ToString("0.##") d</span>
+            </div>
+            <div class="lra-chip">
+                <span class="lbl">From</span>
+                <span class="val">@Model.FromDate.ToString("MMM dd")</span>
+            </div>
+            <div class="lra-chip">
+                <span class="lbl">To</span>
+                <span class="val">@Model.ToDate.ToString("MMM dd")</span>
+            </div>
+            <div class="lra-chip">
+                <span class="lbl">Status</span>
+                <span class="val" style="color:@statusColor.Item1;">@Model.Status</span>
+            </div>
+        </div>
+    </div>
+    <div class="lra-hero-nav">
+        <a class="btn btn-light btn-sm" asp-action="ApprovalInbox">
+            <i class="fa-solid fa-arrow-left me-1"></i> Inbox
+        </a>
+    </div>
+</div>
+
+<!-- Two-column page -->
+<div class="lra-page">
+
+    <!-- ═══ LEFT COLUMN ═══════════════════════════════════════ -->
+    <div>
+        <!-- Request Details -->
+        <div class="lra-card">
+            <div class="lra-card-head">
+                <i class="fas fa-file-lines"></i>
+                <span class="ttl">Request Details</span>
+            </div>
+            <div class="lra-card-body">
+                <div class="lra-info-grid">
+                    <div class="lra-info-item">
+                        <div class="lbl">Leave Type</div>
+                        <div class="val">@(Model.LeaveType?.Name ?? "-")</div>
+                    </div>
+                    <div class="lra-info-item">
+                        <div class="lbl">Duration</div>
+                        <div class="val">
+                            @Model.DaysCount.ToString("0.##") days
+                            @if (Model.IsHalfDay) { <span class="status-badge badge-info ms-1" style="font-size:10px;">@Model.HalfDaySession?.Replace("Half","") Half</span> }
+                        </div>
+                    </div>
+                    <div class="lra-info-item">
+                        <div class="lbl">From Date</div>
+                        <div class="val">@Model.FromDate.ToString("MMMM dd, yyyy")</div>
+                    </div>
+                    <div class="lra-info-item">
+                        <div class="lbl">To Date</div>
+                        <div class="val">@Model.ToDate.ToString("MMMM dd, yyyy")</div>
+                    </div>
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.Reason))
+                {
+                    <div class="mt-3">
+                        <div class="lra-info-item"><div class="lbl">Reason</div></div>
+                        <div class="lra-reason-box">@Model.Reason</div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.AttachmentUrl))
+                {
+                    <div class="mt-3">
+                        <a href="@Model.AttachmentUrl" target="_blank" class="btn btn-light btn-sm border">
+                            <i class="fas fa-paperclip me-1"></i> View Attachment
+                        </a>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                {
+                    <div class="lra-rejection-block">
+                        <i class="fas fa-circle-xmark"></i>
+                        <div>
+                            <div class="r-lbl">Rejection Reason</div>
+                            <div class="r-txt">@Model.RejectionReason</div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Approval Timeline -->
+        <div class="lra-card">
+            <div class="lra-card-head">
+                <i class="fas fa-timeline"></i>
+                <span class="ttl">Approval Timeline</span>
+            </div>
+            <div class="lra-card-body">
+                @if (approvalHistory.Any() || (Model.Status == "Pending" && Model.CurrentApprover != null))
+                {
+                    <div class="lra-timeline">
+                        @foreach (var entry in approvalHistory)
+                        {
+                            var dotClass = entry.Action switch {
+                                "Approved"  => "d-approved",
+                                "Rejected"  => "d-rejected",
+                                _           => "d-submitted"
+                            };
+                            var dotIcon = entry.Action switch {
+                                "Approved"  => "fa-check",
+                                "Rejected"  => "fa-times",
+                                "Submitted" => "fa-paper-plane",
+                                _           => "fa-circle"
+                            };
+                            <div class="lra-tl-item">
+                                <div class="lra-tl-col">
+                                    <div class="lra-tl-dot @dotClass"><i class="fas @dotIcon" style="font-size:9px;"></i></div>
+                                    <div class="lra-tl-line"></div>
+                                </div>
+                                <div class="lra-tl-content">
+                                    <div class="lra-tl-action">
+                                        @entry.Action
+                                        @if (entry.ApprovalLevel > 0)
+                                        {
+                                            <span class="lra-tl-level">L@(entry.ApprovalLevel)</span>
+                                        }
+                                    </div>
+                                    <div class="lra-tl-by">
+                                        @entry.ApproverEmployee?.FullName
+                                        <span class="text-muted">(@entry.ApproverEmployee?.Code)</span>
+                                    </div>
+                                    <div class="lra-tl-time">@entry.ActionAt.ToString("MMM dd, yyyy h:mm tt")</div>
+                                    @if (!string.IsNullOrEmpty(entry.Remarks))
+                                    {
+                                        <div class="lra-tl-remarks">@entry.Remarks</div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.Status == "Pending" && Model.CurrentApprover != null)
+                        {
+                            <div class="lra-tl-item">
+                                <div class="lra-tl-col">
+                                    <div class="lra-tl-dot d-pending">
+                                        <i class="fas fa-hourglass-half" style="font-size:9px;"></i>
+                                    </div>
+                                </div>
+                                <div class="lra-tl-content">
+                                    <div class="lra-tl-action">Awaiting Approval</div>
+                                    <div class="lra-tl-by">
+                                        @Model.CurrentApprover.FullName
+                                        <span class="text-muted">(@Model.CurrentApprover.Code)</span>
+                                    </div>
+                                    <div class="lra-tl-time" style="color:var(--erp-warning);">Pending action</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted text-center py-3 mb-0 small">No workflow history available.</p>
+                }
+            </div>
+        </div>
+
+        <!-- ── Sticky Action Bar (approver only) ───────────── -->
+        @if (isCurrentApprover && Model.Status == "Pending")
+        {
+            <div class="lra-action-bar">
+                <div class="remarks-wrap">
+                    <label>Remarks <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional for approval &middot; required for rejection)</span></label>
+                    <textarea class="form-control" id="actionRemarks" placeholder="Enter your remarks…"></textarea>
+                </div>
+                <div class="action-btns">
+                    <form asp-action="RejectRequest" method="post" id="rejectForm" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="leaveRequestId" value="@Model.Id" />
+                        <input type="hidden" name="reason" id="rejectReason" />
+                        <button type="button" class="btn btn-lra-reject" onclick="submitRejection()">
+                            <i class="fas fa-times-circle"></i> Reject
+                        </button>
+                    </form>
+                    <form asp-action="ApproveRequest" method="post" id="approveForm" style="display:inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="leaveRequestId" value="@Model.Id" />
+                        <input type="hidden" name="remarks" id="approveRemarks" />
+                        <button type="button" class="btn btn-lra-approve" onclick="submitApproval()">
+                            <i class="fas fa-check-circle"></i> Approve
+                        </button>
+                    </form>
+                </div>
+            </div>
+        }
+        else if (Model.Status == "Pending")
+        {
+            <div class="lra-card">
+                <div class="lra-card-body">
+                    <div class="d-flex align-items-center gap-2 text-muted small">
+                        <i class="fas fa-lock"></i>
+                        <span>You are not the current approver for this request. It is awaiting action from <strong>@Model.CurrentApprover?.FullName</strong>.</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- ═══ RIGHT COLUMN ══════════════════════════════════════ -->
+    <aside class="lra-profile-col">
+        <!-- Employee Card -->
+        <div class="lra-emp-panel">
+            <div class="lra-emp-cover">
+                <div class="lra-emp-avatar-wrap">
+                    <div class="lra-emp-avatar">
+                        @if (!string.IsNullOrEmpty(emp?.ProfileImage))
+                        {
+                            <img src="@emp.ProfileImage" alt="@emp.FullName"
+                                 onerror="this.parentElement.textContent='@empInitials'" />
+                        }
+                        else
+                        {
+                            @empInitials
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="lra-emp-identity">
+                <div class="lra-emp-name">@(emp?.FullName ?? "-")</div>
+                <div class="lra-emp-code">@(emp?.Code ?? "-")</div>
+            </div>
+            <div class="lra-emp-chips">
+                <div class="lra-emp-chip">
+                    <span class="lbl">Department</span>
+                    <span class="val" title="@(emp?.Department?.Name ?? "N/A")">@(emp?.Department?.Name ?? "N/A")</span>
+                </div>
+                <div class="lra-emp-chip">
+                    <span class="lbl">Designation</span>
+                    <span class="val" title="@(emp?.Designation?.Name ?? "N/A")">@(emp?.Designation?.Name ?? "N/A")</span>
+                </div>
+                <div class="lra-emp-chip">
+                    <span class="lbl">Location</span>
+                    <span class="val" title="@(emp?.Location?.Name ?? "N/A")">@(emp?.Location?.Name ?? "N/A")</span>
+                </div>
+                <div class="lra-emp-chip">
+                    <span class="lbl">Applied</span>
+                    <span class="val">@Model.AppliedAt?.ToString("MMM dd")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow State -->
+        <div class="lra-card">
+            <div class="lra-card-head">
+                <i class="fas fa-diagram-project"></i>
+                <span class="ttl">Workflow State</span>
+            </div>
+            <div class="lra-card-body">
+                <div class="lra-wf-row">
+                    <span class="lbl">Status</span>
+                    <span class="status-badge @statusBadgeClass">@Model.Status</span>
+                </div>
+                <div class="lra-wf-row">
+                    <span class="lbl">Stage</span>
+                    <span class="val">@stageLabel</span>
+                </div>
+                <div class="lra-wf-row">
+                    <span class="lbl">Level</span>
+                    <span class="wf-level-pill">L@(Model.ApprovalLevel)</span>
+                </div>
+                @if (Model.CurrentApprover != null)
+                {
+                    <div class="lra-wf-row">
+                        <span class="lbl">Approver</span>
+                        <div class="d-flex flex-column align-items-end">
+                            <span class="val">@Model.CurrentApprover.FullName</span>
+                            <span class="text-muted" style="font-size:11px;">@Model.CurrentApprover.Code</span>
+                        </div>
+                    </div>
+                }
+                @if (Model.ApprovedAt.HasValue)
+                {
+                    <div class="lra-wf-row">
+                        <span class="lbl">Approved</span>
+                        <span class="val" style="color:var(--erp-success);">@Model.ApprovedAt.Value.ToString("MMM dd, yyyy")</span>
+                    </div>
+                }
+                @if (Model.RejectedAt.HasValue)
+                {
+                    <div class="lra-wf-row">
+                        <span class="lbl">Rejected</span>
+                        <span class="val" style="color:var(--erp-danger);">@Model.RejectedAt.Value.ToString("MMM dd, yyyy")</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+@section Scripts {
+<script>
+    function submitApproval() {
+        if (!confirm('Approve this leave request?')) return;
+        document.getElementById('approveRemarks').value = document.getElementById('actionRemarks').value;
+        document.getElementById('approveForm').submit();
+    }
+
+    function submitRejection() {
+        var remarks = document.getElementById('actionRemarks').value.trim();
+        if (!remarks) {
+            alert('Please enter a reason for rejection.');
+            document.getElementById('actionRemarks').focus();
+            return;
+        }
+        if (!confirm('Reject this leave request?')) return;
+        document.getElementById('rejectReason').value = remarks;
+        document.getElementById('rejectForm').submit();
+    }
+</script>
+}
