@@ -1,0 +1,155 @@
+@model AlignHR.Models.Employee
+@{
+    var initials = "??";
+    var designation = "Unassigned";
+    var department = "No department";
+    var location = "No location";
+    var employmentType = "Not specified";
+    var employmentStatus = "Unknown";
+    var salaryStatus = "Unknown";
+    var isActive = false;
+    var pfSummary = "Not enrolled";
+    var eobiSummary = "Not enrolled";
+    var filerSummary = "Non-filer";
+    decimal? grossSalary = null;
+
+    if (Model != null)
+    {
+        initials =
+            $"{(string.IsNullOrWhiteSpace(Model.FirstName) ? "?" : Model.FirstName.Substring(0, 1))}" +
+            $"{(string.IsNullOrWhiteSpace(Model.LastName) ? "?" : Model.LastName.Substring(0, 1))}";
+        designation = Model.Designation?.Name ?? (Model.DesiginationId.HasValue ? $"Designation #{Model.DesiginationId}" : "Unassigned");
+        department = Model.Department?.Name ?? "No department";
+        location = Model.Location?.Name ?? "No location";
+        employmentType = Model.EmploymentType?.Name ?? "Not specified";
+        employmentStatus = Model.EmploymentStatus?.Name ?? "Unknown";
+        salaryStatus = string.IsNullOrWhiteSpace(Model.SalaryStatus) ? employmentStatus : Model.SalaryStatus;
+        isActive = salaryStatus.Equals("Active", StringComparison.OrdinalIgnoreCase);
+        pfSummary = Model.isPfMember
+            ? (Model.IsFixedPFAmount && Model.PFAmount.HasValue ? $"Fixed PKR {Model.PFAmount.Value:N0}" : "Enabled")
+            : "Not enrolled";
+        eobiSummary = Model.isEobi ? "Enabled" : "Not enrolled";
+        filerSummary = Model.IsFiler ? "Filer" : "Non-filer";
+
+        if (ViewBag.GrossSalary is decimal gross)
+        {
+            grossSalary = gross;
+        }
+        else if (ViewBag.GrossSalary != null)
+        {
+            decimal parsedGrossSalary;
+            if (decimal.TryParse(ViewBag.GrossSalary.ToString(), out parsedGrossSalary))
+            {
+                grossSalary = parsedGrossSalary;
+            }
+        }
+    }
+}
+
+@if (Model != null)
+{
+    <div class="employee-profile-card animate-profile-in">
+        <div class="employee-profile-topband"></div>
+
+        <div class="employee-profile-hero">
+            <div class="employee-profile-avatar-wrap">
+                @if (!string.IsNullOrEmpty(Model.ProfileImage))
+                {
+                    <img src="/uploads/employees/@Model.ProfileImage" class="employee-profile-avatar" alt="@Model.FullName" />
+                }
+                else
+                {
+                    <div class="employee-profile-avatar employee-profile-avatar--fallback">
+                        @initials.ToUpperInvariant()
+                    </div>
+                }
+            </div>
+
+            <div class="employee-profile-main">
+                <div class="employee-profile-chip-row">
+                    <span class="employee-profile-chip employee-profile-chip--primary">@Model.Code</span>
+                    <span class="employee-profile-chip">@Model.Dateofjoin.ToString("dd MMM yyyy")</span>
+                    <span class="employee-profile-chip">@filerSummary</span>
+                </div>
+
+                <h3 class="employee-profile-name">@Model.FullName</h3>
+
+                <div class="employee-profile-subline">
+                    <span><i class="fas fa-user-tie"></i>@designation</span>
+                    <span><i class="fas fa-building"></i>@department</span>
+                </div>
+            </div>
+
+            <div class="employee-profile-state @(isActive ? "is-active" : "is-inactive")">
+                <i class="fas @(isActive ? "fa-circle-check" : "fa-circle-xmark")"></i>
+                <span>@salaryStatus</span>
+            </div>
+        </div>
+
+        @if (grossSalary.HasValue)
+        {
+            <div class="employee-profile-highlight">
+                <span>Latest Gross Salary</span>
+                <strong>PKR @grossSalary.Value.ToString("N0")</strong>
+            </div>
+        }
+
+        <div class="employee-profile-grid">
+            <div class="employee-profile-stat">
+                <span class="employee-profile-stat-label">Location</span>
+                <strong class="employee-profile-stat-value">@location</strong>
+            </div>
+            <div class="employee-profile-stat">
+                <span class="employee-profile-stat-label">Employment Type</span>
+                <strong class="employee-profile-stat-value">@employmentType</strong>
+            </div>
+            <div class="employee-profile-stat">
+                <span class="employee-profile-stat-label">Employment Status</span>
+                <strong class="employee-profile-stat-value">@employmentStatus</strong>
+            </div>
+            <div class="employee-profile-stat">
+                <span class="employee-profile-stat-label">Provident Fund</span>
+                <strong class="employee-profile-stat-value">@pfSummary</strong>
+            </div>
+            <div class="employee-profile-stat">
+                <span class="employee-profile-stat-label">EOBI</span>
+                <strong class="employee-profile-stat-value">@eobiSummary</strong>
+            </div>
+            <div class="employee-profile-stat">
+                <span class="employee-profile-stat-label">Employee ID</span>
+                <strong class="employee-profile-stat-value">#@Model.Id</strong>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                var empIdField = document.getElementById('hfEmployeeId');
+                if (empIdField) {
+                    empIdField.value = '@Model.Id';
+                    empIdField.dispatchEvent(new Event('change'));
+                }
+            })();
+        </script>
+    </div>
+}
+else
+{
+    <div class="employee-profile-card employee-profile-card--empty animate-profile-in">
+        <div class="employee-profile-empty">
+            <div class="placeholder-icon">
+                <i class="fas fa-user-slash"></i>
+            </div>
+            <strong>No matching employee found</strong>
+            <span>Try searching by a different code or name.</span>
+        </div>
+        <script>
+            (function () {
+                var empIdField = document.getElementById('hfEmployeeId');
+                if (empIdField) {
+                    empIdField.value = '';
+                    empIdField.dispatchEvent(new Event('change'));
+                }
+            })();
+        </script>
+    </div>
+}

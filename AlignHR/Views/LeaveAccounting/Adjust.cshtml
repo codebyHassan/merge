@@ -1,0 +1,43 @@
+@{
+    ViewData["Title"] = "Year-End / Adjust";
+    ViewBag.ActivePage = "Adjust";
+}
+
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="ProcessYearEnd" asp-controller="LeaveAccounting" method="post" id="yearEndForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="actionType" name="actionType" value="Transfer" />
+
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-3">
+                    <label for="year" class="form-label small fw-semibold">Processing Year</label>
+                    <input type="number" class="form-control form-control-sm" id="year" name="year"
+                           value="@(DateTime.Now.Year - 1)" min="2000" max="@(DateTime.Now.Year - 1)" required />
+                    <div class="form-text">Year to carry forward balances for (past year).</div>
+                </div>
+                <div class="col-12 col-md-auto">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="submitTransfer()">
+                        <i class="fa-solid fa-right-long me-1"></i>Transfer (Carry Forward)
+                    </button>
+                </div>
+            </div>
+
+            <p class="text-muted small mt-2 mb-0">
+                <i class="fa-solid fa-circle-info me-1"></i>
+                Carries forward eligible leave balances to the next year. Writes immutable entries to the Leave Ledger.
+            </p>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function submitTransfer() {
+        if (confirm('Transfer (Carry Forward) all eligible leaves to the next year?')) {
+            document.getElementById('yearEndForm').submit();
+        }
+    }
+</script>
+}

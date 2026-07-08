@@ -1,0 +1,155 @@
+@model AlignHR.Models.HrOnboardingDetailsViewModel
+
+@{
+    ViewData["Title"] = "Onboarding — " + Model.CandidateName;
+    ViewBag.ActivePage = "HrOnboarding";
+
+    var statusClass = Model.Status switch
+    {
+        "Completed"       => "badge-success",
+        "TasksInProgress" => "badge-warning",
+        "Initiated"       => "badge-secondary",
+        "Cancelled"       => "badge-danger",
+        _                 => "badge-secondary"
+    };
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small">
+        @TempData["Error"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        @* ── Header ── *@
+        <div class="d-flex align-items-start justify-content-between mb-3 gap-2 flex-wrap">
+            <div>
+                <span class="fw-bold fs-6">@Model.CandidateName</span>
+                <span class="status-badge @statusClass ms-2">@Model.Status</span>
+                <div class="small text-muted mt-1">
+                    @if (!string.IsNullOrEmpty(Model.CandidateEmail)) { <span>@Model.CandidateEmail</span> }
+                    @if (!string.IsNullOrEmpty(Model.JobTitle)) { <span class="ms-2">· @Model.JobTitle</span> }
+                    @if (!string.IsNullOrEmpty(Model.OfferNumber)) { <span class="ms-2">· @Model.OfferNumber</span> }
+                </div>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="history.back()">Back</button>
+            </div>
+        </div>
+
+        @* ── Summary ── *@
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Planned Joining</div>
+                <div class="fw-semibold">@Model.PlannedJoiningDate.ToString("dd MMM yyyy")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Actual Joining</div>
+                <div>@(Model.ActualJoiningDate?.ToString("dd MMM yyyy") ?? "—")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted">Tasks Progress</div>
+                <div>@Model.Tasks.Count(t => t.Status == "Completed") / @Model.Tasks.Count completed</div>
+            </div>
+        </div>
+
+        <hr class="my-3 opacity-25" />
+
+        @* ── Onboarding Tasks ── *@
+        <div class="fw-semibold small mb-2">Onboarding Checklist</div>
+        @if (Model.Tasks.Any())
+        {
+            <table class="table table-sm erp-table mb-4">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Department</th>
+                        <th>Assigned To</th>
+                        <th>Due Date</th>
+                        <th>Status</th>
+                        <th>Completed</th>
+                        <th class="text-end sticky-actions">Update</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Tasks)
+                    {
+                        var tClass = t.Status switch
+                        {
+                            "Completed"  => "badge-success",
+                            "InProgress" => "badge-warning",
+                            "Cancelled"  => "badge-danger",
+                            _            => "badge-secondary"
+                        };
+                        <tr>
+                            <td>
+                                @t.TaskName
+                                @if (t.IsMandatory) { <span class="text-danger ms-1" title="Mandatory">*</span> }
+                            </td>
+                            <td class="small">@(t.ResponsibleDepartment ?? "—")</td>
+                            <td class="small">@(t.AssignedToName ?? "—")</td>
+                            <td class="small">@(t.DueDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                            <td><span class="status-badge @tClass">@t.Status</span></td>
+                            <td class="small">@(t.CompletedDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                            <td class="text-end sticky-actions">
+                                @if (Model.Status != "Completed" && t.Status != "Completed")
+                                {
+                                    <button type="button" class="btn btn-icon btn-sm btn-icon-warning"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#task-update-@t.Id"
+                                            title="Update Status">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                        @if (Model.Status != "Completed" && t.Status != "Completed")
+                        {
+                            <tr class="collapse" id="task-update-@t.Id">
+                                <td colspan="7" class="bg-light">
+                                    <form asp-action="UpdateTask" method="post"
+                                          class="d-flex gap-2 align-items-end flex-wrap p-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="TaskId" value="@t.Id" />
+                                        <input type="hidden" name="OnboardingId" value="@Model.Id" />
+                                        <div>
+                                            <label class="form-label small fw-semibold">Status</label>
+                                            <select name="Status" class="form-select form-select-sm" style="width:160px;">
+                                                <option value="Pending" selected="@(t.Status=="Pending")">Pending</option>
+                                                <option value="InProgress" selected="@(t.Status=="InProgress")">In Progress</option>
+                                                <option value="Completed" selected="@(t.Status=="Completed")">Completed</option>
+                                                <option value="Cancelled" selected="@(t.Status=="Cancelled")">Cancelled</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="form-label small fw-semibold">Remarks</label>
+                                            <input type="text" name="Remarks" value="@t.Remarks"
+                                                   class="form-control form-control-sm" style="width:240px;"
+                                                   placeholder="Optional note…" />
+                                        </div>
+                                        <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p class="small text-muted mb-4">No tasks assigned.</p>
+        }
+
+
+    </div>
+</div>

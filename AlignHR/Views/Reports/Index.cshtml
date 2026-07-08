@@ -1,0 +1,430 @@
+@{
+    ViewData["Title"] = "Reports Template";
+    ViewBag.ActivePage = "Reports";
+
+    var reports = new[]
+    {
+        new { Name = "Attendance Report", Category = "HR", Icon = "bi bi-clock-history", Desc = "Daily, weekly & monthly attendance summaries", Color = "#3B82F6" },
+        new { Name = "Leave Report", Category = "HR", Icon = "bi bi-calendar-check", Desc = "Leave balances, requests & utilization", Color = "#8B5CF6" },
+        new { Name = "Payroll Report", Category = "Finance", Icon = "bi bi-coin", Desc = "Salary disbursement & deductions", Color = "#10B981" },
+        new { Name = "Tax Report", Category = "Finance", Icon = "bi bi-file-earmark-text", Desc = "Income tax deductions & summaries", Color = "#F59E0B" },
+        new { Name = "Bonus Report", Category = "Finance", Icon = "bi bi-gift", Desc = "Bonus disbursements & history", Color = "#EC4899" },
+        new { Name = "Overtime Report", Category = "Operations", Icon = "bi bi-hourglass-split", Desc = "Overtime hours & costs", Color = "#14B8A6" },
+        new { Name = "Performance Report", Category = "HR", Icon = "bi bi-graph-up", Desc = "Employee productivity & metrics", Color = "#6366F1" },
+        new { Name = "Employee Directory", Category = "HR", Icon = "bi bi-people", Desc = "Complete employee listings", Color = "#6B7280" },
+        new { Name = "Recruitment Report", Category = "HR", Icon = "bi bi-person-lines-fill", Desc = "Hiring pipeline & analytics", Color = "#2563EB" },
+        new { Name = "Document Expiry", Category = "Compliance", Icon = "bi bi-file-earmark-excel", Desc = "Documents nearing expiration", Color = "#DC2626" },
+        new { Name = "Loan & Advance", Category = "Finance", Icon = "bi bi-bank", Desc = "Loan balances & installments", Color = "#7C3AED" },
+        new { Name = "Provident Fund", Category = "Finance", Icon = "bi bi-piggy-bank", Desc = "PF contributions & statements", Color = "#0891B2" }
+    };
+
+    var categories = reports.Select(r => r.Category).Distinct().ToArray();
+    var totalReports = reports.Length;
+    var totalCategories = categories.Length;
+}
+
+<style>
+    .rpt-root {
+        --rpt-gap: 16px;
+        display: flex;
+        gap: var(--rpt-gap);
+        height: calc(100vh - 160px);
+        min-height: 500px;
+    }
+
+    .rpt-root .rpt-panel {
+        background: var(--ahr-card, #fff);
+        border: 1px solid var(--ahr-border, #e5e7eb);
+        border-radius: var(--ahr-radius-lg, 10px);
+        box-shadow: 0 1px 2px rgba(15,23,42,.05);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .rpt-root .rpt-list {
+        width: 320px;
+        flex-shrink: 0;
+    }
+    .rpt-root .rpt-list .rpt-search {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--ahr-border, #e5e7eb);
+    }
+    .rpt-root .rpt-list .rpt-search input {
+        width: 100%;
+        border: 1px solid var(--ahr-border, #e5e7eb);
+        border-radius: 8px;
+        padding: 8px 12px 8px 34px;
+        font-size: 13px;
+        background: var(--ahr-surface-2, #f1f3f5);
+        color: var(--ahr-text, #111827);
+        outline: none;
+        transition: border-color .15s;
+    }
+    .rpt-root .rpt-list .rpt-search input:focus {
+        border-color: var(--ahr-accent, #111827);
+        background: var(--ahr-card, #fff);
+    }
+    .rpt-root .rpt-list .rpt-search .search-wrap {
+        position: relative;
+    }
+    .rpt-root .rpt-list .rpt-search .search-wrap i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--ahr-text-tertiary, #6b7280);
+        font-size: 14px;
+    }
+
+    .rpt-root .rpt-list .rpt-items {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px;
+    }
+    .rpt-root .rpt-list .rpt-items .rpt-group-label {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--ahr-text-tertiary, #6b7280);
+        padding: 8px 10px 4px;
+    }
+    .rpt-root .rpt-list .rpt-items .rpt-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: background .12s;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        color: var(--ahr-text, #111827);
+        font-size: 13px;
+    }
+    .rpt-root .rpt-list .rpt-items .rpt-item:hover {
+        background: var(--ahr-surface-2, #f1f3f5);
+    }
+    .rpt-root .rpt-list .rpt-items .rpt-item.active {
+        background: var(--ahr-accent-bg, #f1f3f5);
+        font-weight: 600;
+    }
+    .rpt-root .rpt-list .rpt-items .rpt-item .rpt-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .rpt-root .rpt-list .rpt-items .rpt-item .rpt-name {
+        flex: 1;
+        min-width: 0;
+    }
+    .rpt-root .rpt-list .rpt-items .rpt-item .rpt-name span {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .rpt-root .rpt-list .rpt-items .rpt-item .rpt-name small {
+        font-size: 11px;
+        color: var(--ahr-text-tertiary, #6b7280);
+        font-weight: 400;
+    }
+    .rpt-root .rpt-list .rpt-items .rpt-item.hidden {
+        display: none;
+    }
+
+    .rpt-root .rpt-dash {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+    }
+    .rpt-root .rpt-dash h2 {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -.02em;
+        margin: 0 0 4px;
+        color: var(--ahr-text, #111827);
+    }
+    .rpt-root .rpt-dash .sub {
+        font-size: 12.5px;
+        color: var(--ahr-text-tertiary, #6b7280);
+        margin-bottom: 18px;
+    }
+
+    .rpt-root .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .rpt-root .kpi-card {
+        background: var(--ahr-card, #fff);
+        border: 1px solid var(--ahr-border, #e5e7eb);
+        border-radius: var(--ahr-radius-lg, 10px);
+        padding: 16px;
+        box-shadow: 0 1px 2px rgba(15,23,42,.05);
+    }
+    .rpt-root .kpi-card .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .rpt-root .kpi-card .top .lbl {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--ahr-text-tertiary, #6b7280);
+    }
+    .rpt-root .kpi-card .top .ic {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        font-size: 14px;
+    }
+    .rpt-root .kpi-card .val {
+        font-size: 26px;
+        font-weight: 800;
+        margin-top: 6px;
+        letter-spacing: -.02em;
+        color: var(--ahr-text, #111827);
+    }
+    .rpt-root .kpi-card .desc {
+        font-size: 11.5px;
+        color: var(--ahr-text-tertiary, #6b7280);
+        margin-top: 2px;
+    }
+
+    .rpt-root .cat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .rpt-root .cat-chip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        background: var(--ahr-surface-2, #f1f3f5);
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--ahr-text, #111827);
+    }
+    .rpt-root .cat-chip .c-count {
+        margin-left: auto;
+        font-size: 14px;
+        font-weight: 800;
+        color: var(--ahr-accent, #111827);
+    }
+    .rpt-root .cat-chip .c-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .rpt-root .quick-reports {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 10px;
+    }
+    .rpt-root .quick-report {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px;
+        border: 1px solid var(--ahr-border, #e5e7eb);
+        border-radius: 8px;
+        background: var(--ahr-card, #fff);
+        cursor: pointer;
+        transition: border-color .12s, background .12s;
+    }
+    .rpt-root .quick-report:hover {
+        border-color: var(--ahr-accent, #111827);
+        background: var(--ahr-surface-2, #f1f3f5);
+    }
+    .rpt-root .quick-report .qr-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        font-size: 16px;
+        flex-shrink: 0;
+    }
+    .rpt-root .quick-report .qr-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .rpt-root .quick-report .qr-info strong {
+        display: block;
+        font-size: 12.5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .rpt-root .quick-report .qr-info small {
+        font-size: 11px;
+        color: var(--ahr-text-tertiary, #6b7280);
+    }
+</style>
+
+<div class="rpt-root">
+    @* ── LEFT: searchable report list ── *@
+    <div class="rpt-panel rpt-list">
+        <div class="rpt-search">
+            <div class="search-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" id="rptSearch" placeholder="Search reports..." autocomplete="off" oninput="filterReports(this.value)">
+            </div>
+        </div>
+        <div class="rpt-items" id="rptItems">
+            @{
+                string[] palette = { "#3B82F6", "#10B981", "#F59E0B", "#DC2626" };
+                int ci = 0;
+            }
+            @foreach (var cat in categories)
+            {
+                var catColor = palette[ci++ % palette.Length];
+                var catReports = reports.Where(r => r.Category == cat).ToArray();
+                <div class="rpt-group-label" data-category="@cat">@cat</div>
+                @foreach (var r in catReports)
+                {
+                    <button type="button" class="rpt-item" data-name="@r.Name" data-category="@r.Category"
+                            onclick="selectReport(this, '@r.Name', '@r.Category', '@r.Desc', '@r.Icon', '@r.Color')">
+                        <span class="rpt-dot" style="background:@r.Color"></span>
+                        <div class="rpt-name">
+                            <span>@r.Name</span>
+                            <small>@r.Desc</small>
+                        </div>
+                        <i class="bi bi-chevron-right" style="color:var(--ahr-text-tertiary,#6b7280);font-size:12px"></i>
+                    </button>
+                }
+            }
+        </div>
+    </div>
+
+    @* ── RIGHT: dashboard ── *@
+    <div class="rpt-panel rpt-dash" id="rptDashboard">
+        <h2>Reports Overview</h2>
+        <div class="sub">All your reports at a glance · @DateTime.Now.ToString("MMMM yyyy")</div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="top">
+                    <span class="lbl">Total Reports</span>
+                    <span class="ic" style="background:rgba(59,130,246,0.1);color:#3B82F6"><i class="bi bi-file-earmark-bar-graph"></i></span>
+                </div>
+                <div class="val">@totalReports</div>
+                <div class="desc">Available report templates</div>
+            </div>
+            <div class="kpi-card">
+                <div class="top">
+                    <span class="lbl">Categories</span>
+                    <span class="ic" style="background:rgba(16,185,129,0.1);color:#10B981"><i class="bi bi-folder"></i></span>
+                </div>
+                <div class="val">@totalCategories</div>
+                <div class="desc">Report categories</div>
+            </div>
+            <div class="kpi-card">
+                <div class="top">
+                    <span class="lbl">HR Reports</span>
+                    <span class="ic" style="background:rgba(139,92,246,0.1);color:#8B5CF6"><i class="bi bi-people"></i></span>
+                </div>
+                <div class="val">@reports.Count(r => r.Category == "HR")</div>
+                <div class="desc">Human resource reports</div>
+            </div>
+            <div class="kpi-card">
+                <div class="top">
+                    <span class="lbl">Finance</span>
+                    <span class="ic" style="background:rgba(245,158,11,0.1);color:#F59E0B"><i class="bi bi-coin"></i></span>
+                </div>
+                <div class="val">@reports.Count(r => r.Category == "Finance")</div>
+                <div class="desc">Financial reports</div>
+            </div>
+        </div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ahr-text,#111827);margin-bottom:10px">Categories</div>
+        <div class="cat-grid">
+            @{ int ci2 = 0; }
+            @foreach (var cat in categories)
+            {
+                var catColor = palette[ci2++ % palette.Length];
+                <div class="cat-chip">
+                    <span class="c-dot" style="background:@catColor"></span>
+                    @cat
+                    <span class="c-count">@reports.Count(r => r.Category == cat)</span>
+                </div>
+            }
+        </div>
+
+        <div style="font-size:13px;font-weight:700;color:var(--ahr-text,#111827);margin-bottom:10px">Quick Access</div>
+        <div class="quick-reports" id="quickReports">
+            @foreach (var r in reports.Take(6))
+            {
+                <div class="quick-report" onclick="selectReport(document.querySelector('.rpt-item[data-name=\'@r.Name\']'), '@r.Name', '@r.Category', '@r.Desc', '@r.Icon', '@r.Color')">
+                    <div class="qr-icon" style="background:@r.Color;color:#fff">
+                        <i class="@r.Icon"></i>
+                    </div>
+                    <div class="qr-info">
+                        <strong>@r.Name</strong>
+                        <small>@r.Category</small>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div id="selectedDetail" style="display:none;margin-top:20px;padding:16px;background:var(--ahr-surface-2,#f1f3f5);border-radius:10px;border:1px solid var(--ahr-border,#e5e7eb)">
+            <div style="display:flex;align-items:center;gap:12px">
+                <div id="selIcon" style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-size:18px;color:#fff"></div>
+                <div>
+                    <div id="selName" style="font-size:15px;font-weight:700;color:var(--ahr-text,#111827)"></div>
+                    <div id="selCategory" style="font-size:12px;color:var(--ahr-text-tertiary,#6b7280)"></div>
+                </div>
+            </div>
+            <p id="selDesc" style="margin:10px 0 0;font-size:13px;color:var(--ahr-text,#111827)"></p>
+            <button class="btn btn-primary btn-sm mt-2" style="margin-top:10px" onclick="alert('Generate: ' + document.getElementById('selName').innerText)"><i class="bi bi-download"></i> Generate Report</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function filterReports(val) {
+        var q = val.toLowerCase();
+        document.querySelectorAll('#rptItems .rpt-item').forEach(function(el) {
+            var name = el.getAttribute('data-name').toLowerCase();
+            var cat = el.getAttribute('data-category').toLowerCase();
+            el.classList.toggle('hidden', q && name.indexOf(q) === -1 && cat.indexOf(q) === -1);
+        });
+        document.querySelectorAll('#rptItems .rpt-group-label').forEach(function(el) {
+            var cat = el.getAttribute('data-category');
+            var items = el.nextElementSibling;
+            var visible = false;
+            while (items && items.classList.contains('rpt-item')) {
+                if (!items.classList.contains('hidden')) { visible = true; break; }
+                items = items.nextElementSibling;
+            }
+            el.style.display = q ? (visible ? '' : 'none') : '';
+        });
+    }
+
+    function selectReport(el, name, category, desc, icon, color) {
+        document.querySelectorAll('.rpt-item').forEach(function(e) { e.classList.remove('active'); });
+        if (el) el.classList.add('active');
+        document.getElementById('selName').innerText = name;
+        document.getElementById('selCategory').innerText = category;
+        document.getElementById('selDesc').innerText = desc;
+        var iconEl = document.getElementById('selIcon');
+        iconEl.style.background = color;
+        iconEl.innerHTML = '<i class="' + icon + '"></i>';
+        document.getElementById('selectedDetail').style.display = 'block';
+    }
+</script>

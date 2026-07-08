@@ -1,0 +1,45 @@
+@model AlignHR.Models.LeaveConfiguration
+@{ ViewData["Title"] = "Delete Leave Configuration"; ViewBag.ActivePage = "LeaveConfigurations"; }
+
+<div class="page-header animate-fade">
+    <div>
+        <h1 class="page-title">Delete Leave Configuration</h1>
+        <p class="page-subtitle">You are about to permanently remove this configuration.</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</div>
+
+<div class="hr-card animate-fade" style="animation-delay:0.1s;border-left:4px solid var(--danger-text);">
+    <div class="card-header">
+        <div class="card-title" style="color:var(--danger-text);"><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</div>
+    </div>
+    <div class="card-body">
+        <p style="margin-bottom:16px;">Are you sure you want to delete the following configuration? This action cannot be undone.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+            <div>
+                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Grouping Type</div>
+                <div style="font-weight:600;font-size:16px;">@Model.GroupingType</div>
+            </div>
+            <div>
+                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Status</div>
+                <span class="status-badge @(Model.IsActive ? "active" : "inactive")">@(Model.IsActive ? "Active" : "Inactive")</span>
+            </div>
+            <div>
+                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Mappings</div>
+                <div style="font-weight:600;">@Model.Details.Count approver mappings will be deleted</div>
+            </div>
+            <div>
+                <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Created</div>
+                <div style="font-weight:600;">@Model.CreatedAt.ToString("MMM dd, yyyy")</div>
+            </div>
+        </div>
+
+        <form asp-action="Delete" method="post">
+            <input type="hidden" asp-for="Id" />
+            <div style="display:flex;justify-content:flex-end;gap:12px;padding-top:16px;border-top:1px solid var(--border-light);">
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary" style="background:var(--danger-text);border-color:var(--danger-text);"><i class="fas fa-trash"></i> Delete Configuration</button>
+            </div>
+        </form>
+    </div>
+</div>

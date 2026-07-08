@@ -1,0 +1,91 @@
+name: Deploy to SmarterASP via FTP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8 SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore AlignHR/AlignHR.csproj
+
+      - name: Build
+        run: dotnet build AlignHR/AlignHR.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish AlignHR/AlignHR.csproj --configuration Release --no-build --output ./publish
+
+      - name: Create appsettings.Production.json
+        shell: pwsh
+        run: |
+          $json = [ordered]@{
+            ConnectionStrings = [ordered]@{
+              DefaultConnection = "${{ secrets.DB_CONNECTION_STRING }}"
+            }
+          } | ConvertTo-Json -Depth 5
+
+          Set-Content -Path ./publish/appsettings.Production.json -Value $json -Encoding utf8
+
+      - name: Take Application Offline
+        shell: pwsh
+        run: |
+          @"
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Site Offline</title>
+          </head>
+          <body>
+              <h1>Under Maintenance</h1>
+              <p>We are currently updating our systems. Please check back shortly.</p>
+          </body>
+          </html>
+          "@ | Set-Content app_offline.htm
+
+          curl.exe --ftp-create-dirs `
+            -T app_offline.htm `
+            -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" `
+            "ftps://${{ secrets.FTP_SERVER }}/app_offline.htm"
+
+          Start-Sleep -Seconds 10
+
+      - name: Deploy via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./publish/
+          server-dir: /site1/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/obj/**
+            **/bin/**
+            **/uploads/**
+
+      - name: Bring Application Online
+        if: always()
+        shell: pwsh
+        run: |
+          curl.exe `
+            -u "${{ secrets.FTP_USERNAME }}:${{ secrets.FTP_PASSWORD }}" `
+            "ftps://${{ secrets.FTP_SERVER }}/" `
+            -Q "-DELE app_offline.htm"

@@ -1,0 +1,95 @@
+@model IPagedList<AlignHR.Models.PayRollGenrate>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+
+<div id="table-container">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Employee Photo</th>
+                    <th>Employee Name</th>
+                    <th>Code</th>
+                    <th>Definition</th>
+                    <th>Gross Salary</th>
+                    <th>Generated Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>
+                                <div class="table-avatar" style="@(item.Employee != null && !string.IsNullOrEmpty(item.Employee.ProfileImage) ? "" : "background: linear-gradient(135deg, var(--primary), var(--accent));")">
+                                    @if (@item.Employee != null && !string.IsNullOrEmpty(item.Employee.ProfileImage))
+                                    {
+                                        <img src="/uploads/employees/@item.Employee.ProfileImage" alt="" style="width: 100%; height: 100%; object-fit: cover; border-radius: inherit;" />
+                                    }
+                                    else
+                                    {
+                                        @(item.Employee != null ? item.Employee.FirstName[0].ToString() + item.Employee.LastName[0].ToString() : "??")
+                                    }
+                                </div>
+                            </td>
+                            <td>
+                                <b>@item.Employee?.FirstName @item.Employee?.LastName</b>
+                            </td>
+                            <td>@item.Employee?.Code</td>
+                            <td>@item.PayRollDefinationFile?.DefinitionName</td>
+                            <td style="font-weight: 600; color: #6366f1;">
+                                @item.salery.ToString("N0")
+                            </td>
+                            <td>@item.createat.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a asp-action="Edit" asp-route-id="@item.id" class="btn btn-icon btn-sm" title="Edit">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                                        </svg>
+                                    </a>
+
+                                    <form asp-action="Delete" asp-route-id="@item.id" method="post" style="display:inline;"
+                                          onsubmit="return confirm('Are you sure you want to delete this payroll record?');">
+                                        <button class="btn btn-icon btn-sm text-danger" type="submit" title="Delete">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <polyline points="3 6 5 6 21 6" />
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                            </svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            No payroll records found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="pagination-wrapper mt-4">
+        @Html.PagedListPager(Model, page => Url.Action("Index", new { page, search = Context.Request.Query["search"] }), 
+            new PagedListRenderOptions {
+                UlElementClasses = new[] { "pagination" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" },
+                DisplayLinkToFirstPage = PagedListDisplayMode.Always,
+                DisplayLinkToLastPage = PagedListDisplayMode.Always,
+                DisplayLinkToPreviousPage = PagedListDisplayMode.Always,
+                DisplayLinkToNextPage = PagedListDisplayMode.Always
+            })
+    </div>
+</div>

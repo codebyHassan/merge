@@ -1,0 +1,324 @@
+@model AlignHR.Models.Bonus
+
+@{
+    ViewData["Title"] = "Add New Bonus";
+    ViewBag.ActivePage = "Bonus";
+}
+
+<!-- Breadcrumb Area -->
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator">></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">Bonuses</a>
+    </div>
+    <div class="breadcrumb-separator">></div>
+    <div class="breadcrumb-item active">Add New Bonus</div>
+</div>
+
+<!-- Main Content Card -->
+<div class="form-shell">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" id="bonusForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <h3 class="card-subtitle mb-4">Bonus Information</h3>
+
+            <div class="form-grid">
+                <!-- Employee Selection -->
+                <div class="form-item" style="position: relative; z-index: 1001;">
+                    <label class="form-label">Search Employee <span class="required">*</span></label>
+                    <div class="search-with-icon" style="position: relative;">
+                        <i class="fas fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
+                        <input type="text" id="employeeSearch" name="term" class="form-control" style="padding-left: 2.5rem;" placeholder="Type name or code..." autocomplete="off"
+                               hx-get="/Ajax/SearchEmployees"
+                               hx-trigger="keyup delay:300ms, search"
+                               hx-target="#employeeResults" />
+                    </div>
+                    <div id="employeeResults" class="search-results-container"></div>
+                    <input type="hidden" asp-for="EmployeeID" id="EmployeeID" required />
+                    <span asp-validation-for="EmployeeID" class="text-danger small"></span>
+                </div>
+
+                @* Employee Profile Card - separate grid item *@
+                <div class="form-item" style="grid-column: 1 / -1;">
+                    <div id="employeeProfileCard"></div>
+                </div>
+
+                <!-- Salary Period -->
+                <div class="form-item">
+                    <label class="form-label">Salary Period <span class="required">*</span></label>
+                    <select asp-for="SalaryPeriodID" class="form-control" required>
+                        <option value="">-- Select Period --</option>
+                        @foreach (var p in ViewBag.Periods)
+                        {
+                            <option value="@p.SalaryPeriodID">@p.PeriodName</option>
+                        }
+                    </select>
+                    <span asp-validation-for="SalaryPeriodID" class="text-danger small"></span>
+                </div>
+
+                <!-- Bonus Type -->
+                <div class="form-item">
+                    <label class="form-label">Bonus Type <span class="required">*</span></label>
+                    <select asp-for="BonusTypeID" class="form-control" required>
+                        <option value="">-- Select Type --</option>
+                        @foreach (var t in ViewBag.BonusTypes)
+                        {
+                            <option value="@t.Id">@t.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="BonusTypeID" class="text-danger small"></span>
+                </div>
+
+                <!-- Payment Date -->
+                <div class="form-item">
+                    <label class="form-label">Payment Date</label>
+                    <input asp-for="PaymentDate" type="date" class="form-control" />
+                    <span asp-validation-for="PaymentDate" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Calculation Engine Section -->
+            <div class="calculation-section mt-5">
+                <div class="premium-sections-container">
+                    <h3 class="card-subtitle mb-4 text-muted" style="font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Calculation Engine</h3>
+
+                    <!-- Gross Salary Row -->
+                    <div class="premium-layout-grid">
+                        <div class="toggle-side">
+                            <span class="form-label" style="margin-bottom: 0;">Gross Salary</span>
+                        </div>
+                        <div class="field-side">
+                            <div id="grossSalaryContainer" class="w-100">
+                                <input type="hidden" id="hiddenGrossSalary" value="0" />
+                                <span class="gross-value">0.00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mode Toggle Row -->
+                    <div class="premium-layout-grid">
+                        <div class="toggle-side">
+                            <label class="premium-switch m-0">
+                                <input type="checkbox" asp-for="IsPercentage" id="calcToggle" />
+                                <span class="premium-slider"></span>
+                            </label>
+                            <span class="form-label" style="margin-bottom: 0;">Percentage Mode</span>
+                        </div>
+                        <div class="field-side">
+                            <span id="modeBadge" class="text-muted small font-bold">MODE: FIXED AMOUNT</span>
+                        </div>
+                    </div>
+
+                    <!-- Percentage Input Row -->
+                    <div id="percentageRow" class="premium-layout-grid deduction-animate-container">
+                        <div class="toggle-side">
+                            <span class="form-label" style="margin-bottom: 0;">Bonus %</span>
+                        </div>
+                        <div class="field-side">
+                            <input asp-for="BonusPercentage" type="number" step="0.01" class="form-control" id="BonusPercentage" placeholder="Enter percentage (e.g. 10)" />
+                        </div>
+                    </div>
+
+                    <!-- Amount Input Row -->
+                    <div class="premium-layout-grid">
+                        <div class="toggle-side">
+                            <span class="form-label" style="margin-bottom: 0;" id="amountLabel">Bonus Amount</span>
+                        </div>
+                        <div class="field-side">
+                            <input asp-for="BonusAmount" type="number" step="0.01" class="form-control" id="BonusAmount" required placeholder="0.00" />
+                        </div>
+                    </div>
+
+                    <!-- Tax Row -->
+                    <div class="premium-layout-grid">
+                        <div class="toggle-side">
+                            <span class="form-label" style="margin-bottom: 0;">Tax Deduction</span>
+                        </div>
+                        <div class="field-side">
+                            <input asp-for="TaxDeduction" type="number" step="0.01" class="form-control" id="TaxDeduction" placeholder="0.00" />
+                        </div>
+                    </div>
+
+                    <!-- Final Net Row -->
+                    <div class="premium-layout-grid" style="background: #f5f3ff; border-radius: 8px;">
+                        <div class="toggle-side">
+                            <span class="form-label" style="margin-bottom: 0; color: #4338ca;">Final Net Bonus</span>
+                        </div>
+                        <div class="field-side">
+                            <input asp-for="NetBonus" type="number" step="0.01" class="form-control" id="NetBonus" readonly 
+                                   style="background: transparent; border: none; font-weight: 800; font-size: 1.2rem; color: #4338ca;" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-grid mt-4">
+                <div class="form-item">
+                    <label class="form-label">Approval Status</label>
+                    <select asp-for="ApprovalStatus" class="form-control">
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label class="form-label">Remarks / Notes</label>
+                    <textarea asp-for="Remarks" class="form-control" rows="2" placeholder="Provide any additional details..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-actions-sticky mt-5">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-sm">Create Bonus</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+    (function () {
+        document.addEventListener('DOMContentLoaded', function () {
+            // Clear hidden ID when user types
+            const searchInput = document.getElementById('employeeSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const hiddenInput = document.getElementById('EmployeeID');
+                    if (hiddenInput) hiddenInput.value = '';
+                });
+            }
+
+            // Handle Employee Selection
+            document.body.addEventListener('click', function(e) {
+                const row = e.target.closest('.search-result-item');
+                if (row) {
+                    const id = row.dataset.id;
+                    const name = row.dataset.name;
+                    const code = row.dataset.code;
+                    
+                    const hiddenInput = document.getElementById('EmployeeID');
+                    hiddenInput.value = id;
+                    document.getElementById('employeeResults').innerHTML = '';
+                    document.getElementById('employeeSearch').value = name + ' (' + code + ')';
+                    
+                    // Trigger manual change to fire fetchGross
+                    fetchGross(id);
+
+                    // Trigger profile card load
+                    htmx.ajax('GET', '/Ajax/GetEmployeeCard', {
+                        values: { id: id },
+                        target: '#employeeProfileCard'
+                    });
+                }
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                    document.getElementById('employeeResults').innerHTML = '';
+                }
+            });
+        });
+        // ── Element references ──────────────────────────────────────────
+        var empSelect      = document.getElementById('EmployeeID');
+        var pctInput       = document.getElementById('BonusPercentage');
+        var amtInput       = document.getElementById('BonusAmount');
+        var taxInput       = document.getElementById('TaxDeduction');
+        var netInput       = document.getElementById('NetBonus');
+        var toggle         = document.getElementById('calcToggle');
+        var pctRow         = document.getElementById('percentageRow');
+        var modeBadge      = document.getElementById('modeBadge');
+        var amtLabel       = document.getElementById('amountLabel');
+        var grossDisplay   = document.querySelector('#grossSalaryContainer .gross-value');
+        var grossHidden    = document.getElementById('hiddenGrossSalary');
+
+        // ── Mode toggle ─────────────────────────────────────────────────
+        function applyMode(isPct) {
+            if (isPct) {
+                pctRow.classList.add('show');
+                modeBadge.innerText = 'MODE: PERCENTAGE (%)';
+                amtLabel.innerText  = 'Calculated Bonus Amount';
+                amtInput.readOnly   = true;
+                amtInput.style.background = '#f8fafc';
+            } else {
+                pctRow.classList.remove('show');
+                modeBadge.innerText = 'MODE: FIXED AMOUNT';
+                amtLabel.innerText  = 'Fixed Bonus Amount';
+                amtInput.readOnly   = false;
+                amtInput.style.background = '#fff';
+            }
+        }
+
+        applyMode(toggle.checked);
+        toggle.addEventListener('change', function () {
+            applyMode(this.checked);
+            recalculate();
+        });
+
+        // ── Live recalculation ──────────────────────────────────────────
+        function recalculate() {
+            var gross   = parseFloat(grossHidden.value) || 0;
+            var pct     = parseFloat(pctInput.value)    || 0;
+            var tax     = parseFloat(taxInput.value)    || 0;
+            var bonus   = parseFloat(amtInput.value)    || 0;
+
+            if (toggle.checked) {
+                bonus = (gross * pct) / 100;
+                amtInput.value = bonus.toFixed(2);
+            }
+
+            netInput.value = (bonus - tax).toFixed(2);
+        }
+
+        pctInput.addEventListener('input', recalculate);
+        amtInput.addEventListener('input', recalculate);
+        taxInput.addEventListener('input', recalculate);
+
+        // ── Gross salary fetch via raw XMLHttpRequest ───────────────────
+        function fetchGross(empId) {
+            if (!empId) {
+                grossHidden.value    = 0;
+                grossDisplay.innerText = '0.00';
+                recalculate();
+                return;
+            }
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '/Bonus/GetGrossSalary?EmployeeID=' + empId, true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        try {
+                            var data = JSON.parse(xhr.responseText);
+                            var gross = parseFloat(data.gross) || 0;
+                            grossHidden.value    = gross;
+                            grossDisplay.innerText = gross.toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                            });
+                            recalculate();
+                        } catch (e) {
+                            console.error('Parse error:', e, xhr.responseText);
+                        }
+                    } else {
+                        console.error('XHR failed, status:', xhr.status);
+                    }
+                }
+            };
+
+            xhr.send();
+        }
+
+        // Trigger on employee select change
+        empSelect.addEventListener('change', function () {
+            fetchGross(this.value);
+        });
+
+    })();
+</script>

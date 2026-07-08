@@ -1,0 +1,723 @@
+@{
+    ViewData["Title"] = "Payroll Execution";
+    ViewData["BodyClass"] = "execution-index-page";
+    ViewBag.ActivePage = "Execution";
+
+    var periods = ViewBag.Periods as List<SalaryPeriod> ?? new List<SalaryPeriod>();
+    SalaryPeriod? defaultPeriod = null;
+    var hasOpenPeriod = false;
+
+    foreach (var period in periods)
+    {
+        if (!period.IsPostedToGL)
+        {
+            hasOpenPeriod = true;
+            defaultPeriod = period;
+            break;
+        }
+    }
+}
+
+@section Styles {
+    <style>
+        .execution-module-btn {
+            min-width: 7.5rem;
+            justify-content: center;
+            gap: 0.35rem;
+            white-space: nowrap;
+        }
+
+        .execution-module-btn.is-complete {
+            border-color: rgba(18, 183, 106, 0.25);
+            background: var(--erp-success-soft);
+            color: var(--erp-success);
+            box-shadow: none;
+        }
+
+        .execution-empty {
+            padding: 1rem 1.1rem;
+            border: 1px dashed var(--erp-border-strong);
+            border-radius: var(--erp-radius-md);
+            background: var(--erp-surface);
+            color: var(--erp-muted);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .module-desc {
+            color: var(--erp-muted);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            white-space: normal;
+            font-weight: 400;
+        }
+
+        .note-cell {
+            color: var(--erp-muted);
+            font-size: 0.72rem;
+            font-weight: 500;
+            margin-right: 0.75rem;
+            white-space: normal;
+        }
+    </style>
+}
+
+<div class="d-flex flex-column gap-3">
+    <div class="ahr-page-header align-items-center mb-2">
+        <div>
+            <h1 class="ahr-page-title">Payroll Execution</h1>
+            <p class="ahr-page-subtitle">Execute and process payroll components step by step for the selected period.</p>
+        </div>
+        <div class="ahr-page-actions">
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-primary btn-sm d-none me-1" id="run-all-btn" style="font-weight: 500;">
+                    <i class="fa-solid fa-forward me-1"></i>Run All Steps
+                </button>
+                <label class="mb-0 fw-semibold text-nowrap" for="PeriodSalery" style="font-size: 13px; color: var(--ahr-text-secondary);">Salary Period:</label>
+                <div class="input-group input-group-sm" style="width: 220px;">
+                    <span class="input-group-text bg-light border-end-0"><i class="fas fa-calendar-alt text-muted"></i></span>
+                    <select class="form-select form-select-sm border-start-0 ps-1" id="PeriodSalery" name="PeriodSalery" style="font-weight: 500;">
+                        <option value="">Select salary period</option>
+                        @foreach (var period in periods)
+                        {
+                            if (period.IsPostedToGL)
+                            {
+                                <option value="@period.SalaryPeriodID" disabled>@period.PeriodName (Posted)</option>
+                            }
+                            else if (defaultPeriod != null && period.SalaryPeriodID == defaultPeriod.SalaryPeriodID)
+                            {
+                                <option value="@period.SalaryPeriodID" selected>@period.PeriodName</option>
+                            }
+                            else
+                            {
+                                <option value="@period.SalaryPeriodID">@period.PeriodName</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="table-shell" data-erp-table id="execution-container" style="opacity:0;transition:opacity 0.18s ease">
+        <div class="erp-table-wrap">
+            <table class="table table-hover erp-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Module</th>
+                        <th scope="col" style="width: 120px;" class="text-center">Status</th>
+                        <th scope="col" class="text-end sticky-actions" style="width: 380px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-module-card data-action="GenerateIncomeTax">
+                        <td>
+                            <div class="fw-semibold text-dark">Income Tax Deduction</div>
+                            <div class="module-desc text-muted">Generate tax deductions for active employees using the current fiscal setup.</div>
+                        </td>
+                        <td class="text-center">
+                            <span data-status-indicator></span>
+                        </td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <span class="note-cell text-muted" data-status-note>Select a salary period to check execution status.</span>
+                                <button type="button" class="btn btn-primary btn-sm execution-module-btn" data-module-button>
+                                    <i class="fa-solid fa-play"></i>
+                                    <span>Execute</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr data-module-card data-action="GenerateEOBI">
+                        <td>
+                            <div class="fw-semibold text-dark">EOBI Deduction</div>
+                            <div class="module-desc text-muted">Generate EOBI deductions for employees eligible in the selected period.</div>
+                        </td>
+                        <td class="text-center">
+                            <span data-status-indicator></span>
+                        </td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <span class="note-cell text-muted" data-status-note>Select a salary period to check execution status.</span>
+                                <button type="button" class="btn btn-primary btn-sm execution-module-btn" data-module-button>
+                                    <i class="fa-solid fa-play"></i>
+                                    <span>Execute</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr data-module-card data-action="GenerateLoanDeduction">
+                        <td>
+                            <div class="fw-semibold text-dark">Loan &amp; Advance Deduction</div>
+                            <div class="module-desc text-muted">Generate installment deductions for approved active loans and advances.</div>
+                        </td>
+                        <td class="text-center">
+                            <span data-status-indicator></span>
+                        </td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <span class="note-cell text-muted" data-status-note>Select a salary period to check execution status.</span>
+                                <button type="button" class="btn btn-primary btn-sm execution-module-btn" data-module-button>
+                                    <i class="fa-solid fa-play"></i>
+                                    <span>Execute</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr data-module-card data-action="GeneratePF">
+                        <td>
+                            <div class="fw-semibold text-dark">Provident Fund</div>
+                            <div class="module-desc text-muted">Create provident fund records for employees marked as PF members.</div>
+                        </td>
+                        <td class="text-center">
+                            <span data-status-indicator></span>
+                        </td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <span class="note-cell text-muted" data-status-note>Select a salary period to check execution status.</span>
+                                <button type="button" class="btn btn-primary btn-sm execution-module-btn" data-module-button>
+                                    <i class="fa-solid fa-play"></i>
+                                    <span>Execute</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr data-module-card data-action="FetchBonus">
+                        <td>
+                            <div class="fw-semibold text-dark">Bonuses &amp; Perks</div>
+                            <div class="module-desc text-muted">Check whether approved bonus records already exist for this payroll cycle.</div>
+                        </td>
+                        <td class="text-center">
+                            <span data-status-indicator></span>
+                        </td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <span class="note-cell text-muted" data-status-note>Select a salary period to check execution status.</span>
+                                <button type="button" class="btn btn-primary btn-sm execution-module-btn" data-module-button>
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <span>Fetch</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr data-module-card data-action="FetchSalaryAdjustment">
+                        <td>
+                            <div class="fw-semibold text-dark">Salary Adjustments</div>
+                            <div class="module-desc text-muted">Check whether approved adjustments and arrears already exist for this period.</div>
+                        </td>
+                        <td class="text-center">
+                            <span data-status-indicator></span>
+                        </td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <span class="note-cell text-muted" data-status-note>Select a salary period to check execution status.</span>
+                                <button type="button" class="btn btn-primary btn-sm execution-module-btn" data-module-button>
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                    <span>Fetch</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr data-module-card data-action="GenerateSalarySlips">
+                        <td>
+                            <div class="fw-semibold text-dark">Final Salary Slips</div>
+                            <div class="module-desc text-muted">Generate salary slips, post the period to GL, and lock the payroll cycle.</div>
+                        </td>
+                        <td class="text-center">
+                            <span data-status-indicator></span>
+                        </td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end align-items-center gap-2">
+                                <span class="note-cell text-muted" data-status-note>This is the final step and it locks the selected period.</span>
+                                <button type="button" class="btn btn-primary btn-sm execution-module-btn" data-module-button style="display: none;">
+                                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                                    <span>Generate Slips</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    @if (!hasOpenPeriod)
+    {
+        <div class="execution-empty">
+            All salary periods are already posted to GL. Create a new open salary period before running payroll execution.
+        </div>
+    }
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const periodSelect = document.getElementById("PeriodSalery");
+            const runAllBtn = document.getElementById("run-all-btn");
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+            const cards = Array.from(document.querySelectorAll("[data-module-card]"));
+            const executionContainer = document.getElementById("execution-container");
+
+            const modules = {
+                GenerateIncomeTax: {
+                    idleLabel: "Execute",
+                    idleIcon: "fa-play",
+                    processingLabel: "Executing...",
+                    doneLabel: "Done",
+                    doneIcon: "fa-circle-check",
+                    pendingNote: "Waiting for income tax execution.",
+                    doneNote: "Income tax deductions already exist for this period.",
+                    processingNote: "Generating income tax deductions now.",
+                    doneState: "Executed"
+                },
+                GenerateEOBI: {
+                    idleLabel: "Execute",
+                    idleIcon: "fa-play",
+                    processingLabel: "Executing...",
+                    doneLabel: "Done",
+                    doneIcon: "fa-circle-check",
+                    pendingNote: "Waiting for EOBI execution.",
+                    doneNote: "EOBI deductions already exist for this period.",
+                    processingNote: "Generating EOBI deductions now.",
+                    doneState: "Executed"
+                },
+                GenerateLoanDeduction: {
+                    idleLabel: "Execute",
+                    idleIcon: "fa-play",
+                    processingLabel: "Executing...",
+                    doneLabel: "Done",
+                    doneIcon: "fa-circle-check",
+                    pendingNote: "Waiting for loan deduction execution.",
+                    doneNote: "Loan deduction records already exist for this period month.",
+                    processingNote: "Generating loan installment deductions now.",
+                    doneState: "Executed"
+                },
+                GeneratePF: {
+                    idleLabel: "Execute",
+                    idleIcon: "fa-play",
+                    processingLabel: "Executing...",
+                    doneLabel: "Done",
+                    doneIcon: "fa-circle-check",
+                    pendingNote: "Waiting for provident fund execution.",
+                    doneNote: "Provident fund records already exist for this period.",
+                    processingNote: "Generating provident fund records now.",
+                    doneState: "Executed"
+                },
+                FetchBonus: {
+                    idleLabel: "Fetch",
+                    idleIcon: "fa-magnifying-glass",
+                    processingLabel: "Fetching...",
+                    doneLabel: "Done",
+                    doneIcon: "fa-circle-check",
+                    pendingNote: "No bonus records found yet for this period.",
+                    doneNote: "Bonus records were found for this period.",
+                    processingNote: "Checking bonus records now.",
+                    doneState: "Found"
+                },
+                FetchSalaryAdjustment: {
+                    idleLabel: "Fetch",
+                    idleIcon: "fa-magnifying-glass",
+                    processingLabel: "Fetching...",
+                    doneLabel: "Done",
+                    doneIcon: "fa-circle-check",
+                    pendingNote: "No approved salary adjustments found yet for this period.",
+                    doneNote: "Salary adjustment records were found for this period.",
+                    processingNote: "Checking salary adjustment records now.",
+                    doneState: "Found"
+                },
+                GenerateSalarySlips: {
+                    idleLabel: "Generate Slips",
+                    idleIcon: "fa-file-invoice-dollar",
+                    processingLabel: "Generating...",
+                    doneLabel: "Locked",
+                    doneIcon: "fa-circle-check",
+                    pendingNote: "Final payroll step is still pending.",
+                    doneNote: "Salary slips are already generated and the period is locked.",
+                    processingNote: "Generating salary slips and locking this period.",
+                    doneState: "Generated"
+                }
+            };
+
+            const totalNode = document.querySelector("[data-summary-total]");
+            const completedNode = document.querySelector("[data-summary-completed]");
+            const pendingNode = document.querySelector("[data-summary-pending]");
+
+            function notify(message, type) {
+                if (window.erpToast) {
+                    window.erpToast(message, type || "info", type === "error" ? "Execution Error" : "Payroll Execution");
+                    return;
+                }
+                alert(message);
+            }
+
+            function setSummary(statusMap) {
+                const total = cards.length;
+                let completed = 0;
+
+                cards.forEach(card => {
+                    const action = card.dataset.action;
+                    if (statusMap && statusMap[action]) {
+                        completed += 1;
+                    }
+                });
+
+                if (totalNode) totalNode.textContent = total;
+                if (completedNode) completedNode.textContent = completed;
+                if (pendingNode) pendingNode.textContent = total - completed;
+            }
+
+            function setIndicatorProcessing(indicator, text) {
+                indicator.innerHTML = `<span class="d-inline-flex align-items-center gap-1 text-primary fw-semibold" style="font-size: 0.85rem;"><i class="fa-solid fa-spinner fa-spin"></i> ${text}</span>`;
+            }
+
+            function setButton(button, icon, label, disabled, completeState) {
+                button.disabled = !!disabled;
+                button.classList.remove("is-loading", "loader-white", "btn-primary", "btn-outline-secondary", "is-complete");
+
+                if (completeState) {
+                    button.classList.add("btn-outline-secondary", "is-complete");
+                } else {
+                    button.classList.add("btn-primary");
+                }
+
+                button.innerHTML = `<i class="fa-solid ${icon}"></i><span>${label}</span>`;
+            }
+
+            function setCardIdle(card, hasPeriod, isComplete) {
+                const action = card.dataset.action;
+
+                // GenerateSalarySlips button & status is fully managed by updateSalarySlipsButton
+                if (action === "GenerateSalarySlips") return;
+
+                const config = modules[action];
+                const indicator = card.querySelector("[data-status-indicator]");
+                const note = card.querySelector("[data-status-note]");
+                const button = card.querySelector("[data-module-button]");
+
+                if (!hasPeriod) {
+                    if (indicator) indicator.innerHTML = '';
+                    if (note) note.textContent = "Pick an open salary period to unlock this module.";
+                    if (button) {
+                        button.style.display = '';
+                        button.disabled = true;
+                        button.classList.remove("is-loading", "loader-white", "is-complete", "btn-outline-secondary");
+                        button.classList.add("btn-primary");
+                        button.innerHTML = `<i class="fa-solid ${config.idleIcon}"></i><span>${config.idleLabel}</span>`;
+                    }
+                    return;
+                }
+
+                if (isComplete) {
+                    // Show green tick in status column
+                    if (indicator) indicator.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #12b76a; font-size: 1.15rem;" title="Completed"></i>';
+                    if (note) note.textContent = config.doneNote;
+                    // Also show Re-Execute button (outline style) so user can re-run for new employees
+                    if (button) {
+                        button.style.display = '';
+                        button.disabled = false;
+                        button.classList.remove("is-loading", "loader-white", "btn-primary");
+                        button.classList.add("btn-outline-secondary", "is-complete");
+                        const reLabel = config.idleLabel === "Fetch" ? "Re-Fetch" : "Re-Execute";
+                        button.innerHTML = `<i class="fa-solid fa-rotate-right"></i><span>${reLabel}</span>`;
+                    }
+                    return;
+                }
+
+                // Pending / idle state
+                if (indicator) indicator.innerHTML = '';
+                if (note) note.textContent = config.pendingNote;
+                if (button) {
+                    button.style.display = '';
+                    button.disabled = false;
+                    button.classList.remove("is-loading", "loader-white", "is-complete", "btn-outline-secondary");
+                    button.classList.add("btn-primary");
+                    button.innerHTML = `<i class="fa-solid ${config.idleIcon}"></i><span>${config.idleLabel}</span>`;
+                }
+            }
+
+            function updateSalarySlipsButton(statusMap) {
+                const salarySlipsCard = document.querySelector('[data-action="GenerateSalarySlips"]');
+                if (!salarySlipsCard) return;
+
+                const button = salarySlipsCard.querySelector("[data-module-button]");
+                const indicator = salarySlipsCard.querySelector("[data-status-indicator]");
+                const note = salarySlipsCard.querySelector("[data-status-note]");
+                if (!button) return;
+
+                // No period selected — hide everything
+                if (!statusMap) {
+                    if (indicator) indicator.innerHTML = '';
+                    if (note) note.textContent = "This is the final step and it locks the selected period.";
+                    button.style.display = 'none';
+                    return;
+                }
+
+                const requiredActions = [
+                    "GenerateIncomeTax",
+                    "GenerateEOBI",
+                    "GenerateLoanDeduction",
+                    "GeneratePF"
+                ];
+
+                const allDeductionsDone = requiredActions.every(action => !!statusMap[action]);
+                const slipsGenerated   = !!statusMap["GenerateSalarySlips"];
+
+                if (slipsGenerated) {
+                    // Already locked — show green tick, no button
+                    if (indicator) indicator.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #12b76a; font-size: 1.15rem;" title="Completed"></i>';
+                    if (note) note.textContent = "Salary slips are already generated and the period is locked.";
+                    button.style.display = 'none';
+                } else if (allDeductionsDone) {
+                    // All steps done — show Generate Slips button (primary blue)
+                    if (indicator) indicator.innerHTML = '';
+                    if (note) note.textContent = "Final payroll step is ready for execution.";
+                    button.style.display = '';
+                    button.disabled = false;
+                    button.classList.remove("is-loading", "loader-white", "is-complete", "btn-outline-secondary");
+                    button.classList.add("btn-primary");
+                    button.innerHTML = '<i class="fa-solid fa-file-invoice-dollar"></i><span>Generate Slips</span>';
+                } else {
+                    // Deductions not all done — hide button, show pending note
+                    if (indicator) indicator.innerHTML = '';
+                    if (note) note.textContent = "Complete all deduction steps above to unlock salary slip generation.";
+                    button.style.display = 'none';
+                }
+            }
+
+            function updateRunAllButtonState(statusMap) {
+                if (!runAllBtn) return;
+
+                const periodId = periodSelect.value;
+                if (!periodId) {
+                    runAllBtn.disabled = true;
+                    runAllBtn.classList.add("d-none");
+                    return;
+                }
+
+                runAllBtn.classList.remove("d-none");
+
+                if (!statusMap) {
+                    runAllBtn.disabled = true;
+                    runAllBtn.innerHTML = '<i class="fa-solid fa-forward me-1"></i>Run All Steps';
+                    return;
+                }
+
+                const actions = [
+                    "GenerateIncomeTax",
+                    "GenerateEOBI",
+                    "GenerateLoanDeduction",
+                    "GeneratePF",
+                    "FetchBonus",
+                    "FetchSalaryAdjustment"
+                ];
+
+                const pendingActions = actions.filter(act => !statusMap[act]);
+
+                if (pendingActions.length === 0) {
+                    runAllBtn.disabled = true;
+                    runAllBtn.innerHTML = '<i class="fa-solid fa-check-double me-1"></i>All Steps Complete';
+                    runAllBtn.className = "btn btn-outline-secondary btn-sm";
+                } else {
+                    runAllBtn.disabled = false;
+                    runAllBtn.innerHTML = `<i class="fa-solid fa-forward me-1"></i>Run All Steps (${pendingActions.length})`;
+                    runAllBtn.className = "btn btn-primary btn-sm";
+                }
+            }
+
+            function resetAllCards() {
+                const hasPeriod = !!periodSelect.value;
+                cards.forEach(card => setCardIdle(card, hasPeriod, false));
+                setSummary(null);
+                updateSalarySlipsButton(null);
+                updateRunAllButtonState(null);
+            }
+
+            async function checkStatus() {
+                const periodId = periodSelect.value;
+                if (!periodId) {
+                    resetAllCards();
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/Execution/GetExecutionStatus?periodId=${periodId}`);
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        resetAllCards();
+                        return;
+                    }
+
+                    // Build a status map from flat PascalCase response
+                    const statusMap = {
+                        GenerateIncomeTax:    !!data.GenerateIncomeTax,
+                        GenerateEOBI:         !!data.GenerateEOBI,
+                        GeneratePF:           !!data.GeneratePF,
+                        GenerateLoanDeduction:!!data.GenerateLoanDeduction,
+                        FetchBonus:           !!data.FetchBonus,
+                        FetchSalaryAdjustment:!!data.FetchSalaryAdjustment,
+                        GenerateSalarySlips:  !!data.GenerateSalarySlips
+                    };
+
+                    cards.forEach(card => {
+                        const action = card.dataset.action;
+                        setCardIdle(card, true, !!statusMap[action]);
+                    });
+
+                    setSummary(statusMap);
+                    updateSalarySlipsButton(statusMap);
+                    updateRunAllButtonState(statusMap);
+                } catch (error) {
+                    console.error("Error checking execution status:", error);
+                    notify("Unable to load execution status for the selected salary period.", "error");
+                    resetAllCards();
+                }
+            }
+
+            async function executeAction(action) {
+                const periodId = periodSelect.value;
+                if (!periodId) {
+                    notify("Please select a target salary period first.", "warning");
+                    periodSelect.focus();
+                    return false;
+                }
+
+                const card = document.querySelector(`[data-action="${action}"]`);
+                if (!card) return false;
+
+                const button = card.querySelector("[data-module-button]");
+                const indicator = card.querySelector("[data-status-indicator]");
+                const note = card.querySelector("[data-status-note]");
+                const config = modules[action];
+
+                if (!button || button.disabled) return false;
+
+                setIndicatorProcessing(indicator, "Processing");
+                if (note) note.textContent = config.processingNote;
+                button.classList.remove("btn-outline-secondary", "is-complete");
+                button.classList.add("is-loading", "loader-white", "btn-primary");
+                button.disabled = true;
+                button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>${config.processingLabel}</span>`;
+
+                try {
+                    const response = await fetch(`/Execution/${action}?periodId=${periodId}`, {
+                        method: "POST",
+                        headers: {
+                            "RequestVerificationToken": token,
+                            "X-Requested-With": "XMLHttpRequest"
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("Server error occurred.");
+                    }
+
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error(data.message || "Execution failed.");
+                    }
+
+                    notify(data.message || "Step completed successfully.", "success");
+
+                    if (action === "GenerateSalarySlips") {
+                        window.location.reload();
+                        return true;
+                    }
+
+                    await checkStatus();
+                    return true;
+                } catch (error) {
+                    console.error(`Execution failed for ${action}:`, error);
+                    notify(error.message || "An error occurred. Please try again.", "error");
+                    await checkStatus();
+                    return false;
+                }
+            }
+
+            async function runAllSteps() {
+                const periodId = periodSelect.value;
+                if (!periodId) {
+                    notify("Please select a target salary period first.", "warning");
+                    periodSelect.focus();
+                    return;
+                }
+
+                if (runAllBtn) {
+                    runAllBtn.disabled = true;
+                    runAllBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i>Running...';
+                }
+
+                const actions = [
+                    "GenerateIncomeTax",
+                    "GenerateEOBI",
+                    "GenerateLoanDeduction",
+                    "GeneratePF",
+                    "FetchBonus",
+                    "FetchSalaryAdjustment"
+                ];
+
+                try {
+                    const response = await fetch(`/Execution/GetExecutionStatus?periodId=${periodId}`);
+                    const data = await response.json();
+                    if (!data.success) {
+                        throw new Error("Unable to retrieve current execution status.");
+                    }
+
+                    const pendingActions = actions.filter(act => !data[act]);
+
+                    if (pendingActions.length === 0) {
+                        notify("All deduction and adjustment steps are already completed!", "success");
+                        return;
+                    }
+
+                    for (const action of pendingActions) {
+                        const success = await executeAction(action);
+                        if (!success) {
+                            notify(`Batch execution stopped because step "${modules[action].idleLabel}" failed.`, "error");
+                            break;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Batch execution failed:", error);
+                    notify("An error occurred during batch execution.", "error");
+                } finally {
+                    checkStatus();
+                }
+            }
+
+            periodSelect.addEventListener("change", checkStatus);
+            if (runAllBtn) {
+                runAllBtn.addEventListener("click", runAllSteps);
+            }
+
+            cards.forEach(card => {
+                const button = card.querySelector("[data-module-button]");
+                const action = card.dataset.action;
+
+                if (button) {
+                    button.addEventListener("click", function () {
+                        if (action === "GenerateSalarySlips") {
+                            const confirmed = confirm("This will generate salary slips, post the period to GL, and lock the payroll cycle. Do you want to continue?");
+                            if (!confirmed) {
+                                return;
+                            }
+                        }
+                        executeAction(action);
+                    });
+                }
+            });
+
+            resetAllCards();
+            const init = periodSelect.value ? checkStatus() : Promise.resolve();
+            init.finally(() => { executionContainer.style.opacity = '1'; });
+        });
+    </script>
+}

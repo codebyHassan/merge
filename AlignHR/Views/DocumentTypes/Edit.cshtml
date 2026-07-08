@@ -1,0 +1,89 @@
+@model AlignHR.Models.DocumentType
+
+@{
+    ViewData["Title"] = "Edit Document Type";
+    ViewBag.ActivePage = "DocumentTypes";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="DocumentTypeID" />
+            <input type="hidden" asp-for="createat" />
+            <input type="hidden" asp-for="createdby" />
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label asp-for="TypeName" class="form-label small fw-semibold">Type Name <span class="text-danger">*</span></label>
+                    <input asp-for="TypeName" class="form-control form-control-sm" required />
+                    <span asp-validation-for="TypeName" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="CategoryID" class="form-label small fw-semibold">Category <span class="text-danger">*</span></label>
+                    <select asp-for="CategoryID" class="form-select form-select-sm" asp-items="ViewBag.CategoryID" required>
+                        <option value="">-- Select Category --</option>
+                    </select>
+                    <span asp-validation-for="CategoryID" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <div class="d-flex align-items-center justify-content-between p-3" style="background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); min-height: 70px;">
+                        <div class="toggle-content">
+                            <div class="toggle-title" style="font-size: 14px; font-weight: 700; color: var(--text);">Active</div>
+                        </div>
+                        <label class="premium-switch m-0">
+                            <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                            <span class="premium-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="d-flex align-items-center justify-content-between p-3" style="background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); min-height: 70px;">
+                        <div class="toggle-content">
+                            <div class="toggle-title" style="font-size: 14px; font-weight: 700; color: var(--text);">Requires Approval</div>
+                            <div class="toggle-desc" style="font-size: 12px; color: var(--text-muted);">Documents of this type need approval.</div>
+                        </div>
+                        <label class="premium-switch m-0">
+                            <input type="checkbox" name="RequiresApproval" value="true" @(Model.RequiresApproval ? "checked" : "") />
+                            <span class="premium-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="d-flex align-items-center justify-content-between p-3" style="background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); min-height: 70px;">
+                        <div class="toggle-content">
+                            <div class="toggle-title" style="font-size: 14px; font-weight: 700; color: var(--text);">Has Expiry Date</div>
+                            <div class="toggle-desc" style="font-size: 12px; color: var(--text-muted);">Documents of this type expire.</div>
+                        </div>
+                        <label class="premium-switch m-0">
+                            <input type="checkbox" name="HasExpiry" value="true" @(Model.HasExpiry ? "checked" : "") />
+                            <span class="premium-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <span class="text-muted small me-auto align-self-center">
+                        ID #@Model.DocumentTypeID
+                    </span>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

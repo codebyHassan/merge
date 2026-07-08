@@ -1,0 +1,506 @@
+@model AlignHR.Models.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+    ViewBag.ActivePage = "Dashboard";
+
+    string AgeClass(string s) => s switch { "ok" => "age-ok", "warn" => "age-warn", _ => "age-late" };
+    string ToneClass(string t) => t switch { "good" => "t-good", "warn" => "t-warn", "crit" => "t-crit", "accent" => "t-accent", _ => "t-muted" };
+
+    var hireTot = Model.HireTotal == 0 ? 1 : Model.HireTotal;
+    var pNew = Model.HireNew * 100 / hireTot;
+    var pRep = Model.HireReplacement * 100 / hireTot;
+    var pTrf = Model.HireTransfer * 100 / hireTot;
+
+    // Leave donut — build conic-gradient from balances
+    var leavePalette = new[] { "#111827", "#6B7280", "#15803D", "#1E40AF", "#B45309", "#B91C1C" };
+    var leaveTotal = Model.LeaveBalances.Sum(b => b.Available);
+    var conic = "";
+    if (leaveTotal > 0)
+    {
+        decimal acc = 0; int ci = 0; var stops = new List<string>();
+        foreach (var b in Model.LeaveBalances.Where(b => b.Available > 0))
+        {
+            var col = string.IsNullOrWhiteSpace(b.ColorCode) ? leavePalette[ci % leavePalette.Length] : b.ColorCode;
+            var from = acc / leaveTotal * 100;
+            acc += b.Available;
+            var to = acc / leaveTotal * 100;
+            stops.Add($"{col} {from.ToString(System.Globalization.CultureInfo.InvariantCulture)}% {to.ToString(System.Globalization.CultureInfo.InvariantCulture)}%");
+            ci++;
+        }
+        conic = string.Join(",", stops);
+    }
+
+    var payMax = Model.PayTrend.Count > 0 ? Model.PayTrend.Max() : 1m;
+    if (payMax <= 0) payMax = 1m;
+}
+
+@section Styles {
+<style>
+    .dash-root {
+        /* Mapped to the app's theme tokens so the dashboard matches the rest of the UI */
+        --d-accent: var(--ahr-accent, #111827);
+        --d-ink: var(--ahr-text, #111827);
+        --d-muted: var(--ahr-text-tertiary, #6b7280);
+        --d-border: var(--ahr-border, #e5e7eb);
+        --d-surface: var(--ahr-card, #ffffff);
+        --d-surface2: var(--ahr-surface-2, #f1f3f5);
+        --d-soft-accent: var(--ahr-surface-2, #f1f3f5);
+        --d-good: var(--ahr-success, #15803d); --d-soft-good: var(--ahr-success-bg, #f0fdf4);
+        --d-crit: var(--ahr-danger, #b91c1c); --d-soft-crit: var(--ahr-danger-bg, #fef2f2);
+        --d-info: var(--ahr-info, #1e40af); --d-soft-info: var(--ahr-info-bg, #eff6ff);
+        --d-warn: #b45309; --d-soft-warn: #fef3c7; /* functional amber for the middle 'aging' state */
+        --d-violet: var(--ahr-accent, #111827); --d-soft-violet: var(--ahr-surface-2, #f1f3f5);
+        --d-mono: var(--ahr-font-mono, ui-monospace, "Cascadia Code", Consolas, monospace);
+    }
+    .dash-root .dash-hero { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
+    .dash-root .dash-hero h1 { font-size:22px; font-weight:800; letter-spacing:-.02em; margin:0; color:var(--d-ink); }
+    .dash-root .dash-hero .sub { font-family:var(--d-mono); font-size:11.5px; color:var(--d-muted); margin-top:4px; text-transform:uppercase; letter-spacing:.03em; }
+
+    /* digest */
+    .dash-root .digest { background:linear-gradient(120deg,var(--d-soft-violet),var(--d-surface)); border:1px solid var(--d-violet); border-left:4px solid var(--d-violet); border-radius:var(--ahr-radius-lg, 10px); padding:14px 18px; display:flex; gap:14px; align-items:flex-start; margin-bottom:16px; }
+    .dash-root .digest .di { width:34px; height:34px; border-radius:9px; background:var(--d-violet); color:#fff; display:grid; place-items:center; flex:none; font-size:16px; }
+    .dash-root .digest .sm { font-family:var(--d-mono); font-size:9px; letter-spacing:.1em; text-transform:uppercase; font-weight:700; color:var(--d-violet); }
+    .dash-root .digest h4 { font-size:14.5px; margin:3px 0; letter-spacing:-.01em; color:var(--d-ink); }
+    .dash-root .digest p { margin:0; font-size:13px; color:var(--d-ink); }
+    .dash-root .digest .t-good{color:var(--d-good);font-weight:700;} .dash-root .digest .t-warn{color:var(--d-warn);font-weight:700;}
+    .dash-root .digest .t-crit{color:var(--d-crit);font-weight:700;} .dash-root .digest .t-accent{color:var(--d-accent);font-weight:700;}
+    .dash-root .digest .t-muted{color:var(--d-ink);font-weight:700;}
+
+    /* kpi */
+    .dash-root .kpi { background:var(--d-surface); border:1px solid var(--d-border); border-radius:var(--ahr-radius-lg, 10px); padding:14px; height:100%; box-shadow:0 1px 2px rgba(15,23,42,.05); }
+    .dash-root .kpi .top { display:flex; align-items:center; justify-content:space-between; }
+    .dash-root .kpi .ic { width:30px; height:30px; border-radius:8px; display:grid; place-items:center; font-size:14px; }
+    .dash-root .kpi .val { font-size:23px; font-weight:800; margin-top:8px; letter-spacing:-.02em; color:var(--d-ink); }
+    .dash-root .kpi .lbl { font-size:11.5px; color:var(--d-muted); margin-top:1px; }
+
+    /* cards */
+    .dash-root .card2 { background:var(--d-surface); border:1px solid var(--d-border); border-radius:var(--ahr-radius-lg, 10px); height:100%; box-shadow:0 1px 2px rgba(15,23,42,.05); display:flex; flex-direction:column; }
+    .dash-root .card2.smart { border:1.5px solid var(--d-violet); }
+    .dash-root .card2.mod { border:1.5px dashed var(--d-accent); }
+    .dash-root .card2-h { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:11px 14px; border-bottom:1px solid var(--d-border); }
+    .dash-root .card2-h .t { font-size:13px; font-weight:700; color:var(--d-ink); display:flex; align-items:center; gap:7px; }
+    .dash-root .card2-h .t i { color:var(--d-accent); }
+    .dash-root .card2-b { padding:14px; flex:1; }
+    .dash-root .tag { font-family:var(--d-mono); font-size:8.5px; letter-spacing:.08em; font-weight:700; text-transform:uppercase; border-radius:5px; padding:2px 6px; white-space:nowrap; }
+    .dash-root .tag.u { color:var(--d-muted); background:var(--d-surface2); border:1px solid var(--d-border); }
+    .dash-root .tag.m { color:var(--d-accent); background:var(--d-soft-accent); border:1px solid var(--d-accent); }
+    .dash-root .tag.s { color:#fff; background:var(--d-accent); border:1px solid var(--d-accent); }
+
+    .dash-root .label { font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--d-muted); }
+    .dash-root .list-row { display:flex; align-items:center; gap:10px; padding:9px 0; }
+    .dash-root .list-row + .list-row { border-top:1px solid var(--d-border); }
+    .dash-root .ric { width:30px; height:30px; border-radius:8px; display:grid; place-items:center; font-size:13px; flex:none; }
+    .dash-root .age { font-family:var(--d-mono); font-size:10px; padding:2px 7px; border-radius:999px; white-space:nowrap; font-weight:700; }
+    .dash-root .age-ok { background:var(--d-soft-good); color:var(--d-good); }
+    .dash-root .age-warn { background:var(--d-soft-warn); color:var(--d-warn); }
+    .dash-root .age-late { background:var(--d-soft-crit); color:var(--d-crit); }
+    .dash-root .tint-accent{background:var(--d-soft-accent);color:var(--d-accent);} .dash-root .tint-info{background:var(--d-soft-info);color:var(--d-info);}
+    .dash-root .tint-good{background:var(--d-soft-good);color:var(--d-good);} .dash-root .tint-violet{background:var(--d-soft-violet);color:var(--d-violet);}
+
+    .dash-root .av { width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-weight:700; font-size:14px; color:#fff; background:linear-gradient(135deg, var(--ahr-text-secondary,#4b5563), var(--d-accent)); flex:none; background-size:cover; background-position:center; }
+    .dash-root .av-sm { width:28px; height:28px; border-radius:50%; font-size:10px; }
+    .dash-root .prog { height:6px; border-radius:999px; background:var(--d-border); overflow:hidden; }
+    .dash-root .prog>span { display:block; height:100%; }
+    .dash-root .kv { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; }
+    .dash-root .kv .v { font-size:12.5px; font-weight:700; color:var(--d-ink); }
+
+    /* donut */
+    .dash-root .donut { width:104px; height:104px; border-radius:50%; flex:none; display:grid; place-items:center; }
+    .dash-root .donut .hole { width:68px; height:68px; border-radius:50%; background:var(--d-surface); display:grid; place-items:center; text-align:center; }
+    .dash-root .donut .hole b { font-size:16px; color:var(--d-ink); } .dash-root .donut .hole span { font-size:8.5px; color:var(--d-muted); display:block; }
+    .dash-root .lgd { display:flex; flex-direction:column; gap:6px; font-size:11.5px; color:var(--d-ink); }
+    .dash-root .lgd .d { width:9px; height:9px; border-radius:3px; display:inline-block; margin-right:6px; }
+
+    /* sparkline */
+    .dash-root .spark { display:flex; align-items:flex-end; gap:5px; height:56px; }
+    .dash-root .spark .b { flex:1; background:linear-gradient(180deg,var(--d-accent),var(--d-soft-accent)); border-radius:3px 3px 0 0; min-width:6px; }
+    .dash-root .spark .b.hi { background:var(--d-accent); }
+
+    /* stacked mix */
+    .dash-root .mix { height:26px; border-radius:7px; overflow:hidden; display:flex; font-size:10px; font-weight:700; color:#fff; }
+    .dash-root .mix>span { display:grid; place-items:center; min-width:0; }
+
+    /* heatmap */
+    .dash-root .heat { display:grid; grid-template-columns:repeat(7,1fr); gap:5px; max-width:340px; }
+    .dash-root .heat .hd { aspect-ratio:1; border-radius:4px; background:var(--d-surface2); border:1px solid var(--d-border); }
+    .dash-root .heat .hd.present { background:var(--d-good); border-color:var(--d-good); }
+    .dash-root .heat .hd.leave { background:var(--d-info); border-color:var(--d-info); }
+    .dash-root .heat .hd.absent { background:var(--d-crit); border-color:var(--d-crit); }
+    .dash-root .heat .hd.off { background:#e5e7eb; border-color:#d1d5db; }
+    .dash-root .heat .hd.future { background:var(--d-surface2); border-color:var(--d-border); opacity:.5; }
+    .dash-root .heat .hd.blank { background:transparent; border-color:transparent; }
+    .dash-root .heat-lgd { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; font-size:11px; color:var(--d-muted); }
+    .dash-root .heat-lgd i { width:10px; height:10px; border-radius:3px; display:inline-block; margin-right:5px; }
+
+    .dash-root .bar-row { display:flex; align-items:center; gap:9px; font-size:12px; padding:5px 0; color:var(--d-ink); }
+    .dash-root .empty { text-align:center; color:var(--d-muted); font-size:12.5px; padding:20px 6px; }
+
+    .dash-root .qa { display:flex; flex-direction:column; align-items:center; gap:7px; text-align:center; padding:14px 8px; border:1px solid var(--d-border); border-radius:11px; background:var(--d-surface2); color:var(--d-ink); font-size:11.5px; font-weight:600; text-decoration:none; transition:border-color .12s; }
+    .dash-root .qa:hover { border-color:var(--d-accent); }
+    .dash-root .qa i { font-size:18px; color:var(--d-accent); }
+    .dash-root .qa.primary { background:var(--d-accent); border-color:var(--d-accent); color:#fff; }
+    .dash-root .qa.primary i { color:#fff; }
+    .dash-root .min0 { min-width:0; }
+    .dash-root .chart-box { position:relative; height:210px; }
+    .dash-root .st { font-family:var(--d-mono); font-size:10px; padding:2px 9px; border-radius:999px; font-weight:700; white-space:nowrap; }
+    .dash-root .st-in { background:var(--d-soft-good); color:var(--d-good); }
+    .dash-root .st-leave { background:var(--d-soft-info); color:var(--d-info); }
+    .dash-root .st-off { background:#f1f5f9; color:#64748b; }
+    .dash-root .st-absent { background:var(--d-soft-crit); color:var(--d-crit); }
+    .dash-root .team-item { display:flex; align-items:center; gap:9px; border:1px solid var(--d-border); border-radius:10px; padding:8px 10px; height:100%; }
+</style>
+}
+
+<div class="dash-root">
+
+    @* ── Greeting ── *@
+    <div class="dash-hero">
+        <div>
+            <h1>Good @(DateTime.Now.Hour < 12 ? "morning" : DateTime.Now.Hour < 17 ? "afternoon" : "evening"), @Model.GreetingName 👋</h1>
+            <div class="sub">
+                @DateTime.Now.ToString("dddd, dd MMM yyyy")
+                @if (!string.IsNullOrWhiteSpace(Model.Role)) { <text>· @Model.Role</text> }
+                @if (Model.Me?.Department != null) { <text>· @Model.Me.Department</text> }
+            </div>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            @foreach (var qa in Model.QuickActions.Take(2))
+            {
+                <a class="btn btn-sm @(qa.Primary ? "btn-primary" : "btn-secondary")" asp-controller="@qa.Controller" asp-action="@qa.Action">
+                    <i class="bi @qa.Icon"></i> @qa.Label
+                </a>
+            }
+        </div>
+    </div>
+
+    @* ── Smart digest ── *@
+    <div class="digest">
+        <div class="di">✨</div>
+        <div>
+            <div class="sm">Smart digest · composed at login</div>
+            <h4>Here's your day at a glance</h4>
+            <p>
+                You have @for (int i = 0; i < Model.Digest.Count; i++)
+                {
+                    <span class="@ToneClass(Model.Digest[i].Tone)">@Model.Digest[i].Text</span>@(i < Model.Digest.Count - 1 ? (i == Model.Digest.Count - 2 ? ", and " : ", ") : ".")
+                }
+            </p>
+        </div>
+    </div>
+
+    @* ── KPI strip ── *@
+    <div class="row g-3 mb-1">
+        <div class="col-6 col-xl-3">
+            <div class="kpi"><div class="top"><span class="label">Universal</span><span class="ic tint-info"><i class="bi bi-people"></i></span></div>
+                <div class="val">@Model.TotalEmployees</div><div class="lbl">@Model.ActiveEmployees active employees</div></div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi"><div class="top"><span class="label">Universal</span><span class="ic tint-good"><i class="bi bi-person-plus"></i></span></div>
+                <div class="val">@Model.NewHiresThisMonth</div><div class="lbl">New hires this month</div></div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi"><div class="top"><span class="label">Smart</span><span class="ic tint-violet"><i class="bi bi-clipboard-check"></i></span></div>
+                <div class="val">@Model.PendingApprovalsCount</div><div class="lbl">Approvals awaiting you</div></div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="kpi"><div class="top"><span class="label">Universal</span><span class="ic tint-accent"><i class="bi bi-calendar-x"></i></span></div>
+                <div class="val">@Model.OnLeaveToday</div><div class="lbl">On leave today</div></div>
+        </div>
+    </div>
+
+    <div class="row g-3 mt-0">
+        @* ── Approvals inbox ── *@
+        <div class="col-12 col-xl-8">
+            <div class="card2 smart">
+                <div class="card2-h"><span class="t"><i class="bi bi-inbox"></i> Approvals Inbox</span><span class="tag s">Smart · unified</span></div>
+                <div class="card2-b">
+                    @if (Model.Approvals.Any())
+                    {
+                        @foreach (var a in Model.Approvals)
+                        {
+                            <div class="list-row">
+                                <span class="ric tint-violet"><i class="bi @a.Icon"></i></span>
+                                <div class="flex-grow-1 min0">
+                                    <div class="fw-semibold text-truncate" style="font-size:13px;">@a.Title</div>
+                                    <div class="text-truncate" style="font-size:11.5px;color:var(--d-muted);">@a.Kind · @a.Subtitle</div>
+                                </div>
+                                <span class="age @AgeClass(a.Severity)">@a.AgeLabel</span>
+                                <a class="btn btn-icon btn-sm" asp-controller="@a.Controller" asp-action="@a.Action" title="Open"><i class="bi bi-arrow-right"></i></a>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty"><i class="bi bi-check2-circle" style="font-size:26px;color:var(--d-good);"></i><div class="mt-2">You're all caught up — no approvals waiting.</div></div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* ── My snapshot ── *@
+        <div class="col-12 col-xl-4">
+            <div class="card2">
+                <div class="card2-h"><span class="t"><i class="bi bi-person-badge"></i> My Snapshot</span><span class="tag u">Universal</span></div>
+                <div class="card2-b">
+                    @if (Model.Me != null)
+                    {
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="av" @(string.IsNullOrEmpty(Model.Me.ProfileImage) ? "" : $"style=background-image:url('/uploads/employees/{Model.Me.ProfileImage}')")>@(string.IsNullOrEmpty(Model.Me.ProfileImage) ? Model.Me.Initials : "")</div>
+                            <div class="min0"><div class="fw-bold text-truncate">@Model.Me.FullName</div><div class="text-truncate" style="font-size:12px;color:var(--d-muted);">@(Model.Me.Designation ?? Model.Me.Department ?? "—")</div></div>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <div class="prog flex-grow-1"><span style="width:@Model.Me.ProfileCompleteness%;background:var(--d-good);"></span></div>
+                            <span class="label">@Model.Me.ProfileCompleteness%</span>
+                        </div>
+                        <div class="kv">
+                            <div><div class="label">Employee</div><div class="v">@Model.Me.Code</div></div>
+                            <div><div class="label">Tenure</div><div class="v">@Model.Me.TenureYears yrs</div></div>
+                            <div><div class="label">Department</div><div class="v text-truncate">@(Model.Me.Department ?? "—")</div></div>
+                            <div><div class="label">Location</div><div class="v text-truncate">@(Model.Me.Location ?? "—")</div></div>
+                        </div>
+                    }
+                    else { <div class="empty">Your login isn't linked to an employee record.</div> }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Team availability (managers only) ── *@
+    @if (Model.ShowTeam)
+    {
+        <div class="row g-3 mt-0">
+            <div class="col-12">
+                <div class="card2 smart">
+                    <div class="card2-h">
+                        <span class="t"><i class="bi bi-people-fill"></i> Team Availability · Today</span>
+                        <span class="d-flex align-items-center gap-2">
+                            <span class="st st-in">In @Model.TeamIn</span>
+                            <span class="st st-leave">Leave @Model.TeamLeave</span>
+                            <span class="st st-absent">Absent @Model.TeamAbsent</span>
+                            <span class="tag s">Smart · your reports</span>
+                        </span>
+                    </div>
+                    <div class="card2-b">
+                        <div class="row g-2">
+                            @foreach (var m in Model.Team)
+                            {
+                                <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                                    <div class="team-item">
+                                        <span class="av av-sm" @(string.IsNullOrEmpty(m.ProfileImage) ? "" : $"style=background-image:url('/uploads/employees/{m.ProfileImage}')")>@(string.IsNullOrEmpty(m.ProfileImage) ? m.Initials : "")</span>
+                                        <div class="flex-grow-1 min0"><div class="fw-semibold text-truncate" style="font-size:12.5px;">@m.Name</div></div>
+                                        <span class="st st-@m.Status">@m.Label</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="row g-3 mt-0">
+        @* ── Company pulse / dept donut ── *@
+        <div class="col-12 col-xl-8">
+            <div class="card2">
+                <div class="card2-h"><span class="t"><i class="bi bi-bar-chart"></i> Workforce</span><span class="tag u">Universal</span></div>
+                <div class="card2-b">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-12 col-md-7"><div class="chart-box"><canvas id="deptChart" aria-label="Department distribution" role="img"></canvas></div></div>
+                        <div class="col-12 col-md-5">
+                            @if (Model.HasHireHistory)
+                            {
+                                <div class="label mb-2">Hire-type mix · @DateTime.Now.Year</div>
+                                <div class="mix mb-2">
+                                    @if (Model.HireNew > 0) { <span style="width:@pNew%;background:var(--ahr-accent);">@Model.HireNew</span> }
+                                    @if (Model.HireReplacement > 0) { <span style="width:@pRep%;background:var(--ahr-text-tertiary);">@Model.HireReplacement</span> }
+                                    @if (Model.HireTransfer > 0) { <span style="width:@pTrf%;background:var(--ahr-info);">@Model.HireTransfer</span> }
+                                </div>
+                                <div class="lgd">
+                                    <span><span class="d" style="background:var(--ahr-accent);"></span>New · @Model.HireNew</span>
+                                    <span><span class="d" style="background:var(--ahr-text-tertiary);"></span>Replacement · @Model.HireReplacement</span>
+                                    <span><span class="d" style="background:var(--ahr-info);"></span>Transfer · @Model.HireTransfer</span>
+                                </div>
+                            }
+                            else { <div class="empty">No hires recorded yet this year.</div> }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @* ── Celebrations ── *@
+        <div class="col-12 col-xl-4">
+            <div class="card2 smart">
+                <div class="card2-h"><span class="t"><i class="bi bi-stars"></i> Celebrations</span><span class="tag s">Smart</span></div>
+                <div class="card2-b">
+                    @if (Model.Anniversaries.Any() || Model.NewJoiners.Any())
+                    {
+                        @foreach (var c in Model.Anniversaries)
+                        {
+                            <div class="list-row"><span class="av av-sm">@c.Initials</span>
+                                <div class="flex-grow-1 min0"><div class="fw-semibold text-truncate" style="font-size:12.5px;">@c.Name</div><div style="font-size:11px;color:var(--d-muted);">Work anniversary</div></div>
+                                <span class="age age-warn">@c.Years yr@(c.Years == 1 ? "" : "s")</span></div>
+                        }
+                        @foreach (var c in Model.NewJoiners)
+                        {
+                            <div class="list-row"><span class="av av-sm" style="background:linear-gradient(135deg,#15803d,#4ade80);">@c.Initials</span>
+                                <div class="flex-grow-1 min0"><div class="fw-semibold text-truncate" style="font-size:12.5px;">@c.Name</div><div style="font-size:11px;color:var(--d-muted);">New joiner @(c.Department != null ? "· " + c.Department : "")</div></div>
+                                <span class="age age-ok">New</span></div>
+                        }
+                    }
+                    else { <div class="empty">No anniversaries or new joiners this month.</div> }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Module row: leave donut · pay trend · expiry radar ── *@
+    @if (Model.ShowLeave || Model.ShowPayroll || Model.ShowDocuments)
+    {
+        <div class="row g-3 mt-0">
+            @if (Model.ShowLeave)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card2 mod">
+                        <div class="card2-h"><span class="t"><i class="bi bi-airplane"></i> Leave Balance</span><span class="tag m">Leave</span></div>
+                        <div class="card2-b">
+                            <div class="d-flex gap-3 align-items-center">
+                                <div class="donut" style="@(string.IsNullOrEmpty(conic) ? "background:var(--d-border);" : $"background:conic-gradient({conic});")">
+                                    <div class="hole"><b>@leaveTotal.ToString("0.#")</b><span>days left</span></div>
+                                </div>
+                                <div class="lgd">
+                                    @{ int li = 0; }
+                                    @foreach (var b in Model.LeaveBalances.Where(x => x.Available > 0))
+                                    {
+                                        var col = string.IsNullOrWhiteSpace(b.ColorCode) ? leavePalette[li % leavePalette.Length] : b.ColorCode;
+                                        li++;
+                                        <span><span class="d" style="background:@col;"></span>@b.TypeName · @b.Available.ToString("0.#")</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.ShowPayroll)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card2 mod">
+                        <div class="card2-h"><span class="t"><i class="bi bi-cash-stack"></i> Net Pay Trend</span><span class="tag m">Payroll</span></div>
+                        <div class="card2-b">
+                            <div class="spark">
+                                @for (int i = 0; i < Model.PayTrend.Count; i++)
+                                {
+                                    var h = (int)(Model.PayTrend[i] / payMax * 100);
+                                    if (h < 6) { h = 6; }
+                                    <span class="b @(i == Model.PayTrend.Count - 1 ? "hi" : "")" style="height:@h%;"></span>
+                                }
+                            </div>
+                            <div class="d-flex justify-content-between mt-2" style="font-size:11.5px;">
+                                <span class="label">Last @Model.PayTrend.Count payslips</span><b style="color:var(--d-ink);">@Model.LatestNetPay.ToString("N0")</b>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.ShowDocuments)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="card2 smart">
+                        <div class="card2-h"><span class="t"><i class="bi bi-hourglass-split"></i> Expiry Radar</span><span class="tag s">Smart</span></div>
+                        <div class="card2-b">
+                            @foreach (var d in Model.ExpiringDocs)
+                            {
+                                <div class="list-row">
+                                    <div class="flex-grow-1 min0"><div class="fw-semibold text-truncate" style="font-size:12.5px;">@d.Title</div><div style="font-size:11px;color:var(--d-muted);">@(d.Type ?? "Document")</div></div>
+                                    <span class="age @AgeClass(d.Severity)">@d.DaysLeft d</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @* ── Attendance heatmap ── *@
+    @if (Model.ShowHeatmap)
+    {
+        <div class="row g-3 mt-0">
+            <div class="col-12">
+                <div class="card2 smart">
+                    <div class="card2-h"><span class="t"><i class="bi bi-grid-3x3"></i> Attendance Heatmap · @DateTime.Now.ToString("MMMM")</span><span class="tag s">Smart</span></div>
+                    <div class="card2-b">
+                        <div class="d-flex flex-wrap gap-4 align-items-center">
+                            <div>
+                                <div class="heat">
+                                    @{ var firstDow = (int)new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).DayOfWeek; }
+                                    @for (int i = 0; i < firstDow; i++) { <span class="hd blank"></span> }
+                                    @foreach (var hd in Model.Heatmap) { <span class="hd @hd.State" title="@hd.Day"></span> }
+                                </div>
+                                <div class="heat-lgd">
+                                    <span><i style="background:var(--d-good);"></i>Present @Model.HeatPresent</span>
+                                    <span><i style="background:#2563eb;"></i>Leave @Model.HeatLeave</span>
+                                    <span><i style="background:var(--d-crit);"></i>Absent @Model.HeatAbsent</span>
+                                    <span><i style="background:#e5e7eb;"></i>Off</span>
+                                </div>
+                            </div>
+                            @if (Model.AttToday != null)
+                            {
+                                <div class="d-flex gap-4">
+                                    <div><div class="label">Today in</div><div class="fw-bold" style="font-size:19px;color:var(--d-ink);">@(Model.AttToday.CheckIn ?? "—")</div></div>
+                                    <div><div class="label">Today out</div><div class="fw-bold" style="font-size:19px;color:var(--d-ink);">@(Model.AttToday.CheckOut ?? "—")</div></div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ── Quick actions ── *@
+    @if (Model.QuickActions.Any())
+    {
+        <div class="row g-3 mt-0">
+            <div class="col-12">
+                <div class="card2">
+                    <div class="card2-h"><span class="t"><i class="bi bi-grid"></i> Quick Actions</span><span class="tag u">Permission-aware</span></div>
+                    <div class="card2-b">
+                        <div class="row g-2">
+                            @foreach (var qa in Model.QuickActions)
+                            {
+                                <div class="col-4 col-md-3 col-xl-2">
+                                    <a class="qa @(qa.Primary ? "primary" : "")" asp-controller="@qa.Controller" asp-action="@qa.Action"><i class="bi @qa.Icon"></i><span>@qa.Label</span></a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+<script>
+    (function () {
+        var el = document.getElementById('deptChart');
+        if (!el || typeof Chart === 'undefined') return;
+        var labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DeptLabels));
+        var data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DeptData));
+        if (!labels.length) { el.parentElement.innerHTML = '<div style="text-align:center;color:#64748b;font-size:12.5px;padding:20px;">No department data yet.</div>'; return; }
+        var palette = ['#111827','#6B7280','#15803D','#1E40AF','#B45309','#B91C1C','#4B5563','#9CA3AF'];
+        new Chart(el, {
+            type: 'doughnut',
+            data: { labels: labels, datasets: [{ data: data, backgroundColor: palette, borderWidth: 0 }] },
+            options: { responsive: true, maintainAspectRatio: false, cutout: '62%',
+                plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 } } } } }
+        });
+    })();
+</script>
+}

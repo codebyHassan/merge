@@ -1,0 +1,60 @@
+@model AlignHR.Models.MasterLoanAdvance
+
+<div class="form-grid animate-fade-in">
+    <div class="form-item">
+        <label asp-for="RequestDate" class="form-label">Request Date <span class="required">*</span></label>
+        <input asp-for="RequestDate" type="date" class="form-control" required />
+    </div>
+    <div class="form-item">
+        <label asp-for="TotalAmount" class="form-label">Advance Amount <span class="required">*</span></label>
+        <input asp-for="TotalAmount" type="number" step="0.01" class="form-control" placeholder="0.00" required id="salaryAdvanceAmount" />
+        <span asp-validation-for="TotalAmount" class="text-danger" style="font-size: 0.8rem;"></span>
+        <span id="salaryAdvanceError" class="text-danger" style="font-size: 0.8rem; display: none; margin-top: 4px;"></span>
+    </div>
+    <div class="form-item full-width">
+        <label asp-for="Reason" class="form-label">Reason</label>
+        <textarea asp-for="Reason" class="form-control" rows="3" placeholder="Enter reason for salary advance..."></textarea>
+    </div>
+
+    <div class="form-item full-width" style="margin-top: 1rem;">
+        <div style="display: flex; align-items: center; gap: 1rem; background: #FAFAF9; padding: 1rem; border-radius: 8px; border: 1px solid #F9FAFB;">
+            <label class="premium-switch">
+                <input asp-for="LoanDetuction" type="checkbox" />
+                <span class="premium-slider"></span>
+            </label>
+            <div>
+                <label asp-for="LoanDetuction" style="font-weight: 700; color: #1F2937; cursor: pointer; display: block; margin-bottom: 0;">Stop Deduction</label>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function validateSalaryAdvance() {
+        const amount = parseFloat(document.getElementById('salaryAdvanceAmount').value) || 0;
+        const grossSalary = parseFloat(document.getElementById('hdnGrossSalary')?.value) || 0;
+        const limit = grossSalary * 0.5;
+        const amountField = document.getElementById('salaryAdvanceAmount');
+        const errorSpan = document.getElementById('salaryAdvanceError');
+        
+        if (grossSalary > 0 && amount > limit) {
+            amountField.style.borderColor = '#ef4444';
+            amountField.style.backgroundColor = '#fef2f2';
+            if (errorSpan) {
+                errorSpan.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Exceeds 50% of Gross Salary (Limit: ${limit.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})})`;
+                errorSpan.style.display = 'block';
+            }
+        } else {
+            amountField.style.borderColor = '#e2e8f0';
+            amountField.style.backgroundColor = '';
+            if (errorSpan) {
+                errorSpan.style.display = 'none';
+            }
+        }
+    }
+
+    document.getElementById('salaryAdvanceAmount')?.addEventListener('input', validateSalaryAdvance);
+    
+    // Run once on load for edit mode
+    validateSalaryAdvance();
+</script>

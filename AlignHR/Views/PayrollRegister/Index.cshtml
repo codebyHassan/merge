@@ -1,0 +1,103 @@
+@model IEnumerable<AlignHR.Models.SalarySlipMaster>
+@{
+    ViewData["Title"] = "Payroll Register";
+    ViewBag.ActivePage = "PayrollRegister";
+}
+
+@section Styles {
+    <style>
+        .payroll-register-filterbar {
+            flex-wrap: nowrap;
+        }
+
+        .payroll-register-filterbar .filter-group {
+            flex-wrap: nowrap;
+            flex: 1 1 auto;
+        }
+
+        .payroll-register-filterbar .input-group {
+            flex-wrap: nowrap;
+        }
+
+        .payroll-register-search {
+            flex: 0 0 260px;
+            max-width: 260px;
+            margin-left: auto;
+        }
+
+        @@media (max-width: 991.98px) {
+            .payroll-register-filterbar {
+                flex-wrap: wrap;
+            }
+
+            .payroll-register-filterbar .filter-group {
+                flex-wrap: wrap;
+            }
+
+            .payroll-register-search {
+                flex: 1 1 100%;
+                max-width: 100%;
+                margin-left: 0;
+            }
+        }
+    </style>
+}
+
+<section class="filter-bar mb-2 payroll-register-filterbar" aria-label="Payroll Register filters">
+    <div class="filter-group">
+        <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+            <select name="periodId" class="form-select form-select-sm"
+                    hx-get="/PayrollRegister/Index"
+                    hx-target="#register-container"
+                    hx-trigger="change"
+                    hx-include="[name='departmentId'], [name='search']">
+                <option value="">Select Period</option>
+                @foreach (var period in ViewBag.Periods)
+                {
+                    <option value="@period.SalaryPeriodID" selected="@(ViewBag.SelectedPeriod != null && ViewBag.SelectedPeriod == period.SalaryPeriodID)">
+                        @period.PeriodName
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="input-group input-group-sm">
+            <span class="input-group-text"><i class="fas fa-building"></i></span>
+            <select name="departmentId" class="form-select form-select-sm"
+                    hx-get="/PayrollRegister/Index"
+                    hx-target="#register-container"
+                    hx-trigger="change"
+                    hx-include="[name='periodId'], [name='search']">
+                <option value="">All Departments</option>
+                @foreach (var dept in ViewBag.Departments)
+                {
+                    <option value="@dept.Id" selected="@(ViewBag.SelectedDepartment != null && ViewBag.SelectedDepartment == dept.Id)">
+                        @dept.Name
+                    </option>
+                }
+            </select>
+        </div>
+    </div>
+
+    <div class="input-group input-group-sm payroll-register-search">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="search"
+               placeholder="Search name or ID..."
+               hx-get="/PayrollRegister/Index"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-target="#register-container"
+               hx-include="[name='periodId'], [name='departmentId']"
+               hx-indicator=".search-indicator"
+               form="none" />
+        <div class="htmx-indicator search-indicator">
+            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+        </div>
+    </div>
+</section>
+
+<section class="table-shell" id="register-container">
+    @await Html.PartialAsync("_SlipsList", Model)
+</section>

@@ -1,0 +1,78 @@
+@model List<AlignHR.Models.DocApprovalInstanceStep>
+@{
+    ViewData["Title"] = "Approval History";
+    ViewBag.ActivePage = "DocApprovalHistory";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1 fw-bold text-dark">Approval History</h4>
+            <p class="text-muted small mb-0">Last 50 documents you approved or rejected.</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-inbox me-1"></i>Back to Inbox
+        </a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 border rounded bg-white shadow-sm">
+            <i class="fa-regular fa-folder-open text-secondary display-4 mb-3"></i>
+            <h5 class="fw-semibold">No history yet.</h5>
+        </div>
+    }
+    else
+    {
+        <div class="table-shell">
+            <div class="erp-table-wrap">
+                <table class="table table-hover erp-table">
+                    <thead>
+                        <tr>
+                            <th>Document</th>
+                            <th>Type</th>
+                            <th>Step</th>
+                            <th>Action</th>
+                            <th>Date</th>
+                            <th>Comments</th>
+                            <th class="text-end">Open</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var step in Model)
+                        {
+                            var doc = step.Instance?.Document;
+                            var actionClass = step.Action switch {
+                                "Approved" => "bg-success bg-opacity-10 text-success",
+                                "Rejected" => "bg-danger bg-opacity-10 text-danger",
+                                "Skipped"  => "bg-secondary bg-opacity-10 text-secondary",
+                                _          => "bg-light"
+                            };
+                            <tr>
+                                <td><span class="fw-semibold">@(doc?.Title ?? "—")</span><br /><span class="text-muted small">@doc?.DocumentNo</span></td>
+                                <td class="text-muted small">@(doc?.DocumentType?.TypeName ?? "—")</td>
+                                <td>
+                                    <span class="text-muted small">@(step.TemplateStep?.StepLabel ?? $"Step {step.StepNo}")</span>
+                                </td>
+                                <td><span class="badge @actionClass">@step.Action</span></td>
+                                <td class="text-muted small">@step.ActionAt?.ToString("MMM dd, yyyy HH:mm")</td>
+                                <td class="text-muted small" style="max-width:200px;">@step.Comments</td>
+                                <td class="text-end">
+                                    @if (doc != null)
+                                    {
+                                        <a asp-controller="Documents"
+                                           asp-action="Edit"
+                                           asp-route-id="@doc.DocumentID"
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fa-solid fa-pen-to-square me-1"></i>Open
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

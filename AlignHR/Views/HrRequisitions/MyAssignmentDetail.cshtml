@@ -1,0 +1,146 @@
+@model AlignHR.Models.HrMyAssignmentViewModel
+
+@{
+    ViewData["Title"] = "Assignment — " + Model.RequisitionNo;
+    ViewBag.ActivePage = "HrMyAssignments";
+    ViewData["BreadcrumbParent"] = "My Assignments";
+    ViewData["BreadcrumbParentUrl"] = Url.Action("MyAssignments", "HrRequisitions");
+
+    var statusClass = Model.RequisitionStatus switch
+    {
+        "Approved"  => "badge-success",
+        "Submitted" => "badge-warning",
+        "Rejected"  => "badge-danger",
+        "Cancelled" => "badge-danger",
+        _           => "badge-secondary"
+    };
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <div class="fw-semibold">@(Model.RequisitionNo ?? "—")</div>
+                <div class="small text-muted">@(Model.PositionTitle ?? "—")</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa-solid fa-arrow-left me-1"></i>Back
+                </a>
+                @if (Model.RequisitionStatus == "Approved")
+                {
+                    <a asp-controller="HrJobPostings" asp-action="Create"
+                       asp-route-requisitionId="@Model.RequisitionId"
+                       class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-briefcase me-1"></i>Create Job Posting
+                    </a>
+                }
+            </div>
+        </div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="form-label">Status</div>
+                <div><span class="status-badge @statusClass">@(Model.RequisitionStatus ?? "—")</span></div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="form-label">Department</div>
+                <div class="form-control form-control-sm bg-body-secondary">@(Model.DepartmentName ?? "—")</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="form-label">Type</div>
+                <div class="form-control form-control-sm bg-body-secondary">@(Model.RequisitionType ?? "—")</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="form-label">Nature</div>
+                <div class="form-control form-control-sm bg-body-secondary">@(Model.Nature ?? "—")</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="form-label">Budget / Month</div>
+                <div class="form-control form-control-sm bg-body-secondary">
+                    @(Model.BudgetAmountPerMonth.HasValue ? Model.BudgetAmountPerMonth.Value.ToString("N0") : "—")
+                </div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="form-label">Assigned Date</div>
+                <div class="form-control form-control-sm bg-body-secondary">@(Model.AssignedDate?.ToString("dd MMM yyyy") ?? "—")</div>
+            </div>
+            <div class="col-12 col-sm-6 col-md-3">
+                <div class="form-label">Assigned By</div>
+                <div class="form-control form-control-sm bg-body-secondary">@(Model.AssignedByName ?? "—")</div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Notes))
+            {
+                <div class="col-12">
+                    <div class="form-label">Notes</div>
+                    <div class="form-control form-control-sm bg-body-secondary" style="min-height:48px;white-space:pre-wrap">@Model.Notes</div>
+                </div>
+            }
+        </div>
+
+        @if (Model.Skills.Any())
+        {
+            <div class="d-flex align-items-center mt-3 mb-2 pb-2" style="border-bottom:1px solid var(--erp-border)">
+                <span style="font-size:0.72rem;font-weight:700;color:var(--erp-muted-strong);text-transform:uppercase;letter-spacing:0.05em">Required Skills</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="small">Skill</th>
+                            <th class="small text-center" style="width:110px">Years Exp.</th>
+                            <th class="small text-center" style="width:90px">Mandatory</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var skill in Model.Skills)
+                        {
+                            <tr>
+                                <td class="small">@skill.SkillName</td>
+                                <td class="small text-center">@(skill.YearsExperience?.ToString("0.#") ?? "—")</td>
+                                <td class="small text-center">
+                                    @if (skill.IsMandatory)
+                                    {
+                                        <i class="fa-solid fa-check text-success"></i>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (Model.Offerings.Any())
+        {
+            <div class="d-flex align-items-center mt-4 mb-2 pb-2" style="border-bottom:1px solid var(--erp-border)">
+                <span style="font-size:0.72rem;font-weight:700;color:var(--erp-muted-strong);text-transform:uppercase;letter-spacing:0.05em">Company Offerings</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="small" style="width:220px">Offering</th>
+                            <th class="small">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var offering in Model.Offerings)
+                        {
+                            <tr>
+                                <td class="small">@offering.OfferingName</td>
+                                <td class="small text-muted">@(offering.Description ?? "—")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+    </div>
+</div>

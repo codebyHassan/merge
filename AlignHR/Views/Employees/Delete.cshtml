@@ -1,0 +1,142 @@
+@model AlignHR.Models.Employee
+@{
+    ViewData["Title"] = "Delete Employee";
+    ViewBag.ActivePage = "Employees";
+}
+
+<section class="record-toolbar mb-2">
+    <div>
+        <h2 class="h6 fw-bold mb-0">Delete Employee</h2>
+        <div class="text-muted small">Review and confirm permanent deletion of this employee record.</div>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline-secondary btn-sm" asp-action="Index">Cancel</a>
+        <form asp-action="Delete" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash-can"></i> Confirm Delete</button>
+        </form>
+    </div>
+</section>
+
+<div class="employee-create-grid">
+    <aside class="employee-profile-panel">
+        <div class="profile-card-compact">
+            <div class="profile-avatar-upload" style="pointer-events: none;">
+                @if (!string.IsNullOrEmpty(Model.ProfileImage))
+                {
+                    <span style="background-image: url('/uploads/employees/@Model.ProfileImage'); background-size: cover; background-position: center;"></span>
+                }
+                else
+                {
+                    <span>@(Model.FirstName?.Substring(0, 1))@(Model.LastName?.Substring(0, 1))</span>
+                }
+            </div>
+            <div>
+                <strong>@Model.FirstName @Model.LastName</strong>
+                <span>@Model.Code</span>
+            </div>
+        </div>
+
+        <div class="readiness-card" style="border-color: var(--bs-danger); background: rgba(var(--bs-danger-rgb), 0.03);">
+            <div class="readiness-header">
+                <span style="color: var(--bs-danger);"><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</span>
+            </div>
+            <ul class="requirement-list">
+                <li><i class="fa-solid fa-circle-exclamation" style="color: var(--bs-danger);"></i> This action is irreversible</li>
+                <li><i class="fa-solid fa-circle-exclamation" style="color: var(--bs-danger);"></i> All linked records may be affected</li>
+                <li><i class="fa-solid fa-circle-exclamation" style="color: var(--bs-danger);"></i> Payroll history will be preserved</li>
+            </ul>
+        </div>
+
+        <div class="policy-note">
+            <strong>HR policy</strong>
+            <span>Employee deletion is audited. Consider ending service instead of deleting the record.</span>
+        </div>
+    </aside>
+
+    <main class="form-shell employee-form-main">
+        <div class="form-section">
+            <button class="form-section-header" type="button" data-bs-toggle="collapse" data-bs-target="#identitySection" aria-expanded="true">
+                Identity & Contact <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="collapse show" id="identitySection">
+                <div class="form-section-body">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Employee Code</label>
+                            <div class="form-control-plaintext fw-semibold">@Model.Code</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">First Name</label>
+                            <div class="form-control-plaintext">@Model.FirstName</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Last Name</label>
+                            <div class="form-control-plaintext">@Model.LastName</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Reporting Manager</label>
+                            <div class="form-control-plaintext">@(Model.LineManagerEmpNo ?? "—")</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Leave Approver</label>
+                            <div class="form-control-plaintext">@(Model.LeaveApproverEmpNo ?? "—")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <button class="form-section-header" type="button" data-bs-toggle="collapse" data-bs-target="#employmentSection" aria-expanded="true">
+                Employment Structure <i class="fa-solid fa-chevron-down"></i>
+            </button>
+            <div class="collapse show" id="employmentSection">
+                <div class="form-section-body">
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Department</label>
+                            <div class="form-control-plaintext">@(Model.Department?.Name ?? "—")</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Designation</label>
+                            <div class="form-control-plaintext">@(Model.Designation?.Name ?? "—")</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Joining Date</label>
+                            <div class="form-control-plaintext fw-semibold">@Model.Dateofjoin.ToString("dd MMM yyyy")</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Employment Type</label>
+                            <div class="form-control-plaintext">@(Model.EmploymentType?.Name ?? "—")</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Employment Status</label>
+                            <div class="form-control-plaintext">@(Model.EmploymentStatus?.Name ?? "—")</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Work Location</label>
+                            <div class="form-control-plaintext">@(Model.Location?.Name ?? "—")</div>
+                        </div>
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted">Salary Status</label>
+                            <div class="form-control-plaintext">
+                                <span class="badge @(Model.SalaryStatus == "Active" ? "bg-success" : "bg-danger") bg-opacity-10 @(Model.SalaryStatus == "Active" ? "text-success" : "text-danger")">@Model.SalaryStatus</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions-sticky">
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Index"><i class="fa-solid fa-arrow-left"></i> Cancel</a>
+            <form asp-action="Delete" method="post" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="Id" />
+                <button type="submit" class="btn btn-danger btn-sm"><i class="fa-solid fa-trash-can"></i> Confirm Delete</button>
+            </form>
+        </div>
+    </main>
+</div>

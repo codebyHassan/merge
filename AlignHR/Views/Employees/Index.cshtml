@@ -1,0 +1,264 @@
+@model IPagedList<AlignHR.Models.Employee>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Employees";
+    ViewBag.ActivePage = "Employees";
+    var usersByEmpId = ViewBag.UsersByEmployeeId as Dictionary<int, string> ?? new Dictionary<int, string>();
+}
+
+<section class="filter-bar mb-2" aria-label="Employees filters">
+    <div class="input-group input-group-sm me-auto" style="width: auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="search"
+               value="@Context.Request.Query["search"]"
+               placeholder="Search employee"
+               aria-label="Search records"
+               hx-get="@Url.Action("Index")"
+               hx-target="#employee-index-page"
+               hx-select="#employee-index-page"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-include="[name='search'], [name='departmentId'], [name='subDepartmentId'], [name='gradeId'], [name='divisionId'], [name='status']"
+               hx-push-url="true"
+               form="none" />
+    </div>
+    <div class="filter-group">
+        <div class="dropdown">
+            <button class="btn btn-export-custom btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
+                Columns
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Code" checked />Code</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Name" checked />Name</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="RepToEmp" checked />RepToEmp</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Department" checked />Department</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Sub-Dept" checked />Sub-Dept</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Designation" checked />Designation</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Grade" />Grade</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Location" />Location</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Employment Type" />Employment Type</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Join Date" checked />Join Date</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Priority" />Priority</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Status" checked />Status</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="User" />User</label></li>
+            </ul>
+        </div>
+        <button class="btn btn-export-custom btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFiltersCollapse"><i class="fa-solid fa-filter me-1"></i>Advanced</button>
+        <a class="btn btn-export-custom btn-sm" id="exportBtn" href="#"><i class="fa-solid fa-download me-1"></i>Export</a>
+        <a class="btn btn-primary btn-sm" asp-action="Create"><i class="fa-solid fa-plus me-1"></i>Create</a>
+    </div>
+</section>
+
+<div class="collapse @(Context.Request.Query["departmentId"].ToString() != "" || Context.Request.Query["subDepartmentId"].ToString() != "" || Context.Request.Query["gradeId"].ToString() != "" || Context.Request.Query["divisionId"].ToString() != "" || Context.Request.Query["status"].ToString() != "" ? "show" : "")" id="advancedFiltersCollapse">
+    <div class="card card-body mb-2 p-2" style="background: var(--erp-surface-subtle); border: 1px solid var(--erp-border);">
+        <div class="row g-2">
+            <div class="col-12 col-md">
+                <label class="form-label small fw-semibold mb-1">Department</label>
+                <select name="departmentId" class="form-select form-select-sm"
+                        hx-get="@Url.Action("Index")"
+                        hx-target="#employee-index-page"
+                        hx-select="#employee-index-page"
+                        hx-trigger="change"
+                        hx-include="[name='search'], [name='departmentId'], [name='subDepartmentId'], [name='gradeId'], [name='divisionId'], [name='status']"
+                        hx-push-url="true"
+                        form="none">
+                    <option value="">All Departments</option>
+                    @if (ViewBag.DepartmentsFilter != null)
+                    {
+                        @foreach (var dept in ViewBag.DepartmentsFilter as SelectList)
+                        {
+                            <option value="@dept.Value" selected="@(Context.Request.Query["departmentId"].ToString() == dept.Value)">@dept.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md">
+                <label class="form-label small fw-semibold mb-1">Sub-Dept</label>
+                <select name="subDepartmentId" class="form-select form-select-sm"
+                        hx-get="@Url.Action("Index")"
+                        hx-target="#employee-index-page"
+                        hx-select="#employee-index-page"
+                        hx-trigger="change"
+                        hx-include="[name='search'], [name='departmentId'], [name='subDepartmentId'], [name='gradeId'], [name='divisionId'], [name='status']"
+                        hx-push-url="true"
+                        form="none">
+                    <option value="">All Sub-Depts</option>
+                    @if (ViewBag.SubDepartmentsFilter != null)
+                    {
+                        @foreach (var subDept in ViewBag.SubDepartmentsFilter as SelectList)
+                        {
+                            <option value="@subDept.Value" selected="@(Context.Request.Query["subDepartmentId"].ToString() == subDept.Value)">@subDept.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md">
+                <label class="form-label small fw-semibold mb-1">Grade</label>
+                <select name="gradeId" class="form-select form-select-sm"
+                        hx-get="@Url.Action("Index")"
+                        hx-target="#employee-index-page"
+                        hx-select="#employee-index-page"
+                        hx-trigger="change"
+                        hx-include="[name='search'], [name='departmentId'], [name='subDepartmentId'], [name='gradeId'], [name='divisionId'], [name='status']"
+                        hx-push-url="true"
+                        form="none">
+                    <option value="">All Grades</option>
+                    @if (ViewBag.GradesFilter != null)
+                    {
+                        @foreach (var grade in ViewBag.GradesFilter as SelectList)
+                        {
+                            <option value="@grade.Value" selected="@(Context.Request.Query["gradeId"].ToString() == grade.Value)">@grade.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md">
+                <label class="form-label small fw-semibold mb-1">Division</label>
+                <select name="divisionId" class="form-select form-select-sm"
+                        hx-get="@Url.Action("Index")"
+                        hx-target="#employee-index-page"
+                        hx-select="#employee-index-page"
+                        hx-trigger="change"
+                        hx-include="[name='search'], [name='departmentId'], [name='subDepartmentId'], [name='gradeId'], [name='divisionId'], [name='status']"
+                        hx-push-url="true"
+                        form="none">
+                    <option value="">All Divisions</option>
+                    @if (ViewBag.DivisionsFilter != null)
+                    {
+                        @foreach (var div in ViewBag.DivisionsFilter as SelectList)
+                        {
+                            <option value="@div.Value" selected="@(Context.Request.Query["divisionId"].ToString() == div.Value)">@div.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-12 col-md">
+                <label class="form-label small fw-semibold mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm"
+                        hx-get="@Url.Action("Index")"
+                        hx-target="#employee-index-page"
+                        hx-select="#employee-index-page"
+                        hx-trigger="change"
+                        hx-include="[name='search'], [name='departmentId'], [name='subDepartmentId'], [name='gradeId'], [name='divisionId'], [name='status']"
+                        hx-push-url="true"
+                        form="none">
+                    <option value="">All Statuses</option>
+                    <option value="Active" selected="@(Context.Request.Query["status"].ToString() == "Active")">Active</option>
+                    <option value="Inactive" selected="@(Context.Request.Query["status"].ToString() == "Inactive")">Inactive</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="table-shell" data-erp-table id="employee-index-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="1">Code</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="2">Name</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="3">RepToEmp</button></th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Sub-Dept</th>
+                    <th scope="col">Designation</th>
+                    <th scope="col" style="display: none;">Grade</th>
+                    <th scope="col" style="display: none;">Location</th>
+                    <th scope="col" style="display: none;">Employment Type</th>
+                    <th scope="col">Join Date</th>
+                    <th scope="col" style="display: none;">Priority</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" style="display: none;">User</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var employee in Model)
+                {
+                    var rawStatus = employee.EmploymentStatus?.Name ?? employee.SalaryStatus ?? "Active";
+                    var statusText = rawStatus.Trim();
+                    var statusLower = statusText.ToLowerInvariant();
+                    var status = statusLower.Contains("inactive") || statusLower.Contains("stop") || statusLower.Contains("end")
+                        ? "risk"
+                        : statusLower.Contains("pending") || statusLower.Contains("probation")
+                            ? "pending"
+                            : statusLower.Contains("approved")
+                                ? "approved"
+                                : "active";
+                    var owner = !string.IsNullOrWhiteSpace(employee.LineManagerEmpNo)
+                        ? employee.LineManagerEmpNo
+                        : (!string.IsNullOrWhiteSpace(employee.LeaveApproverEmpNo) ? employee.LeaveApproverEmpNo : "-");
+                    var priority = employee.EmploymentType?.Name ?? employee.Location?.Name ?? "-";
+
+                    <tr data-status="@status">
+                        <td data-label="Code"><a class="fw-semibold" asp-action="Details" asp-route-id="@employee.Id">@employee.Code</a></td>
+                        <td data-label="Name">@employee.FullName</td>
+                        <td data-label="RepToEmp">@owner</td>
+                        <td data-label="Department">@employee.Department?.Name</td>
+                        <td data-label="Sub-Dept">@(employee.SubDepartment?.Name ?? "-")</td>
+                        <td data-label="Designation">@(employee.Designation?.Name ?? "-")</td>
+                        <td data-label="Grade" style="display: none;">@(employee.Grade?.Name ?? "-")</td>
+                        <td data-label="Location" style="display: none;">@(employee.Location?.Name ?? "-")</td>
+                        <td data-label="Employment Type" style="display: none;">@(employee.EmploymentType?.Name ?? "-")</td>
+                        <td data-label="Join Date">@employee.Dateofjoin.ToString("dd MMM yyyy")</td>
+                        <td data-label="Priority" style="display: none;">@priority</td>
+                        <td data-label="Status"><span class="status-badge status-@status">@statusText</span></td>
+                        <td data-label="User" style="display: none;">
+                            @if (usersByEmpId.TryGetValue(employee.Id, out var assignedUser))
+                            {
+                                <span class="badge bg-primary-subtle text-primary-emphasis"><i class="fa-solid fa-user me-1" style="font-size:10px;"></i>@assignedUser</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a class="btn btn-icon btn-sm btn-icon-info" asp-action="Details" asp-route-id="@employee.Id" title="Details"><i class="fa-solid fa-eye"></i></a>
+                                <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Edit" asp-route-id="@employee.Id" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+
+                                <form asp-action="Delete" asp-route-id="@employee.Id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                    <button class="btn btn-icon btn-sm btn-icon-danger" type="submit" title="Archive"><i class="fa-solid fa-trash-can"></i></button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="empty-state" data-table-empty>
+            <i class="fa-solid fa-inbox"></i>
+            <h3 class="h6 mt-2 mb-1">No records match the current filters</h3>
+            <p class="text-muted mb-0">Adjust search, filters, or column criteria.</p>
+        </div>
+    </div>
+
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage-@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav aria-label="Employees pagination">
+            @Html.PagedListPager(Model, page => Url.Action("Index", new { 
+                page, 
+                search = Context.Request.Query["search"],
+                departmentId = Context.Request.Query["departmentId"],
+                subDepartmentId = Context.Request.Query["subDepartmentId"],
+                gradeId = Context.Request.Query["gradeId"],
+                divisionId = Context.Request.Query["divisionId"],
+                status = Context.Request.Query["status"]
+            }), new PagedListRenderOptions
+            {
+                UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" }
+            })
+        </nav>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

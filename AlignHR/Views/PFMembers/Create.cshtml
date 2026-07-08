@@ -1,0 +1,139 @@
+@model AlignHR.Models.PFMembers
+@{
+    ViewData["Title"] = "Create Provident Fund Enrollment";
+    ViewBag.ActivePage = "PFMembers";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6" style="position: relative; z-index: 1001;">
+                    <label class="form-label small fw-semibold">Search Employee <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" id="employeeSearch" name="term" class="form-control" placeholder="Type name or code..." autocomplete="off"
+                               hx-get="/Ajax/SearchEmployees"
+                               hx-trigger="keyup delay:300ms, search"
+                               hx-target="#employeeResults"
+                               hx-indicator=".profile-loader" />
+                    </div>
+                    <div id="employeeResults" class="search-results-container"></div>
+                    <input type="hidden" asp-for="EmployeeId" id="selectedEmployeeId" required />
+                    <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold">Salary Period <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        <select asp-for="SalaryPeriodFK" class="form-select" asp-items="ViewBag.SalaryPeriodFK">
+                            <option value="">-- Select Period --</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="SalaryPeriodFK" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold">Amount (Optional Override)</label>
+                    <div class="input-group">
+                        <span class="input-group-text">PKR</span>
+                        <input asp-for="Amount" class="form-control amount-field" placeholder="0.00" type="number" step="0.01" />
+                    </div>
+                    <span asp-validation-for="Amount" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <div class="profile-loader htmx-indicator mb-2">
+                        <div class="loader-circle"></div>
+                        <span>Syncing Profile...</span>
+                    </div>
+
+                    <div id="side-profile-container" class="employee-profile-slot">
+                        <div class="placeholder-card">
+                            <div class="placeholder-icon">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <h4>Employee Profile</h4>
+                            <p>Details will appear here once an employee is selected from the dropdown.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script>
+        function updatePFCalculation() {
+            const employeeId = document.getElementById('selectedEmployeeId').value;
+            const periodId = document.getElementById('SalaryPeriodFK').value;
+            if (employeeId && periodId) {
+                fetch(`@Url.Action("CalculatePFDetails", "PFMembers")?EmployeeId=${employeeId}&SalaryPeriodFK=${periodId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.amount !== undefined) {
+                            document.querySelector('.amount-field').value = data.amount.toFixed(2);
+                        }
+                    });
+            }
+        }
+
+        document.getElementById('SalaryPeriodFK').addEventListener('change', updatePFCalculation);
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Clear hidden ID when user types
+            const searchInput = document.getElementById('employeeSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const hiddenInput = document.getElementById('selectedEmployeeId');
+                    if (hiddenInput) hiddenInput.value = '';
+                });
+            }
+
+            // Handle Employee Selection
+            document.body.addEventListener('click', function(e) {
+                const row = e.target.closest('.search-result-item');
+                if (row) {
+                    const id = row.dataset.id;
+                    const name = row.dataset.name;
+                    const code = row.dataset.code;
+                    
+                    const hiddenInput = document.getElementById('selectedEmployeeId');
+                    hiddenInput.value = id;
+                    document.getElementById('employeeResults').innerHTML = '';
+                    document.getElementById('employeeSearch').value = name + ' (' + code + ')';
+                    
+                    // Trigger HTMX to load employee card
+                    htmx.ajax('GET', '/Ajax/GetEmployeeCard', {
+                        values: { id: id },
+                        target: '#side-profile-container',
+                        indicator: '.profile-loader'
+                    });
+
+                    updatePFCalculation();
+                }
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                    document.getElementById('employeeResults').innerHTML = '';
+                }
+            });
+        });
+    </script>
+}

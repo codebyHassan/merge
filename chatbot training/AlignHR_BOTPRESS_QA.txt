@@ -1,0 +1,167 @@
+ALIGN HR - QUESTION AND ANSWER KNOWLEDGE BASE
+===============================================
+
+Q: What is AlignHR?
+A: AlignHR is an enterprise-grade Human Resource management system developed by VISACME. It streamlines the complete employee lifecycle from recruitment and onboarding through attendance, leave, payroll, and reporting. Core modules include Dashboard, Workforce, Attendance, Leave Management, Overtime, Payroll, Recruitment, Document Management, Approvals, Administration, and Reports.
+
+Q: How do I log into AlignHR?
+A: Open your browser and navigate to the AlignHR URL. The login page shows a split layout with the AlignHR brand on the left and a login form on the right. Enter your email address and password, then click Sign In. If login fails, an error message appears in a red alert box. The default redirect after login is the Dashboard page.
+
+Q: How do I navigate AlignHR?
+A: The sidebar on the left is the primary navigation. It is organized into labeled sections: Workspace (Dashboard, Workforce), Operations (Attendance, Leave Management), Documents, Recruitment, Payroll, and Admin. Click section headers to expand or collapse submenus. The top navbar includes global search (Ctrl+K), a New Employee button, notifications bell, and a user dropdown.
+
+Q: What is on the Dashboard?
+A: The Dashboard is the default landing page. It shows a time-based greeting with your name and role, a Smart Digest summary, KPI strip (Total Employees, Active Employees, New Hires, Pending Approvals, On Leave Today), unified Approvals Inbox, personal profile snapshot, team availability for managers, workforce charts, celebrations, leave balance, net pay trend, document expiry radar, attendance heatmap, and quick action buttons.
+
+Q: How do I add a new employee?
+A: Go to Workforce > Employees and click Create New. Fill in personal details (Employee Code, Name, DOB, CNIC, Phone, Email), employment details (Department, Designation, Location, Grade, Division, Employment Type, Date of Joining), salary information, and upload documents including a photo.
+
+Q: How do I edit an employee?
+A: Go to Workforce > Employees, find the employee in the list, and click the Edit action. You can update any field, change the photo, or update the employment status (Active, Terminated, Resigned, etc.).
+
+Q: How do I manage departments?
+A: Go to Workforce > Departments. Click Create to add a new department with Code, Name, Description, and Head of Department. You can also edit, delete (only if no employees are assigned), or view details of existing departments.
+
+Q: How do I manage locations?
+A: Go to Workforce > Locations. Click Create to add a location with Code, Name, Address, City, and Country. You can also edit, delete, or view location details.
+
+Q: How do I define work shifts?
+A: Go to Workforce > Shifts. Click Create to define a shift with Shift Code, Name, Start Time, End Time, and Grace Period.
+
+Q: How do I assign shifts to employees?
+A: Go to Workforce > Employee Shifts. Search and select employees, then assign an existing shift definition. You can also view current assignments and bulk assign shifts to multiple employees.
+
+Q: How does attendance logging work?
+A: Attendance Logs record daily employee check-in and check-out times including GPS coordinates. Go to Operations > Attendance > Logs to view, create manual entries, edit existing ones, and filter by employee or date range.
+
+Q: How do I set up attendance policies?
+A: Go to Operations > Attendance > Policies. Create policies with rules for check-in/check-out windows, grace periods, and late/early thresholds. Policies can be assigned to specific departments or employee categories.
+
+Q: How do I handle attendance exceptions?
+A: Go to Operations > Attendance > Exceptions. Create an exception for an employee who could not punch in or out, select the reason (system issue, forgot to punch, etc.), and submit for approval or rejection.
+
+Q: What leave types are available?
+A: Common leave types include Annual Leave, Sick Leave, Casual Leave, Maternity Leave, Paternity Leave, and Hajj/Umrah Leave. You can manage them under Operations > Leave Management > Leave Types.
+
+Q: How do I apply for leave?
+A: Go to Operations > Leave Management > Leave Requests. Click Create, select a leave type, specify From and To dates, optionally mark as half-day, enter a reason, and submit for approval.
+
+Q: How do I approve or reject leave requests?
+A: Go to Operations > Leave Management > Approval Inbox. You will see all pending leave requests with Employee Code, Name, Leave Type, Dates, Days, Current Stage (Line Manager, Higher Mgmt, or HR Final), and Applied Date. Click Review and Decide to approve or reject with comments.
+
+Q: How do I check leave balances?
+A: Go to Operations > Leave Management > Balances. You can view employee leave balances per leave type, make adjustments, manage annual carry-forward, and search by employee.
+
+Q: How does leave accounting work?
+A: Leave Accounting has four functions: Year-End/Adjust (balance adjustments and carry-forward), Individual Transfer (transfer balance between employees), Company Summary (company-wide view with department breakdowns), and Leave Compensation (convert unused days to monetary payment). Access under Operations > Leave Management.
+
+Q: How do I record overtime?
+A: Go to Operations > Attendance > Overtime Hours. Click Add OverTime Hours to create an entry with employee, date, hours, and OT type. You can also use Bulk Upload to upload multiple records via an Excel template.
+
+Q: How do I set up overtime policies?
+A: Go to Operations > Attendance > Overtime Policies. Define overtime rules including hourly rates for regular and holiday overtime, eligibility criteria, and approval requirements.
+
+Q: What is on the Payroll Dashboard?
+A: The Payroll Dashboard shows active employee count, employees with EOBI/PF/Tax deductions, active salary period info, configuration statistics, and the lock/unlock status of payroll periods.
+
+Q: How do I set up a fiscal year?
+A: Go to Payroll > Fiscal Year. Click Create and enter the fiscal year name (e.g., FY 2025-26), start date, and end date. You can set it as active, edit, or delete it.
+
+Q: How do I define salary periods?
+A: Go to Payroll > Salary Periods. Click Create and enter a period name (e.g., July 2025), month, year, start/end dates, and link it to a fiscal year. Mark it as open for processing or closed.
+
+Q: How do I set up payroll structures?
+A: Go to Payroll > Structures. Define earnings components like Basic, House Rent Allowance, Transport, Medical, and deduction components like Tax, EOBI, PF, Loan. Each component has a type (earning or deduction), calculation method (percentage or fixed), and value.
+
+Q: How do I configure tax slabs?
+A: Go to Payroll > Tax Slabs. Create slabs with minimum income, maximum income, tax rate, and fixed tax amount with effective dates. Multiple slabs create a progressive tax structure.
+
+Q: How do I run payroll?
+A: Go to Payroll > Execution. Step 1: Select a Salary Period. Step 2: Execute modules in order - (1) Income Tax Deduction, (2) EOBI Deduction, (3) Loan and Advance Deduction, (4) Provident Fund, (5) Bonuses and Perks, (6) Salary Adjustments, (7) Final Salary Slips (Generate Slips). The final step locks the period.
+
+Q: How do I view and print salary slips?
+A: Go to Payroll > Salary Slips. Filter by period, department, and employee. The table shows Employee ID, Name, Department, Status (Finalized/Pending), and Net Salary. Click Print to open a printable salary slip.
+
+Q: How do I manage loans and advances?
+A: Go to Payroll > Loan and Advance. Create a record with employee, amount, purpose, repayment terms, loan type (Loan or Advance), and approval status. Installments are managed under Payroll > Installments.
+
+Q: How do I manage Provident Fund?
+A: Go to Payroll > Provident Funds. View members, create records with employee, salary period, and PF configuration (percentage or fixed). Use Bulk Upload via Excel, or Execute to run PF contribution calculation.
+
+Q: How do I manage EOBI deductions?
+A: Go to Payroll > EOBI Deduction. Generate EOBI deductions for eligible employees, use Bulk Upload or Bulk Add, view calculation results, and configure rates.
+
+Q: How do I track unpaid leave days?
+A: Go to Payroll > Without Pay Days. Record employee, period, number of days, and reason. Bulk upload via Excel is supported. These days reduce the payable salary.
+
+Q: How do I create a hiring requisition?
+A: Go to Recruitment > Requisitions. Click Create and fill in job title, department, location, number of positions, employment type, grade, justification, budget, skills, and qualifications. Submit for approval through the workflow.
+
+Q: How do I approve a requisition?
+A: Go to Recruitment > Approval Inbox. You will see all pending requisitions awaiting your decision. Review the details and approve or reject.
+
+Q: How do I create a job posting?
+A: Go to Recruitment > Job Postings. Click Create and enter job code, title, description, requirements, and location. Link to an approved requisition. Publish to make it visible on the public career portal.
+
+Q: How does the ATS Dashboard work?
+A: Go to Recruitment > ATS Dashboard. It shows summary cards for Open Postings, Active Applications, Candidates in Pipeline, and Active Stages. Applications by Stage shows progress bars for Applied, Screening, Shortlisted, Interview, Final Review, Selected, Hired, Rejected, and Withdrawn stages.
+
+Q: How do I manage candidates?
+A: Go to Recruitment > Candidates. Click Create and enter name, unique email, phone, resume, and skills. View the full profile, edit information, and upload documents.
+
+Q: How do I move candidates through the hiring pipeline?
+A: Go to the Applications section from a candidate or job posting. The Pipeline view shows a kanban-style stage progression. You can move candidates between stages (e.g., from Screening to Interview) and view stage history.
+
+Q: How do I schedule an interview?
+A: Go to the Interviews section. Schedule an interview for an application, define the round (1st, 2nd, Final), select panel members, and set date, time, and mode (in-person or virtual). Submit feedback with scores and comments.
+
+Q: How do I create an offer?
+A: Go to Recruitment > Offers. Click Create and enter salary, benefits, joining date, and terms for the selected candidate. The system supports version control for offer changes. Upload offer documents and submit for approval.
+
+Q: How do I approve an offer?
+A: Go to Recruitment > Offer Inbox (My Approvals). You will see offers pending your decision with a badge count. Review the offer details and approve or reject. Candidates can also respond via a secure token link sent by email.
+
+Q: How does onboarding work?
+A: Go to Recruitment > Onboarding. The list shows candidates being onboarded with their name, position, planned joining date, actual joining date, task completion, and status (Completed, Joined, ReadyToJoin, TasksInProgress, DocumentsPending, Cancelled). Click View for details. Use Confirm Joining on the joining date.
+
+Q: How do I set up onboarding task templates?
+A: Go to Recruitment > Task Templates. Create reusable checklists with tasks like document collection, IT setup, orientation, and training. Assign templates to positions or departments. Tasks are created automatically when onboarding begins.
+
+Q: How do I manage documents?
+A: Go to Documents > All Documents. Upload employee documents (CNIC, certificates, contracts, etc.). The system tracks document expiry with dashboard alerts. Filter by employee, document type, or category. Edit metadata and delete documents.
+
+Q: How do document approvals work?
+A: Go to Documents > Approvals > Approval Inbox to see all document approval requests pending your action. Review and approve or reject with comments. Filter by status, type, or date. Approval History shows the complete audit trail.
+
+Q: How do I set up approval templates?
+A: Go to Documents > Approvals > Approval Templates. Create templates with name, description, steps/levels with approvers in sequence, and routing conditions (amount thresholds, department). Assign to document types or processes.
+
+Q: How do I manage users?
+A: Go to Admin > Administration > Users. Click Create and enter username, email, password, and link to an employee. Edit details, reset passwords, disable/enable accounts, or delete users. Login history tracks activity.
+
+Q: How do I manage roles and permissions?
+A: Go to Admin > Administration > Roles to create roles with names and descriptions. Assign permissions (Functions) to roles. Go to User Roles to assign roles to users. Go to Functions to define permission units. Go to Function Roles to map functions to roles.
+
+Q: How do I manage dropdown values?
+A: Go to Admin > Administration > Value Sets. Manage lookup values like Employment Types (Permanent, Contract, Intern), Status values, Grades, Divisions, and Sub-Departments. Create, edit, or delete entries.
+
+Q: What reports are available?
+A: Go to Admin > Reports. Access pre-built reports including employee listings, attendance summaries, leave utilization, payroll reports, and recruitment pipeline reports. Export data to Excel or PDF.
+
+Q: How does the public career portal work?
+A: The public career portal is at the /jobs URL and does not require login. It lists all published job postings with search and filter by title, department, or location. Candidates can click a job to view details and apply.
+
+Q: How does the offer response process work for candidates?
+A: Candidates receive a secure email with a token link. They click the link to view the full offer details and can Accept or Decline. The system records the response and updates the offer status automatically.
+
+Q: How do I bulk upload data?
+A: Several modules support bulk upload via Excel files including Overtime Hours, Income Tax Deduction, Without Pay Days, EOBI Deduction, Provident Funds, and Salary Adjustments. Always download the provided template first, fill it in, then upload. The system validates and shows errors for invalid rows.
+
+Q: How do I switch between light and dark themes?
+A: Click the moon or stars icon in the sidebar footer to switch between Light and Dark themes. The preference persists during your session.
+
+Q: What keyboard shortcuts are available?
+A: Ctrl+K opens the Command Palette for global search and quick actions. Esc closes modals and dropdowns. Data tables support in-table search, column sorting by clicking headers, pagination controls, and column visibility toggles.
+
+Q: How do permissions work in AlignHR?
+A: Each user's sidebar shows only the modules they can access. If a menu item is not visible, the user lacks the required permission. Permissions are managed through Functions (atomic permission units) and Roles in the Administration module. A user can have multiple roles, and permissions are aggregated from all assigned roles.

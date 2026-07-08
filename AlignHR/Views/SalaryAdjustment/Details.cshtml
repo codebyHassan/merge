@@ -1,0 +1,93 @@
+@model AlignHR.Models.SalaryAdjustments
+@using AlignHR.Services
+@inject IPayrollLockService LockService
+
+@{
+    ViewData["Title"] = "Adjustment Details";
+    bool isLocked = await LockService.IsRecordLocked(Model.EmployeeId, Model.SalaryPeriodId);
+}
+
+<div class="page-header animate-fade-in">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a href="/SalaryAdjustment">Adjustments</a>
+        <span>/</span>
+        <span>Details</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Salary Adjustment</h1>
+            <p class="page-subtitle">Modification record for @Model.employee?.FirstName</p>
+        </div>
+
+        <div class="flex gap-12">
+            @if (isLocked)
+            {
+                <div class="status-badge locked"><i class="fas fa-lock"></i><span>FINALIZED</span></div>
+            }
+            else
+            {
+                <div class="status-badge active"><i class="fas fa-check-circle"></i><span>@(Model.IsApproved ? "APPROVED" : "PENDING")</span></div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="details-grid animate-slide-up">
+    <div class="erp-card main">
+        <div class="card-header-premium">
+            <i class="fas fa-info-circle"></i>
+            <span>Adjustment Details</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-group">
+                <label>Employee</label>
+                <div class="value-highlight">@Model.employee?.FirstName @Model.employee?.LastName</div>
+            </div>
+            <hr class="divider" />
+            <div class="info-row">
+                <div class="info-item">
+                    <label>Category</label>
+                    <div class="value">@Model.AdjustmentCategory</div>
+                </div>
+                <div class="info-item">
+                    <label>Adjustment Type</label>
+                    <div class="value"><span class="badge-type @Model.Type.ToString().ToLower()">@Model.Type</span></div>
+                </div>
+            </div>
+            <div class="info-group mt-20">
+                <label>Reason / Remarks</label>
+                <div class="value text-muted">@Model.Reason</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="erp-card secondary">
+        <div class="card-header-premium financial">
+            <i class="fas fa-money-bill-wave"></i>
+            <span>Financial Impact</span>
+        </div>
+        <div class="card-body-premium centered">
+            <div class="stat-box-container">
+                <div class="stat-box">
+                    <label>Amount</label>
+                    <div class="stat-value secondary">PKR @Model.Amount.ToString("N0")</div>
+                </div>
+            </div>
+            <div class="meta-info">
+                <div class="meta-item"><i class="fas fa-calendar-alt"></i><span>Period: @Model.SalaryPeriod?.PeriodName</span></div>
+                <div class="meta-item"><i class="fas fa-history"></i><span>Created: @Model.CreatedAt.ToString("dd MMM yyyy")</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-actions-footer">
+        <a href="/SalaryAdjustment" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i>Back</a>
+        @if (!isLocked)
+        {
+            <a href="/SalaryAdjustment/Edit/@Model.Id" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i>Edit</a>
+        }
+    </div>
+</div>

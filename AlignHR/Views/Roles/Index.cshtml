@@ -1,0 +1,101 @@
+@model IEnumerable<AlignHR.Models.Role>
+@using AlignHR.Security
+@{
+    ViewData["Title"] = "Roles";
+    ViewBag.ActivePage = "Roles";
+}
+
+<section class="filter-bar mb-2" aria-label="Roles filters">
+    <div class="input-group input-group-sm me-auto" style="width:auto;position:relative;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="search"
+               value="@Context.Request.Query["search"]"
+               placeholder="Search roles..."
+               aria-label="Search roles"
+               hx-get="@Url.Action("Index")"
+               hx-target="#roles-table"
+               hx-select="#roles-table"
+               hx-indicator="#search-loader"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-push-url="true"
+               form="none" />
+        <span id="search-loader" class="htmx-indicator" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:10;">
+            <div class="spinner-border spinner-border-sm text-primary" role="status" style="width:.85rem;height:.85rem;border-width:1.5px;"></div>
+        </span>
+    </div>
+    <div class="filter-group">
+        @if (PermissionHelper.HasActionAccess(Context, "Roles", "Create"))
+        {
+            <a class="btn btn-primary btn-sm" asp-action="create">
+                <i class="fa-solid fa-plus me-1"></i>Add Role
+            </a>
+        }
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table id="roles-table">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Role Name</th>
+                    <th scope="col">Description</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model)
+                {
+                    <tr>
+                        <td data-label="#">@l.Id</td>
+                        <td data-label="Role Name" class="fw-semibold">@l.Name</td>
+                        <td data-label="Description" class="text-muted">@(l.Description ?? "—")</td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                @if (PermissionHelper.HasActionAccess(Context, "Roles", "Manage"))
+                                {
+                                    <a class="btn btn-icon btn-sm btn-icon-info" asp-action="Manage" asp-route-id="@l.Id" title="Manage Permissions">
+                                        <i class="fa-solid fa-shield-halved"></i>
+                                    </a>
+                                }
+                                @if (PermissionHelper.HasActionAccess(Context, "Roles", "Edit"))
+                                {
+                                    <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Edit" asp-route-id="@l.Id" title="Edit">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                }
+                                @if (PermissionHelper.HasActionAccess(Context, "Roles", "Delete"))
+                                {
+                                    <form asp-action="Delete" asp-route-id="@l.Id" method="post" class="d-inline"
+                                          onsubmit="return confirm('Are you sure you want to delete this role?');">
+                                        <button class="btn btn-icon btn-sm btn-icon-danger" type="submit" title="Delete">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <div class="empty-state" data-table-empty>
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <h3 class="h6 mt-2 mb-1">No roles defined</h3>
+                                <p class="text-muted mb-0">Try adjusting your search or create a new role.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">@Model.Count() roles</span>
+    </div>
+</section>

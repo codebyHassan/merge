@@ -1,0 +1,170 @@
+@model AlignHR.Models.RoleFunctionsViewModel
+
+@{
+    ViewData["Title"] = "Manage Permissions";
+    ViewBag.ActivePage = "Roles";
+}
+
+<div class="page-header mb-3">
+    <div class="breadcrumb small mb-1">
+        <a asp-controller="Roles" asp-action="Index" class="text-decoration-none">Roles</a>
+        <span class="mx-1 text-muted">/</span>
+        <span class="text-muted">Manage Permissions</span>
+    </div>
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title h4 mb-0 fw-bold">Manage Permissions</h1>
+            <p class="page-subtitle text-muted small mb-0">Assign functions/pages to role: <strong>@Model.RoleName</strong></p>
+        </div>
+    </div>
+</div>
+
+<div class="form-shell w-100">
+    <div class="card-inner p-3 p-md-4 bg-white border rounded shadow-sm">
+        <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+            <div>
+                <h5 class="h6 mb-0 text-dark fw-bold"><i class="fa-solid fa-shield-halved me-2 text-primary"></i>Function Permissions</h5>
+                <span class="text-muted small">Update permitted system routes for the role</span>
+            </div>
+            <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 fs-6">@Model.RoleName</span>
+        </div>
+
+        <form asp-action="Manage" method="post" id="permissionsForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="RoleId" />
+
+            <!-- Filters & Search Toolbar -->
+            <div class="row g-2 mb-3 align-items-center bg-light p-2 border rounded">
+                <!-- Search bar -->
+                <div class="col-12 col-md-4">
+                    <div class="input-group input-group-sm shadow-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="search" id="permissionSearch" class="form-control form-control-sm border-start-0" placeholder="Search functions or routes..." onkeyup="applyFilters()" />
+                    </div>
+                </div>
+                
+                <!-- Status filter buttons -->
+                <div class="col-12 col-md-4 text-md-center my-2 my-md-0">
+                    <div class="btn-group btn-group-sm shadow-sm" role="group" aria-label="Checked filters">
+                        <input type="radio" class="btn-check" name="statusFilter" id="filterAll" checked onclick="applyFilters()" />
+                        <label class="btn btn-outline-secondary px-3" for="filterAll" onclick="void(0)">All</label>
+
+                        <input type="radio" class="btn-check" name="statusFilter" id="filterChecked" onclick="applyFilters()" />
+                        <label class="btn btn-outline-secondary px-3" for="filterChecked" onclick="void(0)"><i class="fa-solid fa-circle-check text-success me-1"></i>Checked</label>
+
+                        <input type="radio" class="btn-check" name="statusFilter" id="filterUnchecked" onclick="applyFilters()" />
+                        <label class="btn btn-outline-secondary px-3" for="filterUnchecked" onclick="void(0)"><i class="fa-regular fa-circle text-muted me-1"></i>Unchecked</label>
+                    </div>
+                </div>
+
+                <!-- Select all/none links -->
+                <div class="col-12 col-md-4 text-md-end">
+                    <button type="button" class="btn btn-outline-primary btn-sm py-1 px-3 me-1 shadow-sm" onclick="selectAll()">Select All</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm py-1 px-3 shadow-sm" onclick="deselectAll()">Deselect All</button>
+                </div>
+            </div>
+
+            <!-- Table list of functions -->
+            <div class="table-responsive border rounded mb-4" style="max-height: 480px; overflow-y: auto;">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted small text-uppercase sticky-top" style="z-index: 5;">
+                        <tr>
+                            <th class="px-4 py-3 text-center" style="width: 80px;">Grant</th>
+                            <th class="px-4 py-3">Function Name</th>
+                            <th class="px-4 py-3">Route / URL</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.AllFunctions != null)
+                        {
+                            @for (var i = 0; i < Model.AllFunctions.Count; i++)
+                            {
+                                var func = Model.AllFunctions[i];
+                                var isChecked = Model.SelectedFunctionIds.Contains(func.Id);
+                                <tr class="permission-row" data-checked="@(isChecked ? "true" : "false")">
+                                    <td class="px-4 py-3 text-center">
+                                        <div class="form-check form-switch d-inline-block">
+                                            <input type="checkbox"
+                                                   name="SelectedFunctionIds"
+                                                   value="@func.Id"
+                                                   class="form-check-input func-checkbox"
+                                                   id="chk_@func.Id"
+                                                   @(isChecked ? "checked" : "")
+                                                   onchange="updateRowCheckedState(this)" />
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <label for="chk_@func.Id" class="fw-bold text-dark small func-name mb-0" style="cursor: pointer;">@func.Name</label>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <code class="text-muted small func-route font-monospace bg-light py-1 px-2 border rounded">@func.Route</code>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 border-top pt-3">
+                <a asp-controller="Roles" asp-action="Index" class="btn btn-outline-secondary btn-sm px-3 shadow-sm">Back to Roles</a>
+                <button type="submit" class="btn btn-primary btn-sm px-4 shadow-sm">Save Permissions</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function selectAll() {
+        document.querySelectorAll('.func-checkbox').forEach(cb => {
+            cb.checked = true;
+            updateRowCheckedState(cb);
+        });
+        applyFilters();
+    }
+    
+    function deselectAll() {
+        document.querySelectorAll('.func-checkbox').forEach(cb => {
+            cb.checked = false;
+            updateRowCheckedState(cb);
+        });
+        applyFilters();
+    }
+
+    function updateRowCheckedState(checkbox) {
+        var row = checkbox.closest('.permission-row');
+        if (row) {
+            row.setAttribute('data-checked', checkbox.checked ? 'true' : 'false');
+        }
+    }
+
+    function applyFilters() {
+        var searchQuery = document.getElementById("permissionSearch").value.toLowerCase();
+        
+        var showAll = document.getElementById("filterAll").checked;
+        var showChecked = document.getElementById("filterChecked").checked;
+        var showUnchecked = document.getElementById("filterUnchecked").checked;
+        
+        var rows = document.querySelectorAll(".permission-row");
+        
+        rows.forEach(row => {
+            var name = row.querySelector(".func-name").textContent.toLowerCase();
+            var route = row.querySelector(".func-route").textContent.toLowerCase();
+            var isRowChecked = row.getAttribute('data-checked') === 'true';
+            
+            // Search text match
+            var matchesSearch = name.includes(searchQuery) || route.includes(searchQuery);
+            
+            // Checked state match
+            var matchesFilter = showAll || 
+                               (showChecked && isRowChecked) || 
+                               (showUnchecked && !isRowChecked);
+            
+            if (matchesSearch && matchesFilter) {
+                row.style.display = "";
+            } else {
+                row.style.display = "none";
+            }
+        });
+    }
+</script>

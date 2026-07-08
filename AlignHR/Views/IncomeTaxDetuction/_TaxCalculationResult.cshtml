@@ -1,0 +1,226 @@
+@using AlignHR.Models
+@{
+    var grossSalary = ViewBag.GrossSalary != null ? (decimal)ViewBag.GrossSalary : 0m;
+    var annualGross = ViewBag.AnnualGross != null ? (decimal)ViewBag.AnnualGross : grossSalary * 12;
+    var fixedTax = ViewBag.FixedTax != null ? (decimal)ViewBag.FixedTax : 0m;
+    var taxOnExceeding = ViewBag.TaxOnExceeding != null ? (decimal)ViewBag.TaxOnExceeding : 0m;
+    var surchargeAmount = ViewBag.SurchargeAmount != null ? (decimal)ViewBag.SurchargeAmount : 0m;
+    var annualTax = ViewBag.AnnualTax != null ? (decimal)ViewBag.AnnualTax : 0m;
+    var monthlyTax = ViewBag.MonthlyTax != null ? (decimal)ViewBag.MonthlyTax : 0m;
+    var fiscalYearName = ViewBag.FiscalYearName as string ?? "Fiscal year pending";
+    var periodName = ViewBag.PeriodName as string ?? "Selected period";
+    var errorMessage = ViewBag.ErrorMessage as string;
+    var taxSlab = ViewBag.TaxSlab as TaxSlabMaster;
+    var taxSurcharge = ViewBag.TaxSurcharge as TaxSurcharge;
+
+    var exceedingAmount = taxSlab != null ? Math.Max(0m, annualGross - taxSlab.IncomeFrom) : 0m;
+    var slabRange = taxSlab != null
+        ? $"PKR {taxSlab.IncomeFrom:N0} - {(taxSlab.IncomeTo.HasValue ? $"PKR {taxSlab.IncomeTo.Value:N0}" : "Above")}"
+        : "No tax slab matched";
+    var surchargeRange = taxSurcharge != null
+        ? $"PKR {taxSurcharge.IncomeFrom:N0} - {(taxSurcharge.IncomeTo.HasValue ? $"PKR {taxSurcharge.IncomeTo.Value:N0}" : "Above")}"
+        : "No surcharge applied";
+}
+
+@if (ViewBag.GrossSalary != null)
+{
+    <input type="number"
+           id="GrossSalary"
+           name="grossSalary"
+           class="form-control form-control-sm payroll-locked-field"
+           step="0.01"
+           placeholder="e.g. 50000"
+           value="@grossSalary.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+           hx-swap-oob="true"
+           readonly />
+}
+
+@if (ViewBag.CalculationSuccessful == true)
+{
+    <div class="payroll-calculation-card animate-profile-in">
+        <div class="payroll-calculation-topband"></div>
+
+        <div class="payroll-calculation-header">
+            <div class="payroll-calculation-heading">
+                <span class="payroll-calculation-icon">
+                    <i class="fas fa-calculator"></i>
+                </span>
+                <div>
+                    <h4>Tax Calculation Breakdown</h4>
+                    <p>Calculated from the selected salary period and the employee's latest gross salary.</p>
+                </div>
+            </div>
+
+            <div class="payroll-calculation-badges">
+                <span class="payroll-pill payroll-pill--primary">@fiscalYearName</span>
+                <span class="payroll-pill">@periodName</span>
+            </div>
+        </div>
+
+        <div class="payroll-calculation-hero">
+            <div>
+                <span class="payroll-calculation-eyebrow">Monthly Tax Deduction</span>
+                <strong>PKR @monthlyTax.ToString("N2")</strong>
+                <small>Auto-filled into the deduction amount field below.</small>
+            </div>
+
+            <div class="payroll-calculation-hero-meta">
+                <div>
+                    <span>Monthly Gross</span>
+                    <strong>PKR @grossSalary.ToString("N2")</strong>
+                </div>
+                <div>
+                    <span>Total Annual Tax</span>
+                    <strong>PKR @annualTax.ToString("N2")</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="payroll-calculation-grid">
+            <div class="payroll-metric">
+                <span class="payroll-metric-label">Annual Gross</span>
+                <strong class="payroll-metric-value">PKR @annualGross.ToString("N2")</strong>
+                <span class="payroll-metric-note">Monthly gross x 12</span>
+            </div>
+
+            <div class="payroll-metric">
+                <span class="payroll-metric-label">Fixed Tax</span>
+                <strong class="payroll-metric-value">PKR @fixedTax.ToString("N2")</strong>
+                <span class="payroll-metric-note">Base amount from slab</span>
+            </div>
+
+            <div class="payroll-metric">
+                <span class="payroll-metric-label">Tax On Exceeding</span>
+                <strong class="payroll-metric-value">PKR @taxOnExceeding.ToString("N2")</strong>
+                <span class="payroll-metric-note">Above the slab floor</span>
+            </div>
+
+            <div class="payroll-metric @(surchargeAmount > 0 ? "payroll-metric--warning" : "payroll-metric--success")">
+                <span class="payroll-metric-label">Annual Surcharge</span>
+                <strong class="payroll-metric-value">PKR @surchargeAmount.ToString("N2")</strong>
+                <span class="payroll-metric-note">@(surchargeAmount > 0 ? "Additional fiscal surcharge" : "No surcharge applied")</span>
+            </div>
+
+            <div class="payroll-metric payroll-metric--accent">
+                <span class="payroll-metric-label">Total Annual Tax</span>
+                <strong class="payroll-metric-value">PKR @annualTax.ToString("N2")</strong>
+                <span class="payroll-metric-note">Fixed tax + variable tax + surcharge</span>
+            </div>
+
+            <div class="payroll-metric payroll-metric--accent">
+                <span class="payroll-metric-label">Monthly Deduction</span>
+                <strong class="payroll-metric-value">PKR @monthlyTax.ToString("N2")</strong>
+                <span class="payroll-metric-note">Annual tax / 12</span>
+            </div>
+        </div>
+
+        <div class="payroll-breakdown-panels">
+            <div class="payroll-breakdown-panel">
+                <div class="payroll-breakdown-panel-header">
+                    <span class="payroll-breakdown-panel-title">Applicable Tax Slab</span>
+                    @if (taxSlab != null)
+                    {
+                        <span class="payroll-pill payroll-pill--primary">@taxSlab.RatePercent.ToString("0.##")%</span>
+                    }
+                </div>
+
+                <strong class="payroll-breakdown-panel-range">@slabRange</strong>
+
+                <div class="payroll-detail-list">
+                    <div class="payroll-detail-row">
+                        <span>Fixed tax amount</span>
+                        <strong>PKR @fixedTax.ToString("N2")</strong>
+                    </div>
+                    <div class="payroll-detail-row">
+                        <span>Exceeding amount</span>
+                        <strong>PKR @exceedingAmount.ToString("N2")</strong>
+                    </div>
+                    <div class="payroll-detail-row">
+                        <span>Tax on exceeding</span>
+                        <strong>PKR @taxOnExceeding.ToString("N2")</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="payroll-breakdown-panel">
+                <div class="payroll-breakdown-panel-header">
+                    <span class="payroll-breakdown-panel-title">Surcharge Rule</span>
+                    @if (taxSurcharge != null)
+                    {
+                        <span class="payroll-pill payroll-pill--warning">@taxSurcharge.RatePercent.ToString("0.##")%</span>
+                    }
+                </div>
+
+                <strong class="payroll-breakdown-panel-range">@surchargeRange</strong>
+
+                <div class="payroll-detail-list">
+                    <div class="payroll-detail-row">
+                        <span>Threshold</span>
+                        <strong>PKR @(taxSurcharge?.IncomeThreshold.ToString("N2") ?? "0.00")</strong>
+                    </div>
+                    <div class="payroll-detail-row">
+                        <span>Calculated surcharge</span>
+                        <strong>PKR @surchargeAmount.ToString("N2")</strong>
+                    </div>
+                    <div class="payroll-detail-row">
+                        <span>Status</span>
+                        <strong>@(taxSurcharge != null ? "Applied" : "Not applicable")</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="payroll-calculation-note">
+            <i class="fas fa-circle-info"></i>
+            <span>The deduction saved in this form is the monthly tax amount calculated from the selected fiscal settings.</span>
+        </div>
+
+        <script>
+            (function () {
+                var deductionInput = document.getElementById('incometaxdetection');
+                if (deductionInput) {
+                    deductionInput.value = '@monthlyTax';
+                }
+
+                var grossSalaryInput = document.getElementById('GrossSalary');
+                if (grossSalaryInput) {
+                    grossSalaryInput.value = '@grossSalary.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)';
+                }
+            })();
+        </script>
+    </div>
+}
+else if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="payroll-calculation-card payroll-calculation-card--warning animate-profile-in">
+        <div class="payroll-calculation-topband is-warning"></div>
+
+        <div class="payroll-calculation-header">
+            <div class="payroll-calculation-heading">
+                <span class="payroll-calculation-icon">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </span>
+                <div>
+                    <h4>Tax Calculation Unavailable</h4>
+                    <p>@errorMessage</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="payroll-calculation-card payroll-calculation-card--placeholder animate-profile-in">
+        <div class="payroll-calculation-header">
+            <div class="payroll-calculation-heading">
+                <span class="payroll-calculation-icon">
+                    <i class="fas fa-calculator"></i>
+                </span>
+                <div>
+                    <h4>Tax Calculation Breakdown</h4>
+                    <p>Select an employee and salary period to preview the monthly tax deduction.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}

@@ -1,0 +1,25 @@
+@{
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    ViewData["Title"] = "Application Submitted – AlignHR";
+    var name = TempData["AppliedName"]?.ToString();
+}
+
+<div class="public-card" style="max-width:520px;text-align:center;padding:56px 40px;">
+    <div style="width:64px;height:64px;background:var(--ahr-accent);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="none" viewBox="0 0 24 24" stroke="white" stroke-width="2.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+    </div>
+
+    <h1 style="font-family:var(--ahr-font-display);font-size:22px;font-weight:700;margin:0 0 10px;color:var(--ahr-text);">
+        Application Received@(string.IsNullOrWhiteSpace(name) ? "" : $", {name}!")
+    </h1>
+    <p style="font-size:14px;color:var(--ahr-text-muted);line-height:1.65;margin:0;">
+        Thank you for applying. Our recruitment team will review your application and
+        reach out to you if your profile matches our requirements.
+    </p>
+
+    <div style="margin-top:32px;padding-top:24px;border-top:1px solid var(--ahr-border);font-size:12px;color:var(--ahr-text-muted);">
+        You may close this window.
+    </div>
+</div>

@@ -1,0 +1,341 @@
+@model List<AlignHR.Models.HrJobPortalItemViewModel>
+@{
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    ViewData["Title"] = "Job Openings – AlignHR";
+
+    var search         = ViewData["Search"]?.ToString();
+    var selectedDept   = ViewData["Department"]?.ToString();
+    var allDepartments = ViewData["AllDepartments"] as List<string?> ?? new();
+}
+
+<style>
+    .portal-wrap {
+        width: 100%;
+        max-width: 860px;
+    }
+
+    .portal-hero {
+        text-align: center;
+        padding: 40px 24px 32px;
+    }
+
+    .portal-hero h1 {
+        font-family: var(--ahr-font-display);
+        font-size: 30px;
+        font-weight: 700;
+        color: var(--ahr-text);
+        margin: 0 0 8px;
+        letter-spacing: -0.03em;
+    }
+
+    .portal-hero p {
+        font-size: 14px;
+        color: var(--ahr-text-muted);
+        margin: 0;
+    }
+
+    .portal-filters {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 0 0 20px;
+    }
+
+    .portal-filters input,
+    .portal-filters select {
+        font-size: 13px;
+        border: 1px solid var(--ahr-border);
+        border-radius: 7px;
+        padding: 8px 12px;
+        background: var(--ahr-surface);
+        color: var(--ahr-text);
+        outline: none;
+    }
+
+    .portal-filters input {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .portal-filters input:focus,
+    .portal-filters select:focus {
+        border-color: var(--ahr-accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--ahr-accent) 12%, transparent);
+    }
+
+    .portal-filters button {
+        padding: 8px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 7px;
+        border: none;
+        background: var(--ahr-accent);
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .portal-filters button:hover {
+        opacity: .88;
+    }
+
+    .job-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .job-card {
+        background: var(--ahr-surface);
+        border: 1px solid var(--ahr-border);
+        border-radius: 10px;
+        padding: 22px 24px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 20px;
+        transition: box-shadow .15s, border-color .15s;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .job-card:hover {
+        border-color: var(--ahr-accent);
+        box-shadow: 0 4px 18px rgba(0,0,0,.07);
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .job-card-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .job-card-title {
+        font-family: var(--ahr-font-display);
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--ahr-text);
+        margin: 0 0 5px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .job-card-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 14px;
+        margin-bottom: 10px;
+    }
+
+    .job-card-meta span {
+        font-size: 12px;
+        color: var(--ahr-text-muted);
+    }
+
+    .job-card-meta .dot::before {
+        content: "·";
+        margin-right: 14px;
+    }
+
+    .job-card-desc {
+        font-size: 13px;
+        color: var(--ahr-text-muted);
+        line-height: 1.55;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .job-card-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+    }
+
+    .job-tag {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 9px;
+        border-radius: 20px;
+        border: 1px solid var(--ahr-border);
+        color: var(--ahr-text-muted);
+        background: var(--ahr-bg);
+        white-space: nowrap;
+    }
+
+    .job-card-cta {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    .job-card-code {
+        font-family: var(--ahr-font-mono);
+        font-size: 11px;
+        color: var(--ahr-text-muted);
+        white-space: nowrap;
+    }
+
+    .btn-apply {
+        display: inline-block;
+        padding: 9px 20px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 7px;
+        background: var(--ahr-accent);
+        color: #fff;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity .15s;
+    }
+
+    .btn-apply:hover {
+        opacity: .88;
+        color: #fff;
+        text-decoration: none;
+    }
+
+    .portal-empty {
+        text-align: center;
+        padding: 56px 24px;
+        color: var(--ahr-text-muted);
+        background: var(--ahr-surface);
+        border: 1px solid var(--ahr-border);
+        border-radius: 10px;
+    }
+
+    .portal-empty h3 {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 6px;
+        color: var(--ahr-text);
+    }
+
+    .portal-count {
+        font-size: 12px;
+        color: var(--ahr-text-muted);
+        margin-bottom: 16px;
+    }
+
+    @@media (max-width: 600px) {
+        .job-card { flex-direction: column; gap: 14px; }
+        .job-card-cta { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
+        .job-card-title { white-space: normal; }
+    }
+</style>
+
+<div class="portal-wrap">
+
+    @* ── Hero ── *@
+    <div class="portal-hero">
+        <h1>We're Hiring</h1>
+        <p>Explore open positions and find a role that matches your ambitions.</p>
+    </div>
+
+    @* ── Filters ── *@
+    <form method="get" action="/jobs" class="portal-filters">
+        <input type="text" name="search" value="@search" placeholder="Search by title, department or location…" />
+        @if (allDepartments.Any())
+        {
+            <select name="department">
+                <option value="">All Departments</option>
+                @foreach (var dept in allDepartments)
+                {
+                    <option value="@dept" selected="@(dept == selectedDept)">@dept</option>
+                }
+            </select>
+        }
+        <button type="submit">Search</button>
+        @if (!string.IsNullOrWhiteSpace(search) || !string.IsNullOrWhiteSpace(selectedDept))
+        {
+            <a href="/jobs" style="padding:8px 14px;font-size:13px;color:var(--ahr-text-muted);text-decoration:none;align-self:center;">
+                Clear
+            </a>
+        }
+    </form>
+
+    @* ── Count ── *@
+    <div class="portal-count">
+        @Model.Count opening@(Model.Count == 1 ? "" : "s") found
+    </div>
+
+    @* ── Job list ── *@
+    @if (!Model.Any())
+    {
+        <div class="portal-empty">
+            <h3>No openings right now</h3>
+            <p style="margin:0;font-size:13px;">Check back soon — new positions are added regularly.</p>
+        </div>
+    }
+    else
+    {
+        <div class="job-list">
+            @foreach (var job in Model)
+            {
+                var isClosingSoon = job.CloseDate.HasValue && job.CloseDate.Value <= DateTime.Today.AddDays(7);
+                var isClosed = job.CloseDate.HasValue && job.CloseDate.Value < DateTime.Today;
+
+                <a class="job-card" href="/apply/@job.Id">
+                    <div class="job-card-body">
+                        <div class="job-card-title">@job.JobTitle</div>
+
+                        <div class="job-card-meta">
+                            @if (!string.IsNullOrWhiteSpace(job.DepartmentName))
+                            {
+                                <span>@job.DepartmentName</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(job.Location))
+                            {
+                                <span class="@(string.IsNullOrWhiteSpace(job.DepartmentName) ? "" : "dot")">@job.Location</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(job.EmploymentType))
+                            {
+                                <span class="dot">@job.EmploymentType</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(job.Nature))
+                            {
+                                <span class="dot">@job.Nature</span>
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(job.JobDescription))
+                        {
+                            <div class="job-card-desc">@job.JobDescription</div>
+                        }
+
+                        <div class="job-card-tags">
+                            <span class="job-tag">Posted @job.OpenDate.ToString("dd MMM yyyy")</span>
+                            @if (job.CloseDate.HasValue)
+                            {
+                                if (isClosingSoon && !isClosed)
+                                {
+                                    <span class="job-tag" style="border-color:#f59e0b;color:#b45309;background:#fffbeb;">
+                                        Closes @job.CloseDate.Value.ToString("dd MMM yyyy")
+                                    </span>
+                                }
+                                else if (!isClosed)
+                                {
+                                    <span class="job-tag">Closes @job.CloseDate.Value.ToString("dd MMM yyyy")</span>
+                                }
+                            }
+                        </div>
+                    </div>
+
+                    <div class="job-card-cta">
+                        @if (!string.IsNullOrWhiteSpace(job.JobCode))
+                        {
+                            <span class="job-card-code">@job.JobCode</span>
+                        }
+                        <span class="btn-apply">Apply Now</span>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+
+</div>

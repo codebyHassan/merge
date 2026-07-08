@@ -1,0 +1,123 @@
+@{
+    var pageTitle    = ViewData["Title"] as string ?? "Dashboard";
+    var bodyClass    = ViewData["BodyClass"] as string ?? string.Empty;
+    var toastSuccess = TempData["Success"] as string ?? string.Empty;
+    var toastError   = TempData["Error"]   as string ?? string.Empty;
+}
+<!doctype html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@pageTitle - Align HR</title>
+
+    @* Fonts: Inter (body + headings) · JetBrains Mono (numeric) *@
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+    @* Load order: Bootstrap CSS → Icon libs → DataTables → Flatpickr → Theme *@
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+    <link href="https://cdn.datatables.net/1.13.8/css/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet" />
+    <link href="~/css/erp/erp.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/alignhr-theme.css" rel="stylesheet" asp-append-version="true" />
+    <link href="~/css/alignhr-chat.css" rel="stylesheet" asp-append-version="true" />
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="erp-app @bodyClass"
+      data-permissions="@ViewData["Permissions"]"
+      data-toast-success="@toastSuccess"
+      data-toast-error="@toastError">
+
+    <a class="skip-link" href="#main-workspace">Skip to workspace</a>
+
+    <div class="erp-shell">
+        <partial name="_Sidebar" />
+
+        <div class="erp-main">
+            <partial name="_TopNavbar" />
+
+            <main id="main-workspace" class="erp-workspace" tabindex="-1">
+                <partial name="_Breadcrumb" />
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <div class="toast-container position-fixed top-0 end-0 p-3"
+         id="erpToastHost"
+         aria-live="polite"
+         aria-atomic="true"></div>
+
+    <partial name="_CommandPalette" />
+    <partial name="_ConfirmationModal" />
+
+    @* Load order: jQuery → Bootstrap JS → Libraries → Core *@
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.8/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="~/js/erp/app.js" asp-append-version="true"></script>
+    <script src="~/js/alignhr-core.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+    @* ── Botpress SDK + AlignHR Branding ── *@
+    <script src="https://cdn.botpress.cloud/webchat/v3.6/inject.js"></script>
+    <script src="https://files.bpcontent.cloud/2026/07/08/11/20260708110420-Z2ZH1Y9S.js" defer></script>
+
+    <script>
+        window.botpressWebChat = {
+        configuration: {
+        botName: "AlignHR",
+        botDescription: "Your AI HR Assistant",
+        botAvatar: "/images/alignhr-logo.png", // Change to your logo
+        color: "#0B6E4F",                      // AlignHR brand color
+        variant: "solid",
+        themeMode: "light",
+        showPoweredBy: false // Works only if supported by your Botpress plan
+        }
+        }
+    </script>
+
+    <style>
+        /* Hide Botpress launcher (using your own UI) */
+        #bp-web-widget,
+        #botpress-webchat,
+        .bpw-widget-btn,
+        .bpw-floating-button,
+        [id^="bp-web-widget"],
+        [class*="bpw-widget"],
+        iframe[title*="Botpress" i],
+        iframe[title*="AlignHR" i],
+        div[class*="Webchat"],
+        div[data-testid="webchat-widget"] {
+        display: none !important;
+        }
+
+        /* Remove Powered by Botpress */
+        .bp-powered-by,
+        .bpw-powered-by,
+        [class*="powered"],
+        [data-testid="powered-by"] {
+        display: none !important;
+        }
+
+        /* Optional: hide Botpress logo if it appears */
+        .bpw-header__icon,
+        .bpw-header-logo,
+        img[alt*="Botpress"] {
+        display: none !important;
+        }
+    </style>
+
+
+</body>
+</html>

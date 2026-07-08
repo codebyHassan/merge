@@ -1,0 +1,59 @@
+@model AlignHR.Models.MasterLoanAdvanceDetail
+
+@{
+    ViewData["Title"] = "Delete Installment";
+    ViewBag.ActivePage = "MasterLoanAdvanceDetail";
+}
+
+<!-- Breadcrumb Area -->
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <i class="fas fa-home"></i>
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">Installment Schedule</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Delete Confirmation</div>
+</div>
+
+<!-- Main Content Card -->
+<div class="form-shell danger-border">
+    <div class="card-inner">
+        <div class="delete-header">
+            <div class="warning-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h2 class="card-subtitle">Delete Installment?</h2>
+            <p class="text-danger font-medium mt-2">Warning: This action cannot be undone. Are you sure you want to delete this installment record?</p>
+        </div>
+
+        <div class="summary-box">
+            <div class="summary-item">
+                <span class="label">Employee</span>
+                <span class="value">@Model.MasterLoanAdvance?.Employee?.FirstName @Model.MasterLoanAdvance?.Employee?.LastName</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Installment No.</span>
+                <span class="value font-bold">#@Model.InstallmentNo</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Deduction Month</span>
+                <span class="value">@Model.DeductionMonth</span>
+            </div>
+            <div class="summary-item">
+                <span class="label">Amount</span>
+                <span class="value font-mono font-bold">@Model.TotalDeductionAmount.ToString("N2")</span>
+            </div>
+        </div>
+
+        <form asp-action="Delete" method="post" class="form-actions-sticky-center">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="id" />
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel, Keep Record</a>
+            <button type="submit" class="btn-delete-full">Confirm Permanent Deletion</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,70 @@
+@model IEnumerable<AlignHR.Models.SalarySlipMaster>
+
+@if (Model != null && Model.Any())
+{
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col">Employee ID</th>
+                    <th scope="col">Employee Name</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Designation</th>
+                    <th scope="col">Pay Period</th>
+                    <th scope="col" class="text-end">Basic Salary</th>
+                    <th scope="col" class="text-end">Allowances</th>
+                    <th scope="col" class="text-end">Overtime</th>
+                    <th scope="col" class="text-end">Bonuses</th>
+                    <th scope="col" class="text-end">Gross Salary</th>
+                    <th scope="col" class="text-end">Deductions</th>
+                    <th scope="col" class="text-end">Taxes</th>
+                    <th scope="col" class="text-end">Net Salary</th>
+                    <th scope="col" class="text-end sticky-actions">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var overtime = item.Details?.Where(d => d.Type == AlignHR.Models.PayrollComponentType.Earning && (d.ComponentName.Contains("Overtime", StringComparison.OrdinalIgnoreCase) || d.ComponentName.Contains("OT", StringComparison.OrdinalIgnoreCase))).Sum(d => d.Amount) ?? 0;
+                    var taxes = item.Details?.Where(d => d.Type == AlignHR.Models.PayrollComponentType.Deduction && (d.ComponentName.Contains("Tax", StringComparison.OrdinalIgnoreCase))).Sum(d => d.Amount) ?? 0;
+                    var basicSalary = item.GrossSalarySnapshot;
+                    var allowances = item.TotalAllowances;
+                    var grossSalary = basicSalary + allowances + overtime + item.BonusAmount;
+                    <tr>
+                        <td>@item.Employee?.Code</td>
+                        <td><strong>@item.EmployeeNameSnapshot</strong></td>
+                        <td>@item.DepartmentSnapshot</td>
+                        <td>@item.DesignationSnapshot</td>
+                        <td>@item.SalaryPeriod?.PeriodName</td>
+                        <td class="text-end">@basicSalary.ToString("N2")</td>
+                        <td class="text-end">@allowances.ToString("N2")</td>
+                        <td class="text-end">@overtime.ToString("N2")</td>
+                        <td class="text-end">@item.BonusAmount.ToString("N2")</td>
+                        <td class="text-end">@grossSalary.ToString("N2")</td>
+                        <td class="text-end">@item.TotalDeductions.ToString("N2")</td>
+                        <td class="text-end">@taxes.ToString("N2")</td>
+                        <td class="text-end"><strong>@item.PayableAmount.ToString("N2")</strong></td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a href="/PayrollRegister/Print/@item.Id" class="btn btn-icon btn-sm btn-icon-primary" target="_blank" title="Print Slip">
+                                    <i class="fas fa-print"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">@Model.Count() record(s) found</span>
+    </div>
+}
+else
+{
+    <div class="empty-state" style="display: block;">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <h3 class="h6 mt-2 mb-1">No Payroll Records Found</h3>
+        <p class="text-muted mb-0">No records match your criteria. Select a period and try again.</p>
+    </div>
+}

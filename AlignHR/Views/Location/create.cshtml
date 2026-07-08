@@ -1,0 +1,57 @@
+@model AlignHR.Models.Location
+@{
+    ViewData["Title"] = "Create Location";
+    ViewBag.ActivePage = "Location";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <!-- Row 1 -->
+                <div class="col-12 col-md-4">
+                    <label asp-for="Name" class="form-label small fw-semibold">Name <span class="text-danger">*</span></label>
+                    <input asp-for="Name" class="form-control form-control-sm" placeholder="e.g. Dubai" required />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="Latitude" class="form-label small fw-semibold">Latitude</label>
+                    <input asp-for="Latitude" type="number" step="any" class="form-control form-control-sm" placeholder="e.g. 25.2048" />
+                    <span asp-validation-for="Latitude" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="Longitude" class="form-label small fw-semibold">Longitude</label>
+                    <input asp-for="Longitude" type="number" step="any" class="form-control form-control-sm" placeholder="e.g. 55.2708" />
+                    <span asp-validation-for="Longitude" class="text-danger small"></span>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="col-12">
+                    <label asp-for="Adress" class="form-label small fw-semibold">Address</label>
+                    <input asp-for="Adress" class="form-control form-control-sm" placeholder="e.g. Office 5, Main Boulevard, Johar Town, Lahore" />
+                    <span asp-validation-for="Adress" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

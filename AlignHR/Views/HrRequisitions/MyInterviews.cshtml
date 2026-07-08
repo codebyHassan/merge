@@ -1,0 +1,108 @@
+@model List<AlignHR.Models.HrMyInterviewItemViewModel>
+
+@{
+    ViewData["Title"] = "My Interviews";
+    ViewBag.ActivePage = "HrMyInterviews";
+}
+
+<section class="filter-bar mb-3">
+    <div class="fw-semibold">My Interviews</div>
+</section>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small">
+        @TempData["Error"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="table-shell" data-erp-table>
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Position</th>
+                    <th>Department</th>
+                    <th>Candidate</th>
+                    <th>Round</th>
+                    <th>Scheduled</th>
+                    <th>Status</th>
+                    <th>Feedback</th>
+                    <th>Score</th>
+                    <th class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var ivClass = item.InterviewStatus switch
+                    {
+                        "Completed"   => "badge-success",
+                        "Cancelled"   => "badge-danger",
+                        "NoShow"      => "badge-danger",
+                        "Rescheduled" => "badge-warning",
+                        _             => "badge-secondary"
+                    };
+                    <tr>
+                        <td class="fw-semibold">@(item.PositionTitle ?? "—")</td>
+                        <td>@(item.DepartmentName ?? "—")</td>
+                        <td>@item.CandidateName</td>
+                        <td>@(item.RoundName ?? "—")</td>
+                        <td>@item.ScheduledDateTime.ToString("dd MMM yyyy HH:mm")</td>
+                        <td><span class="status-badge @ivClass">@item.InterviewStatus</span></td>
+                        <td>
+                            @if (!item.HasFeedback)
+                            {
+                                <span class="status-badge badge-secondary">Pending</span>
+                            }
+                            else if (item.IsSubmitted)
+                            {
+                                <span class="status-badge badge-success">Submitted</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-warning">Draft</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.OverallScore.HasValue)
+                            {
+                                var scoreClass = item.OverallScore >= 75 ? "badge-success"
+                                              : item.OverallScore >= 50 ? "badge-warning"
+                                              : "badge-danger";
+                                <span class="status-badge @scoreClass">@item.OverallScore.Value.ToString("0.#")%</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">—</span>
+                            }
+                        </td>
+                        <td class="text-end sticky-actions">
+                            @if (item.IsOnPanel)
+                            {
+                                <a asp-controller="HrInterviews" asp-action="LineManagerFeedback"
+                                   asp-route-scheduleId="@item.ScheduleId"
+                                   class="btn btn-icon btn-sm btn-icon-warning"
+                                   title="@(item.HasFeedback ? "Edit Feedback" : "Give Feedback")">
+                                    <i class="fa-solid fa-@(item.HasFeedback ? "pen-to-square" : "star")"></i>
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted small" title="Not on panel for this interview">—</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-calendar-xmark"></i>
+                <h3 class="h6 mt-2 mb-1">No interviews yet</h3>
+                <p class="text-muted mb-0">Interviews for positions you initiated will appear here.</p>
+            </div>
+        }
+    </div>
+</section>

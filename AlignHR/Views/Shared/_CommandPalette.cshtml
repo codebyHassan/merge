@@ -1,0 +1,45 @@
+<div class="modal fade command-modal" id="commandPalette" tabindex="-1" aria-labelledby="commandPaletteLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <div class="input-group command-search">
+                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input class="form-control" id="commandSearchInput" type="search" placeholder="Search modules, people, reports, actions" aria-label="Command search" />
+                </div>
+                <button type="button" class="btn-close ms-2" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="command-group">
+                    <div class="command-label">Suggested actions</div>
+                    <button class="command-item" type="button">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>Add employee</span>
+                        <kbd>N</kbd>
+                    </button>
+                    <button class="command-item" type="button">
+                        <i class="fa-solid fa-calendar-check"></i>
+                        <span>Approve leave request</span>
+                        <kbd>L</kbd>
+                    </button>
+                    <button class="command-item" type="button">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <span>Open payroll report</span>
+                        <kbd>R</kbd>
+                    </button>
+                </div>
+                <div class="command-group">
+                    <div class="command-label">Recent</div>
+                    <button class="command-item" type="button">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Attendance exceptions today</span>
+                    </button>
+                    <button class="command-item" type="button">
+                        <i class="fa-regular fa-star"></i>
+                        <span>Favorite modules</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

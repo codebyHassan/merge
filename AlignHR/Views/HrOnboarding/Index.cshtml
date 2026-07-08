@@ -1,0 +1,87 @@
+@model IPagedList<AlignHR.Models.HrOnboardingListItemViewModel>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Onboarding";
+    ViewBag.ActivePage = "HrOnboarding";
+    var currentFilter = ViewData["CurrentFilter"]?.ToString();
+}
+
+<section class="filter-bar mb-2">
+    <div class="input-group input-group-sm me-auto" style="width:auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control" type="search" name="search" value="@currentFilter"
+               placeholder="Candidate name or status"
+               hx-get="@Url.Action("Index")" hx-target="#onboarding-page"
+               hx-select="#onboarding-page" hx-trigger="keyup[key=='Enter'], search"
+               hx-include="[name='search']" hx-push-url="true" form="none" />
+    </div>
+</section>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="table-shell" data-erp-table id="onboarding-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Position</th>
+                    <th>Planned Joining</th>
+                    <th>Actual Joining</th>
+                    <th>Tasks</th>
+                    <th>Status</th>
+                    <th class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model)
+                {
+                    var statusClass = o.Status switch
+                    {
+                        "Completed"      => "badge-success",
+                        "Joined"         => "badge-success",
+                        "ReadyToJoin"    => "badge-warning",
+                        "TasksInProgress"=> "badge-warning",
+                        "DocumentsPending"=> "badge-secondary",
+                        "Cancelled"      => "badge-danger",
+                        _                => "badge-secondary"
+                    };
+                    <tr>
+                        <td class="fw-semibold">@(o.CandidateName ?? "—")</td>
+                        <td>@(o.JobTitle ?? "—")</td>
+                        <td>@o.PlannedJoiningDate.ToString("dd MMM yyyy")</td>
+                        <td>@(o.ActualJoiningDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                        <td>
+                            <span class="badge bg-secondary">@o.CompletedTasks / @o.TotalTasks</span>
+                        </td>
+                        <td><span class="status-badge @statusClass">@o.Status</span></td>
+                        <td class="text-end sticky-actions">
+                            <a asp-action="Details" asp-route-id="@o.Id"
+                               class="btn btn-icon btn-sm btn-icon-primary"><i class="fa-solid fa-eye"></i></a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-person-walking-arrow-right"></i>
+                <h3 class="h6 mt-2 mb-1">No onboarding records yet</h3>
+                <p class="text-muted mb-0">Start onboarding from an accepted offer.</p>
+            </div>
+        }
+    </div>
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage–@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav>@Html.PagedListPager(Model, page => Url.Action("Index", new { page, search = currentFilter }), new PagedListRenderOptions { UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" }, LiElementClasses = new[] { "page-item" }, PageClasses = new[] { "page-link" } })</nav>
+    </div>
+</section>

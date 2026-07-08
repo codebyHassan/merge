@@ -1,0 +1,129 @@
+@model AlignHR.Models.OverTimeHours
+@using AlignHR.Services
+@inject IPayrollLockService LockService
+
+@{
+    ViewData["Title"] = "OverTime Details";
+    bool isLocked = await LockService.IsRecordLocked(Model.EmployeeId, Model.SalaryPeriodFK);
+}
+
+<div class="page-header animate-fade-in">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a href="/OverTimeHours">Overtime</a>
+        <span>/</span>
+        <span>Details</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">OverTime Details</h1>
+            <p class="page-subtitle">Hourly records and calculations for @Model.Employee?.FirstName</p>
+        </div>
+
+        <div class="flex gap-12">
+            @if (isLocked)
+            {
+                <div class="status-badge locked">
+                    <i class="fas fa-lock"></i>
+                    <span>LOCKED</span>
+                </div>
+            }
+            else
+            {
+                <div class="status-badge active">
+                    <i class="fas fa-check-circle"></i>
+                    <span>ACTIVE</span>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="details-grid animate-slide-up">
+    <!-- Main Info Card -->
+    <div class="erp-card main">
+        <div class="card-header-premium">
+            <i class="fas fa-user-clock"></i>
+            <span>Employee & Period</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-group">
+                <label>Employee</label>
+                <div class="value-highlight">@Model.Employee?.FirstName @Model.Employee?.LastName</div>
+                <div class="value small text-muted">ID: @Model.Employee?.Code</div>
+            </div>
+            
+            <hr class="divider" />
+            
+            <div class="info-group">
+                <label>Salary Period</label>
+                <div class="value">@Model.SalaryPeriod?.PeriodName</div>
+            </div>
+            <div class="info-group">
+                <label>Period Status</label>
+                <div class="value">
+                    <span class="status-pill @(isLocked ? "posted" : "open")">
+                        @(isLocked ? "Posted to GL" : "Open for Editing")
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calculations Card -->
+    <div class="erp-card secondary">
+        <div class="card-header-premium financial">
+            <i class="fas fa-calculator"></i>
+            <span>OverTime Calculation</span>
+        </div>
+        <div class="card-body-premium centered">
+            <div class="stat-box-container">
+                <div class="stat-box">
+                    <label>Total Hours</label>
+                    <div class="stat-value">@Model.OTHours</div>
+                </div>
+                <div class="stat-box-divider"></div>
+                <div class="stat-box">
+                    <label>Total Amount</label>
+                    <div class="stat-value secondary">PKR @Model.Amount.ToString("N0")</div>
+                </div>
+            </div>
+            
+            <div class="meta-info">
+                <div class="meta-item">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span>Recorded: @Model.createat.ToString("dd MMM yyyy")</span>
+                </div>
+                <div class="meta-item">
+                    <i class="fas fa-user-edit"></i>
+                    <span>Last Updated: @(Model.updateat != DateTime.MinValue ? Model.updateat.ToString("dd MMM yyyy") : "Never")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Bar -->
+    <div class="details-actions-footer">
+        <a href="/OverTimeHours" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i>
+            Back to List
+        </a>
+        
+        @if (!isLocked)
+        {
+            <a href="/OverTimeHours/Edit/@Model.id" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i>
+                Edit Record
+            </a>
+        }
+        else
+        {
+            <button class="btn-locked-premium" disabled title="Record is finalized and locked">
+                <i class="fas fa-lock"></i>
+                Finalized
+            </button>
+        }
+    </div>
+</div>

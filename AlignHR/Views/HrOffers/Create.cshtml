@@ -1,0 +1,64 @@
+@model AlignHR.Models.HrOfferFormViewModel
+
+@{
+    ViewData["Title"] = "Create Offer";
+    ViewBag.ActivePage = "HrOffers";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <div class="mb-3 small text-muted">Candidate: <strong>@Model.CandidateName</strong> · @Model.JobTitle</div>
+
+        <form asp-action="Create" method="post" class="needs-validation" novalidate id="offerForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ApplicationFk" />
+            <input type="hidden" asp-for="CandidateName" />
+            <input type="hidden" asp-for="JobTitle" />
+
+            @{
+                var _me = ViewData.ModelState.ContainsKey("") ? ViewData.ModelState[""]!.Errors : null;
+            }
+            @if (_me != null && _me.Count > 0)
+            {
+                <div class="alert alert-danger p-2 mb-3 small">
+                    @foreach (var e in _me) { <div>@e.ErrorMessage</div> }
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label asp-for="ProposedSalary" class="form-label small fw-semibold">Proposed Salary <span class="text-danger">*</span></label>
+                    <input asp-for="ProposedSalary" type="number" step="any" min="0" class="form-control form-control-sm" />
+                    <span asp-validation-for="ProposedSalary" class="invalid-feedback"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="ExpiryDate" class="form-label small fw-semibold">Offer Expiry Date</label>
+                    <input asp-for="ExpiryDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Remarks" class="form-label small fw-semibold">Initial Remarks</label>
+                    <textarea asp-for="Remarks" class="form-control form-control-sm" rows="5"
+                              placeholder="e.g. Initial offer as discussed."></textarea>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Notes" class="form-label small fw-semibold">Offer Notes</label>
+                    <textarea asp-for="Notes" class="form-control form-control-sm" rows="5"
+                              placeholder="Type offer terms, benefits, conditions…"></textarea>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-check me-1"></i>Create Offer
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

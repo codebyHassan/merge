@@ -1,0 +1,62 @@
+@model dynamic
+@{
+    ViewData["Title"] = "Bulk Add Income Tax Deduction";
+    ViewBag.ActivePage = "IncomeTaxDetuction";
+}
+
+<div class="d-flex flex-column gap-3">
+    <section class="record-toolbar mb-2">
+        <div>
+            <h2 class="h6 fw-bold mb-0">Bulk Add Income Tax Deduction</h2>
+            <div class="text-muted small">Automatically calculate and generate tax records for all active employees.</div>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Index">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to List
+            </a>
+        </div>
+    </section>
+
+    <div class="form-shell">
+        <div class="card-inner p-4">
+            <div class="row align-items-center g-3">
+                <div class="col-md-7">
+                    <h3 class="h6 fw-bold mb-1"><i class="fa-solid fa-calculator text-primary me-2"></i>Automated Calculation</h3>
+                    <p class="text-muted small mb-0">
+                        This tool automatically calculates income tax for all <strong>Active</strong> employees based on their latest payroll records and active tax slabs. Select a period to preview.
+                    </p>
+                </div>
+                <div class="col-md-5">
+                    <div class="form-item">
+                        <label class="form-label mb-1" for="PeriodSelector">Select Salary Period <span class="required">*</span></label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                            <select id="PeriodSelector" class="form-select form-select-sm" asp-items="ViewBag.PeriodSalery" 
+                                    hx-get="/IncomeTaxDetuction/GetBulkAddPreview" 
+                                    hx-target="#PreviewContainer" 
+                                    hx-trigger="change"
+                                    hx-indicator="#BulkAddLoadingIndicator"
+                                    name="periodId">
+                                <option value="">-- Choose Period --</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="BulkAddLoadingIndicator" class="htmx-indicator py-4 text-center">
+        <div class="spinner-border text-primary" role="status" style="width: 2.2rem; height: 2.2rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="text-muted mt-2 fw-semibold mb-0" style="font-size: 0.8rem;">Calculating taxes for active employees...</p>
+    </div>
+
+    <div id="PreviewContainer" style="min-height: 200px; position: relative;">
+        <div class="form-shell py-5 text-center">
+            <i class="fa-solid fa-table text-muted mb-3" style="font-size: 2.5rem; opacity: 0.5;"></i>
+            <p class="text-muted fw-semibold mb-0">Select a salary period above to generate the tax calculation preview.</p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,267 @@
+@model AlignHR.Models.EmployeeShifts
+@{
+    ViewData["Title"] = "Edit Shift Assignment";
+    ViewBag.ActivePage = "EmployeeShifts";
+}
+
+@section Styles {
+    <style>
+        .shift-card {
+            border: 1px solid var(--erp-border);
+            border-radius: 0.8rem;
+            overflow: hidden;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+            box-shadow: 0 10px 20px rgba(15, 23, 42, 0.05);
+        }
+
+        .shift-card__header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.7rem;
+            padding: 0.7rem 0.85rem 0.62rem;
+            border-bottom: 1px solid var(--erp-border);
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.08), rgba(15, 23, 42, 0.03));
+        }
+
+        .shift-card__eyebrow {
+            margin: 0 0 0.18rem;
+            color: var(--erp-primary);
+            font-size: 0.63rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .shift-card__title {
+            margin: 0;
+            color: var(--erp-text);
+            font-family: "Plus Jakarta Sans", sans-serif;
+            font-size: 0.84rem;
+            font-weight: 800;
+        }
+
+        .shift-card__subtitle {
+            margin: 0.1rem 0 0;
+            color: var(--erp-muted);
+            font-size: 0.68rem;
+        }
+
+        .shift-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            padding: 0.25rem 0.58rem;
+            font-size: 0.63rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+
+        .shift-pill--muted {
+            background: rgba(100, 116, 139, 0.12);
+            color: #475569;
+        }
+
+        .shift-card__body {
+            display: flex;
+            flex-direction: column;
+            gap: 0.7rem;
+            padding: 0.82rem;
+        }
+
+        .shift-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.22rem;
+        }
+
+        .shift-field .form-label {
+            margin-bottom: 0;
+            font-size: 0.74rem;
+        }
+
+        .shift-control {
+            min-height: 37px;
+            border-radius: 0.72rem;
+            border-color: var(--erp-border);
+            padding-inline: 0.72rem;
+            font-size: 0.8rem;
+        }
+
+        .shift-control:focus {
+            border-color: var(--erp-primary);
+            box-shadow: 0 0 0 0.18rem rgba(17, 24, 39, 0.14);
+        }
+
+        .shift-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.72rem;
+        }
+
+        @@media (max-width: 991.98px) {
+            .shift-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .shift-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.72rem;
+        }
+
+        @@media (max-width: 575.98px) {
+            .shift-card__header {
+                flex-direction: column;
+            }
+        }
+
+        .shift-info-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            border-radius: 0.72rem;
+            border: 1px solid var(--erp-border);
+            background: rgba(249, 250, 251, 0.9);
+            padding: 0.55rem 0.7rem;
+            min-width: 0;
+        }
+
+        .shift-info-chip__icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.9rem;
+            height: 1.9rem;
+            border-radius: 999px;
+            background: rgba(17, 24, 39, 0.12);
+            color: var(--erp-primary);
+            flex: 0 0 auto;
+        }
+
+        .shift-info-chip__label {
+            color: var(--erp-muted);
+            font-size: 0.64rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .shift-info-chip__value {
+            color: var(--erp-text);
+            font-size: 0.8rem;
+            font-weight: 800;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+    </style>
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" id="employeeShiftEditForm" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="id" />
+            <input type="hidden" name="EmployeeIds" value="@Model.EmployeeId" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="shift-grid">
+                <div class="shift-card">
+                    <div class="shift-card__header">
+                        <div>
+                            <div class="shift-card__eyebrow">Compact</div>
+                            <h2 class="shift-card__title">Employee Snapshot</h2>
+                            <p class="shift-card__subtitle">Readonly employee details for this assignment.</p>
+                        </div>
+                        <span class="shift-pill shift-pill--muted">Locked</span>
+                    </div>
+
+                    <div class="shift-card__body">
+                        <div class="shift-summary">
+                            <div class="shift-info-chip">
+                                <div class="shift-info-chip__icon"><i class="fa-solid fa-id-badge"></i></div>
+                                <div class="min-w-0">
+                                    <div class="shift-info-chip__label">Employee</div>
+                                    <div class="shift-info-chip__value">@ViewBag.EmployeeDisplayName</div>
+                                </div>
+                            </div>
+                            <div class="shift-info-chip">
+                                <div class="shift-info-chip__icon"><i class="fa-solid fa-building"></i></div>
+                                <div class="min-w-0">
+                                    <div class="shift-info-chip__label">Department</div>
+                                    <div class="shift-info-chip__value">@ViewBag.DepartmentName</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="shift-card">
+                    <div class="shift-card__header">
+                        <div>
+                            <div class="shift-card__eyebrow">Edit</div>
+                            <h2 class="shift-card__title">Shift Assignment</h2>
+                            <p class="shift-card__subtitle">Update the shift and effective dates.</p>
+                        </div>
+                        <span class="shift-pill shift-pill--muted">Compact</span>
+                    </div>
+
+                    <div class="shift-card__body">
+                        <div class="shift-field">
+                            <label asp-for="ShiftId" class="form-label small fw-semibold">Shift <span class="text-danger">*</span></label>
+                            <select asp-for="ShiftId" class="form-select shift-control form-select-sm" required>
+                                <option value="">-- Select Shift --</option>
+                                @foreach (var s in ViewBag.Shifts)
+                                {
+                                    <option value="@s.Value">@s.Text</option>
+                                }
+                            </select>
+                            <span asp-validation-for="ShiftId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="shift-grid">
+                            <div class="shift-field">
+                                <label asp-for="RestDay" class="form-label small fw-semibold">Rest Day <span class="text-danger">*</span></label>
+                                <select asp-for="RestDay" class="form-select shift-control form-select-sm" required>
+                                    @foreach (DayOfWeek day in Enum.GetValues(typeof(DayOfWeek)))
+                                    {
+                                        <option value="@day">@day</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="RestDay" class="text-danger small"></span>
+                            </div>
+
+                            <div class="shift-field">
+                                <label asp-for="EffiectiveForm" class="form-label small fw-semibold">Effective From <span class="text-danger">*</span></label>
+                                <input asp-for="EffiectiveForm" type="date" class="form-control shift-control form-control-sm" required />
+                                <span asp-validation-for="EffiectiveForm" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="shift-field">
+                            <label asp-for="EffiectiveTo" class="form-label small fw-semibold">Effective To</label>
+                            <input asp-for="EffiectiveTo" type="date" class="form-control shift-control form-control-sm" />
+                            <span asp-validation-for="EffiectiveTo" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

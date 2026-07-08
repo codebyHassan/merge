@@ -1,0 +1,629 @@
+====================================================
+  AlignHR — HR Recruitment Module : DONE TRACKER
+====================================================
+
+Last Updated : 2026-06-09 (Sprint 2 Rev — Requisition Refactor + Recruitment Org)
+---------------------------------------------------------
+
+
+==========================================================
+  SPRINT 1 — Requisition Module                  ✅ DONE
+==========================================================
+
+TABLES
+  ✅ HR_Requisition
+
+EF MODELS
+  ✅ Models/HrRequisition.cs
+
+REPOSITORY
+  ✅ Repositories/IHrRequisitionRepository.cs
+  ✅ Repositories/HrRequisitionRepository.cs
+
+SERVICE
+  ✅ Services/IHrRequisitionService.cs
+  ✅ Services/HrRequisitionService.cs
+
+CONTROLLER
+  ✅ Controllers/HrRequisitionsController.cs
+
+VIEWS
+  ✅ Views/HrRequisitions/Index.cshtml
+  ✅ Views/HrRequisitions/Create.cshtml
+  ✅ Views/HrRequisitions/Edit.cshtml
+  ✅ Views/HrRequisitions/Details.cshtml
+
+MIGRATION
+  ✅ Migrations/20260605000000_AddHrRequisition.cs
+
+FEATURES DELIVERED
+  - Line Manager creates Requisition (Draft / Submit / Cancel)
+  - Unique RequisitionNo generation
+  - Requisition belongs to Department and Employee
+  - Full CRUD screens
+
+
+==========================================================
+  SPRINT 2 — Approval Workflow Engine            ✅ DONE
+==========================================================
+
+TABLES
+  ✅ HR_WorkflowDefinition
+  ✅ HR_WorkflowStep
+  ✅ HR_WorkflowInstance
+  ✅ HR_WorkflowHistory
+  ✅ HR_Requisition (WorkflowInstanceFK column added)
+
+EF MODELS
+  ✅ Models/HrWorkflowDefinition.cs
+  ✅ Models/HrWorkflowStep.cs
+  ✅ Models/HrWorkflowInstance.cs
+  ✅ Models/HrWorkflowHistory.cs
+  ✅ Models/HrWorkflowViewModels.cs
+
+REPOSITORY
+  ✅ Repositories/IHrWorkflowRepository.cs
+  ✅ Repositories/HrWorkflowRepository.cs
+
+SERVICE
+  ✅ Services/IHrRequisitionWorkflowService.cs
+  ✅ Services/HrRequisitionWorkflowService.cs
+
+CONTROLLER
+  ✅ Controllers/HrRequisitionsController.cs (Inbox / Approve / Reject / SendBack actions)
+
+MIGRATION
+  ✅ Migrations/20260605010000_AddHrRequisitionWorkflow.cs
+
+FEATURES DELIVERED
+  - Configurable workflow steps (HRBP → HOD → Recruiter)
+  - Approve / Reject / SendBack actions
+  - Every action stored in HR_WorkflowHistory
+  - Approval Inbox for each role
+
+
+==========================================================
+  SPRINT 2 REFACTOR — Workflow Engine Overhaul    ✅ DONE (2026-06-09)
+==========================================================
+
+ROOT CAUSE FIXED
+  - Original design routed approvals via HR_WorkflowStep.RoleId
+  - All HRBPs saw ALL HRBP approvals; no department-level ownership
+  - Incorrect approval visibility and poor scalability for enterprise orgs
+  - Replaced with employee-level assignment resolved per department
+
+SCHEMA CHANGES
+
+  HR_WorkflowStep  [MODIFIED]
+    ❌ Removed : RoleId  NUMERIC(18,0)
+    ✅ Added   : ApproverType  NVARCHAR(50)
+                  Values: HRBP | HOD | Recruiter | FinanceApprover | CEOApprover
+
+  HR_WorkflowHistory  [DROPPED]
+    ❌ Dropped — was mixing current workflow state + audit history
+    ✅ Replaced by HR_WorkflowInstanceStep + HR_WorkflowAction
+
+  NEW TABLE — HR_DepartmentApprover
+    ✅ HR_DepartmentApprover
+        Columns: Id, DepartmentId, ApproverType, EmployeeId, IsActive
+        Index  : IX_HR_DepartmentApprover_Department_Type_Active
+        Purpose: Maps each department to specific employees per approver type
+        Example: IT → HRBP=Sara, HOD=Ahmed, Recruiter=Ali
+
+  NEW TABLE — HR_WorkflowInstanceStep
+    ✅ HR_WorkflowInstanceStep
+        Columns: Id, WorkflowInstanceId, WorkflowStepId, StepOrder,
+                 ApproverType, EmployeeId, Status, AssignedDate, ActionDate, Comments
+        Indexes: IX_HR_WorkflowInstanceStep_Instance_Order (unique)
+                 IX_HR_WorkflowInstanceStep_Employee_Status
+        Purpose: Stores resolved approvers per workflow instance
+        Status : Pending | Waiting | Approved | Rejected | SentBack
+
+  NEW TABLE — HR_WorkflowAction
+    ✅ HR_WorkflowAction
+        Columns: Id, WorkflowInstanceStepId, ActionByEmployeeId,
+                 ActionType, Comments, ActionDate
+        Purpose: Permanent immutable audit trail
+        ActionType: Submitted | Approved | Rejected | SentBack
+
+TABLES KEPT (unchanged)
+  ✅ HR_Requisition
+  ✅ HR_WorkflowDefinition
+  ✅ HR_WorkflowStep  (structure modified, table kept)
+  ✅ HR_WorkflowInstance
+
+EF MODELS
+  ✅ Models/HrWorkflowStep.cs           (updated — RoleId removed, ApproverType added)
+  ✅ Models/HrDepartmentApprover.cs     (new)
+  ✅ Models/HrWorkflowInstanceStep.cs   (new — replaces WorkflowHistory state tracking)
+  ✅ Models/HrWorkflowAction.cs         (new — permanent audit trail)
+  ✅ Models/HrWorkflowViewModels.cs     (updated — inbox ViewModel uses EmployeeId)
+  ❌ Models/HrWorkflowHistory.cs        (removed)
+
+REPOSITORY
+  ✅ Repositories/IHrWorkflowRepository.cs   (updated — new queries for instance steps)
+  ✅ Repositories/HrWorkflowRepository.cs    (updated)
+
+SERVICE
+  ✅ Services/IHrRequisitionWorkflowService.cs  (updated — new submission & inbox logic)
+  ✅ Services/HrRequisitionWorkflowService.cs   (updated)
+
+CONTROLLER
+  ✅ Controllers/HrRequisitionsController.cs
+      Inbox action — now filters by EmployeeId == CurrentEmployeeId
+      (was: RoleId == CurrentUserRoleId)
+
+NEW CONTROLLER
+  ✅ Controllers/HrDepartmentApproversController.cs
+      Actions: Index, Create, Edit
+      Permission-gated: Super Admin (full), HRBP/HOD (read-only)
+
+MIGRATIONS
+  ✅ Migrations/20260606000000_RefactorHrRequisitionWorkflowApprovers.cs
+      - Adds ApproverType to HR_WorkflowStep; backfills (1→HRBP, 2→HOD, 3→Recruiter)
+      - Drops RoleId from HR_WorkflowStep
+      - Creates HR_DepartmentApprover
+      - Creates HR_WorkflowInstanceStep
+      - Creates HR_WorkflowAction
+      - Drops HR_WorkflowHistory
+      - Re-seeds workflow steps with ApproverType values
+
+  ✅ Migrations/20260606010000_AddHrDepartmentApproverFunctions.cs
+      - Seeds function records for HrDepartmentApprovers (Index, Create, Edit)
+      - Assigns all 3 functions to Super Admin
+      - Assigns Index-only (read) to HRBP and HOD
+
+  ✅ Migrations/20260606020000_AddHrRequisitionWorkflowFunctions.cs
+      - Permissions seeded for Requisition workflow screens
+
+NEW SUBMISSION LOGIC
+  1. Read DepartmentId from Requisition
+  2. Load WorkflowDefinition + WorkflowSteps (ordered by StepOrder)
+  3. Resolve each ApproverType → EmployeeId via HR_DepartmentApprover
+  4. Create HR_WorkflowInstanceStep for every step
+  5. Set first step → Pending; remaining steps → Waiting
+
+NEW INBOX LOGIC
+  - Old: step.RoleId == CurrentUserRoleId  (all role members see all requests)
+  - New: step.EmployeeId == CurrentEmployeeId  (only the assigned person sees it)
+
+BUSINESS RULES ENFORCED
+  - RBAC kept only for authorization (CanApproveRequisition etc.), not routing
+  - If no approver configured for a dept+type combination → submission fails with error
+  - Cross-department requests are never visible to unassigned approvers
+
+
+==========================================================
+  SPRINT 2 REV — Requisition Refactor + Recruitment Org  ✅ DONE (2026-06-09)
+==========================================================
+
+SOURCE
+  hrRecruitment_changes.txt  dated 09-06-2026
+
+REQUISITION CHANGES — HR_Requisition (MODIFIED)
+  New columns added:
+  ✅ InitialDate              DATE NULL
+  ✅ PromisedDate             DATE NULL
+  ✅ RequisitionType          NVARCHAR(50) NULL  (Replacement | Transfer | NewVacancy)
+  ✅ Nature                   NVARCHAR(50) NULL  (Budgeted | NonBudgeted)
+  ✅ BudgetAmountPerMonth     DECIMAL(18,2) NULL
+  ✅ ReplacementEmployeeId    NUMERIC(18,0) NULL  (for Replacement type)
+  ✅ TransferFromDepartmentId NUMERIC(18,0) NULL  (for Transfer type)
+  ✅ TransferToDepartmentId   NUMERIC(18,0) NULL  (for Transfer type)
+
+NEW MASTER TABLES
+  ✅ HR_RequisitionType   — Id, Code, Name
+      Seeded: Replacement | Transfer | NewVacancy
+
+  ✅ HR_RequisitionNature — Id, Code, Name
+      Seeded: Budgeted | NonBudgeted
+
+NEW CHILD TABLES (per-requisition)
+  ✅ HR_RequisitionSkill
+      Columns: Id, RequisitionId, SkillName, YearsExperience, IsMandatory
+      Purpose: Required skills per requisition (many)
+
+  ✅ HR_RequisitionOffering
+      Columns: Id, RequisitionId, OfferingName, Description
+      Purpose: Benefits/offerings per requisition (Health Insurance, Bonus, etc.)
+
+NEW RECRUITMENT ORGANISATION TABLES
+  ✅ HR_RecruitmentUnit
+      Columns: Id, UnitName, RecruitmentHeadEmployeeId, IsActive
+      Purpose: Groups departments under one Recruitment Head
+      Examples: Technology Recruitment, Corporate Recruitment, Sales Recruitment
+
+  ✅ HR_RecruitmentUnitDepartment
+      Columns: Id, RecruitmentUnitId, DepartmentId
+      Index  : IX_HR_RecruitmentUnitDepartment_Unit_Dept (unique)
+      Purpose: Many-to-many — which departments belong to which unit
+
+  ✅ HR_RecruitmentTeam
+      Columns: Id, RecruitmentUnitId, RecruiterEmployeeId, IsActive
+      Purpose: Recruiters working under a recruitment unit
+
+HR_RequisitionAssignment (MODIFIED)
+  ✅ Added: AssignedByEmployeeId NUMERIC(18,0) NULL
+      Purpose: Records which Recruitment Head made the assignment
+
+EF MODELS
+  ✅ Models/HrRequisition.cs              (updated — 8 new fields + Skills/Offerings nav props)
+  ✅ Models/HrRequisitionAssignment.cs    (updated — AssignedByEmployeeId added)
+  ✅ Models/HrRequisitionType.cs          (new)
+  ✅ Models/HrRequisitionNature.cs        (new)
+  ✅ Models/HrRequisitionSkill.cs         (new)
+  ✅ Models/HrRequisitionOffering.cs      (new)
+  ✅ Models/HrRecruitmentUnit.cs          (new)
+  ✅ Models/HrRecruitmentUnitDepartment.cs (new)
+  ✅ Models/HrRecruitmentTeam.cs          (new)
+  ✅ Models/HrRecruitmentUnitViewModels.cs (new — List/Form/Details ViewModels)
+
+DBCONTEXT
+  ✅ Data/ApplicationDbContext.cs
+      DbSets: HrRequisitionTypes, HrRequisitionNatures, HrRequisitionSkills,
+              HrRequisitionOfferings, HrRecruitmentUnits,
+              HrRecruitmentUnitDepartments, HrRecruitmentTeams
+      Fluent: table names, FK relationships, unique index on UnitDepartment
+
+WORKFLOW UPDATE
+  ✅ Services/HrRequisitionWorkflowService.cs — ResolveApproversAsync updated
+      - HRBP + HOD still resolved from HR_DepartmentApprover (ApproverType = HRBP / HOD)
+      - RecruitmentHead resolved via:
+          HR_RecruitmentUnitDepartment (find unit for department)
+          → HR_RecruitmentUnit.RecruitmentHeadEmployeeId
+      - Throws clear error if no recruitment unit mapped to department
+
+  New workflow (Step 3 changed):
+      Step 1 = HRBP          (from HR_DepartmentApprover)
+      Step 2 = HOD           (from HR_DepartmentApprover)
+      Step 3 = RecruitmentHead (from HR_RecruitmentUnit, FINAL step)
+
+  ✅ Controllers/HrDepartmentApproversController.cs
+      ApproverTypes list updated: removed "Recruiter", now only HRBP | HOD
+  ✅ Views/HrDepartmentApprovers/Create.cshtml
+      Helper text updated to match new 2-type structure
+
+CONTROLLER
+  ✅ Controllers/HrRecruitmentUnitsController.cs (new)
+      Actions: Index, Details, Create (GET/POST), Edit (GET/POST)
+      Manages: unit name, head, departments (checkbox), recruiters (checkbox)
+
+VIEWS — HrRecruitmentUnits
+  ✅ Views/HrRecruitmentUnits/Index.cshtml
+  ✅ Views/HrRecruitmentUnits/Details.cshtml
+  ✅ Views/HrRecruitmentUnits/Create.cshtml
+  ✅ Views/HrRecruitmentUnits/Edit.cshtml
+
+VIEWS — HrRequisitions (updated 2026-06-09)
+  ✅ Views/HrRequisitions/Create.cshtml
+      Fully rewritten — all new fields (InitialDate, PromisedDate, RequisitionType,
+      Nature, BudgetAmountPerMonth, RequiredByDate), conditional Replacement /
+      Transfer sections (shown via JS toggle on RequisitionType), dynamic Skills
+      rows, dynamic Offerings rows, Save as Draft / Submit buttons.
+  ✅ Views/HrRequisitions/Edit.cshtml
+      Same structure as Create — pre-populated existing Skills/Offerings from DB,
+      JS index counters start at existing count so new rows get unique indexes,
+      all new fields editable.
+  ✅ Views/HrRequisitions/Details.cshtml
+      Read-only display of all fields including Type, Nature, Budget, InitialDate,
+      PromisedDate, conditional Replacement / Transfer blocks, Skills table,
+      Offerings table.
+  ✅ Controllers/HrRequisitionsController.cs — Details action
+      Added ViewBag: ReplacementEmployeeName, TransferFromDepartmentName,
+      TransferToDepartmentName for name resolution in Details view.
+
+MIGRATIONS
+  ✅ Migrations/20260609000000_AddHrRequisitionRefactorSprint2Rev.cs
+      - Adds 8 new columns to HR_Requisition
+      - Creates HR_RequisitionType + seeds (Replacement, Transfer, NewVacancy)
+      - Creates HR_RequisitionNature + seeds (Budgeted, NonBudgeted)
+      - Creates HR_RequisitionSkill
+      - Creates HR_RequisitionOffering
+      - Creates HR_RecruitmentUnit
+      - Creates HR_RecruitmentUnitDepartment (unique index on Unit+Dept)
+      - Creates HR_RecruitmentTeam
+      - Adds AssignedByEmployeeId to HR_RequisitionAssignment
+      - Updates workflow seed: HRBP(1) → HOD(2) → RecruitmentHead(3, final)
+
+  ✅ Migrations/20260609010000_AddHrRecruitmentUnitFunctions.cs
+      - Seeds function records: Index, Create, Edit, Details for HrRecruitmentUnits
+      - Assigns all 4 to Super Admin
+      - Assigns Index + Details (read) to HRBP, HOD, Recruiter
+
+WORKFLOW ROUTING RESULT
+  IT Requisition (Technology Recruitment Unit: Head = Ali):
+    Step 1 → Sara  (HRBP for IT dept)
+    Step 2 → Ahmed (HOD for IT dept)
+    Step 3 → Ali   (Recruitment Head of Technology unit)
+  → Ali then assigns a recruiter via HR_RequisitionAssignment
+
+  No other HRBP, HOD, or Recruitment Head sees this request.
+
+
+==========================================================
+  SPRINT 3 — Recruiter Assignment & Job Posting  ✅ DONE
+==========================================================
+
+TABLES
+  ✅ HR_RequisitionAssignment
+  ✅ HR_JobPosting
+  ✅ HR_PostingChannel
+  ✅ HR_JobPostingChannel
+
+EF MODELS
+  ✅ Models/HrRequisitionAssignment.cs
+  ✅ Models/HrJobPosting.cs
+  ✅ Models/HrPostingChannel.cs
+  ✅ Models/HrJobPostingChannel.cs
+  ✅ Models/HrJobPostingViewModels.cs
+  ✅ Models/HrAssignmentViewModels.cs
+
+REPOSITORY
+  ✅ Repositories/IHrAssignmentRepository.cs
+  ✅ Repositories/HrAssignmentRepository.cs
+  ✅ Repositories/IHrJobPostingRepository.cs
+  ✅ Repositories/HrJobPostingRepository.cs
+
+SERVICE
+  ✅ Services/IHrAssignmentService.cs
+  ✅ Services/HrAssignmentService.cs
+  ✅ Services/IHrJobPostingService.cs
+  ✅ Services/HrJobPostingService.cs
+  ✅ Services/IFileStorageService.cs
+  ✅ Services/LocalFileStorageService.cs
+
+CONTROLLER
+  ✅ Controllers/HrAssignmentsController.cs
+  ✅ Controllers/HrJobPostingsController.cs
+
+MIGRATION
+  ✅ Migrations/20260605020000_AddHrRecruitmentSprint3.cs
+
+FEATURES DELIVERED
+  - Recruiter assigned to approved requisition
+  - Job Posting with multiple channels (Internal/LinkedIn/Indeed/etc.)
+  - Posting channel seeded
+  - Job Posting statuses: Draft → Published → Paused → Closed
+
+
+==========================================================
+  SPRINT 4 — ATS (Applicant Tracking System)     ✅ DONE
+==========================================================
+
+TABLES
+  ✅ HR_Candidate
+  ✅ HR_CandidateDocument
+  ✅ HR_JobApplication
+  ✅ HR_ApplicationStage
+  ✅ HR_ApplicationStageHistory
+
+EF MODELS
+  ✅ Models/HrCandidate.cs
+  ✅ Models/HrCandidateDocument.cs
+  ✅ Models/HrJobApplication.cs
+  ✅ Models/HrApplicationStage.cs
+  ✅ Models/HrApplicationStageHistory.cs
+  ✅ Models/HrCandidateViewModels.cs
+  ✅ Models/HrApplicationViewModels.cs
+
+REPOSITORY
+  ✅ Repositories/IHrCandidateRepository.cs
+  ✅ Repositories/HrCandidateRepository.cs
+  ✅ Repositories/IHrApplicationRepository.cs
+  ✅ Repositories/HrApplicationRepository.cs
+
+SERVICE
+  ✅ Services/IHrCandidateService.cs
+  ✅ Services/HrCandidateService.cs
+  ✅ Services/IHrApplicationService.cs
+  ✅ Services/HrApplicationService.cs
+
+CONTROLLER
+  ✅ Controllers/HrCandidatesController.cs
+  ✅ Controllers/HrAtsDashboardController.cs
+
+MIGRATION
+  ✅ Migrations/20260605030000_AddHrRecruitmentSprint4.cs
+
+FEATURES DELIVERED
+  - Candidate profile (reusable across multiple applications)
+  - Resume / document upload (LocalFileStorageService)
+  - Application linked to Job Posting
+  - Stage pipeline: Applied → Screening → Shortlisted → Interview → Selected/Rejected
+  - Full application stage history
+  - ATS Dashboard (open jobs, application count, candidate pipeline)
+
+
+==========================================================
+  SPRINT 5 — Interview Management                ✅ DONE
+==========================================================
+
+TABLES
+  ✅ HR_InterviewRound
+  ✅ HR_InterviewSchedule
+  ✅ HR_InterviewPanel
+  ✅ HR_InterviewFeedback
+  ✅ HR_EvaluationCriteria
+  ✅ HR_EvaluationScore
+
+EF MODELS
+  ✅ Models/HrInterviewRound.cs
+  ✅ Models/HrInterviewSchedule.cs
+  ✅ Models/HrInterviewPanel.cs
+  ✅ Models/HrInterviewFeedback.cs
+  ✅ Models/HrEvaluationCriteria.cs
+  ✅ Models/HrEvaluationScore.cs
+  ✅ Models/HrInterviewViewModels.cs
+
+REPOSITORY
+  ✅ Repositories/IHrInterviewRepository.cs
+  ✅ Repositories/HrInterviewRepository.cs
+
+SERVICE
+  ✅ Services/IHrInterviewService.cs
+  ✅ Services/HrInterviewService.cs
+
+CONTROLLER
+  ✅ Controllers/HrInterviewsController.cs
+
+VIEWS
+  ✅ Views/HrInterviews/Setup.cshtml
+  ✅ Views/HrInterviews/Schedule.cshtml
+  ✅ Views/HrInterviews/Details.cshtml
+  ✅ Views/HrInterviews/ApplicationInterviews.cshtml
+  ✅ Views/HrInterviews/SubmitFeedback.cshtml
+  ✅ Views/HrInterviews/FeedbackDetails.cshtml
+
+MIGRATION
+  ✅ Migrations/20260605040000_AddHrRecruitmentSprint5.cs
+
+FEATURES DELIVERED
+  - Configurable interview rounds per job posting
+  - Interview scheduling with meeting link / location
+  - Multi-interviewer panel per round
+  - Feedback with overall score + recommendation (Strong Hire / Hire / Hold / Reject)
+  - Scorecard with per-criteria evaluation
+  - Full interview history
+
+
+==========================================================
+  SPRINT 6 — Offer Management & Hiring Decision  ✅ DONE (2026-06-05)
+==========================================================
+
+TABLES
+  ✅ HR_Offer
+  ✅ HR_OfferVersion
+  ✅ HR_OfferApproval
+  ✅ HR_OfferDocument
+  ✅ HR_OfferResponse
+  ✅ HR_HiringDecision
+
+EF MODELS
+  ✅ Models/HrOffer.cs
+  ✅ Models/HrOfferVersion.cs
+  ✅ Models/HrOfferApproval.cs
+  ✅ Models/HrOfferDocument.cs
+  ✅ Models/HrOfferResponse.cs
+  ✅ Models/HrHiringDecision.cs
+  ✅ Models/HrOfferViewModels.cs
+      ViewModels included:
+      - HrOfferFormViewModel
+      - HrOfferListItemViewModel
+      - HrOfferDetailsViewModel
+      - HrOfferVersionItemViewModel / HrOfferVersionFormViewModel
+      - HrOfferApprovalItemViewModel / HrAddApproverViewModel / HrApprovalActionViewModel
+      - HrOfferResponseFormViewModel / HrOfferResponseItemViewModel
+      - HrOfferDocumentItemViewModel
+      - HrHiringDecisionFormViewModel / HrHiringDecisionItemViewModel
+
+DBCONTEXT
+  ✅ Data/ApplicationDbContext.cs
+      DbSets: HrOffers, HrOfferVersions, HrOfferApprovals,
+              HrOfferDocuments, HrOfferResponses, HrHiringDecisions
+      Fluent config: table names, FK relationships, unique indexes
+
+REPOSITORY
+  ✅ Repositories/IHrOfferRepository.cs
+  ✅ Repositories/HrOfferRepository.cs
+      Methods: Query, GetByIdAsync, GetWithDetailsAsync, GetByApplicationAsync,
+               CountForYearAsync, OfferNumberExistsAsync, AddOfferAsync, UpdateOffer,
+               AddVersionAsync, GetNextVersionNoAsync, AddApprovalAsync,
+               GetApprovalByIdAsync, UpdateApproval, AddDocumentAsync,
+               GetDocumentByIdAsync, RemoveDocument, AddResponseAsync,
+               AddHiringDecisionAsync, GetHiringDecisionAsync, UpdateHiringDecision,
+               SaveChangesAsync
+
+SERVICE
+  ✅ Services/IHrOfferService.cs
+  ✅ Services/HrOfferService.cs
+      Methods: GetPagedAsync, GetForCreateAsync, GetDetailsAsync,
+               GetForRevisionAsync, GetApprovalActionAsync, GetForResponseAsync,
+               GetForHiringDecisionAsync, CreateAsync, AddVersionAsync,
+               SubmitForApprovalAsync, AddApproverAsync, ProcessApprovalAsync,
+               SendOfferAsync, RecordResponseAsync, UploadDocumentAsync,
+               DeleteDocumentAsync, CancelOfferAsync, RecordHiringDecisionAsync
+
+CONTROLLER
+  ✅ Controllers/HrOffersController.cs
+      Actions: Index, Create (GET/POST), Details, AddVersion (GET/POST),
+               SubmitForApproval (POST), AddApprover (POST),
+               ApproveOffer (GET/POST), Send (POST),
+               RecordResponse (GET/POST), UploadDocument (POST),
+               DeleteDocument (POST), DownloadDocument (GET),
+               Cancel (POST), HiringDecision (GET/POST)
+
+VIEWS
+  ✅ Views/HrOffers/Index.cshtml        — paged offer list with search
+  ✅ Views/HrOffers/Create.cshtml       — create offer for a selected application
+  ✅ Views/HrOffers/Details.cshtml      — full offer detail card with:
+                                           approvals management, salary versions,
+                                           candidate responses, document upload/delete
+  ✅ Views/HrOffers/AddVersion.cshtml   — salary revision form
+  ✅ Views/HrOffers/ApproveOffer.cshtml — approve / reject action form
+  ✅ Views/HrOffers/RecordResponse.cshtml — candidate response form
+  ✅ Views/HrOffers/HiringDecision.cshtml — final hiring decision form
+
+MIGRATION
+  ✅ Migrations/20260605050000_AddHrRecruitmentSprint6.cs
+      Creates all 6 Sprint 6 tables with correct NUMERIC(18,0) PKs,
+      FK constraints, and unique indexes (idempotent IF NOT EXISTS guards)
+
+DI REGISTRATION
+  ✅ Program.cs — added:
+      builder.Services.AddScoped<IHrOfferRepository, HrOfferRepository>();
+      builder.Services.AddScoped<IHrOfferService, HrOfferService>();
+
+SIDEBAR
+  ✅ Views/Shared/_Sidebar.cshtml
+      - "HrOffers" added to recruitmentOpen detection
+      - "Offers" link added at bottom of Recruitment sub-menu (permission-gated)
+
+
+==========================================================
+  SPRINT 6 — BUSINESS WORKFLOW IMPLEMENTED
+==========================================================
+
+  Application (Accepted candidate)
+          ↓
+  Create Offer  [HrOffersController.Create]
+          ↓
+  Offer saved as Draft  (Version 1 auto-created)
+          ↓
+  Optional: Revise Salary  [AddVersion] — versions tracked, never overwritten
+          ↓
+  Submit for Approval  [SubmitForApproval]
+          ↓  Status = PendingApproval
+  Add Approver(s) at any level  [AddApprover]
+          ↓
+  Each Approver takes action  [ApproveOffer → Approve / Reject]
+          ↓  All approved → Status = Approved
+          ↓  Any rejected → Status = Rejected
+  Send Offer to Candidate  [Send]
+          ↓  Status = Sent
+  Record Candidate Response  [RecordResponse]
+      • Accepted         → Status = Accepted
+      • Rejected         → Status = Rejected
+      • NegotiationReq.  → Status unchanged (negotiate then revise)
+      • Expired          → Status = Expired
+          ↓
+  Record Hiring Decision  [HiringDecision]
+      • Hired   → candidate stage set to "Selected", requisition closed
+      • Hold    → no downstream change
+      • Rejected → no downstream change
+          ↓
+  Complete ATS — candidate is hired
+
+
+BUSINESS RULES ENFORCED
+  - Offer can only be submitted from Draft status
+  - Only Approved offers can be sent
+  - Salary revisions are forbidden once Accepted or Hired
+  - One offer per application (enforced in service + unique index)
+  - Offer Number auto-generated: OFF-YYYY-NNNN (no gaps, no duplicates)
+  - Requisition stays open until Hired (not on offer creation or sending)
+  - Document files stored as paths only (no binary in SQL)
+  - Approval levels are flexible (not hardcoded), added by recruiter at runtime
+
+==========================================================
+  END OF TRACKER
+==========================================================

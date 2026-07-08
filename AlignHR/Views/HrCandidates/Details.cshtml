@@ -1,0 +1,224 @@
+@model AlignHR.Models.HrCandidateDetailsViewModel
+
+@{
+    ViewData["Title"] = "Candidate — " + Model.FullName;
+    ViewBag.ActivePage = "HrCandidates";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Error"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner p-0">
+
+        @* Header *@
+        <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+            <div>
+                <div class="fw-bold fs-6">@Model.FullName</div>
+                @if (!string.IsNullOrEmpty(Model.CurrentDesignation) || !string.IsNullOrEmpty(Model.CurrentEmployer))
+                {
+                    <div class="small text-muted">
+                        @Model.CurrentDesignation@(!string.IsNullOrEmpty(Model.CurrentDesignation) && !string.IsNullOrEmpty(Model.CurrentEmployer) ? " at " : "")@Model.CurrentEmployer
+                    </div>
+                }
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary btn-sm">Edit Profile</a>
+            </div>
+        </div>
+
+        <div class="p-4">
+
+            @* ── Personal Information ── *@
+            <div class="mb-4">
+                <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Personal Information</div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-4">
+                        <div class="small text-muted">Email</div>
+                        <div>@Model.Email</div>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <div class="small text-muted">Phone</div>
+                        <div>@(Model.Phone ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <div class="small text-muted">Date of Birth</div>
+                        <div>@(Model.DateOfBirth.HasValue ? Model.DateOfBirth.Value.ToString("dd MMM yyyy") : "—")</div>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <div class="small text-muted">Gender</div>
+                        <div>@(Model.Gender ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <div class="small text-muted">Country</div>
+                        <div>@(Model.Country ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <div class="small text-muted">City</div>
+                        <div>@(Model.City ?? "—")</div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-3 opacity-25" />
+
+            @* ── Education ── *@
+            <div class="mb-4">
+                <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Education</div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-3">
+                        <div class="small text-muted">Highest Degree</div>
+                        <div>@(Model.HighestDegree ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <div class="small text-muted">Field of Study</div>
+                        <div>@(Model.FieldOfStudy ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-5">
+                        <div class="small text-muted">University / Institution</div>
+                        <div>@(Model.University ?? "—")</div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-3 opacity-25" />
+
+            @* ── Work Experience ── *@
+            <div class="mb-4">
+                <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Work Experience</div>
+                <div class="row g-3">
+                    <div class="col-12 col-md-3">
+                        <div class="small text-muted">Employment Status</div>
+                        <div>
+                            @if (Model.IsCurrentlyEmployed.HasValue)
+                            {
+                                <span class="status-badge @(Model.IsCurrentlyEmployed.Value ? "badge-success" : "badge-secondary")">
+                                    @(Model.IsCurrentlyEmployed.Value ? "Currently Employed" : "Not Employed")
+                                </span>
+                            }
+                            else { <span>—</span> }
+                        </div>
+                    </div>
+                    @if (Model.IsCurrentlyEmployed == true)
+                    {
+                        <div class="col-12 col-md-4">
+                            <div class="small text-muted">Current Organization</div>
+                            <div>@(Model.CurrentEmployer ?? "—")</div>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <div class="small text-muted">Current Designation</div>
+                            <div>@(Model.CurrentDesignation ?? "—")</div>
+                        </div>
+                        <div class="col-12 col-md-2">
+                            <div class="small text-muted">Notice Period</div>
+                            <div>@(Model.NoticePeriod ?? "—")</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <hr class="my-3 opacity-25" />
+
+            @* ── Documents ── *@
+            <div class="mb-4">
+                <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Documents</div>
+
+                @if (Model.Documents.Any())
+                {
+                    <table class="table table-sm erp-table mb-3">
+                        <thead><tr><th>Type</th><th>File</th><th>Uploaded</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var doc in Model.Documents)
+                            {
+                                <tr>
+                                    <td><span class="status-badge badge-secondary">@doc.DocumentType</span></td>
+                                    <td>@doc.FileName</td>
+                                    <td>@(doc.UploadedDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td>
+                                        <div class="d-flex gap-1">
+                                            <a asp-controller="HrCandidates" asp-action="Download"
+                                               asp-route-path="@doc.FilePath"
+                                               class="btn btn-icon btn-sm btn-icon-primary" title="Download">
+                                                <i class="fa-solid fa-download"></i>
+                                            </a>
+                                            <form asp-action="DeleteDocument" method="post" class="d-inline"
+                                                  onsubmit="return confirm('Delete this document?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="documentId" value="@doc.Id" />
+                                                <input type="hidden" name="candidateId" value="@Model.Id" />
+                                                <button class="btn btn-icon btn-sm btn-icon-danger" title="Delete">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+
+                <form asp-action="UploadDocument" method="post" enctype="multipart/form-data" class="d-flex align-items-end gap-2 flex-wrap">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="candidateId" value="@Model.Id" />
+                    <div>
+                        <label class="form-label small fw-semibold">Document Type</label>
+                        <select name="documentType" class="form-select form-select-sm">
+                            <option>Resume</option>
+                            <option>Cover Letter</option>
+                            <option>Certification</option>
+                            <option>Passport</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-semibold">File</label>
+                        <input type="file" name="file" class="form-control form-control-sm" />
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary btn-sm">Upload</button>
+                </form>
+            </div>
+
+            @* ── Applications ── *@
+            @if (Model.Applications.Any())
+            {
+                <hr class="my-3 opacity-25" />
+                <div class="mb-2">
+                    <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Applications</div>
+                    <table class="table table-sm erp-table">
+                        <thead><tr><th>Job</th><th>Stage</th><th>Applied</th><th>Active</th><th></th></tr></thead>
+                        <tbody>
+                            @foreach (var a in Model.Applications)
+                            {
+                                <tr>
+                                    <td>@a.JobCode — @a.JobTitle</td>
+                                    <td><span class="status-badge badge-secondary">@(a.CurrentStage ?? "—")</span></td>
+                                    <td>@(a.AppliedDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                    <td>@(a.IsActive ? "Yes" : "No")</td>
+                                    <td>
+                                        <a asp-controller="HrApplications" asp-action="Details"
+                                           asp-route-id="@a.ApplicationId"
+                                           class="btn btn-icon btn-sm btn-icon-primary" title="View Application">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>

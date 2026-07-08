@@ -1,0 +1,181 @@
+@model AlignHR.Models.HrCandidateFormViewModel
+
+@{
+    ViewData["Title"] = "Add Candidate";
+    ViewBag.ActivePage = "HrCandidates";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner p-0">
+        <form asp-action="Create" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-0 small rounded-0 rounded-top">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="p-4">
+
+                @* ── Personal Information ── *@
+                <div class="mb-4">
+                    <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Personal Information</div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <label asp-for="FirstName" class="form-label small fw-semibold">First Name <span class="text-danger">*</span></label>
+                            <input asp-for="FirstName" class="form-control form-control-sm" required />
+                            <span asp-validation-for="FirstName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="LastName" class="form-label small fw-semibold">Last Name</label>
+                            <input asp-for="LastName" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="Email" class="form-label small fw-semibold">Email <span class="text-danger">*</span></label>
+                            <input asp-for="Email" type="email" class="form-control form-control-sm" required />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="Phone" class="form-label small fw-semibold">Phone</label>
+                            <input asp-for="Phone" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="DateOfBirth" class="form-label small fw-semibold">Date of Birth</label>
+                            <input asp-for="DateOfBirth" type="date" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="Gender" class="form-label small fw-semibold">Gender</label>
+                            <select asp-for="Gender" class="form-select form-select-sm">
+                                <option value="">— Select —</option>
+                                <option>Male</option>
+                                <option>Female</option>
+                                <option>Other</option>
+                                <option>Prefer not to say</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="CurrentLocation" class="form-label small fw-semibold">Current Location</label>
+                            <input asp-for="CurrentLocation" class="form-control form-control-sm" placeholder="e.g. Karachi, Pakistan" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="City" class="form-label small fw-semibold">City</label>
+                            <input asp-for="City" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="Country" class="form-label small fw-semibold">Country</label>
+                            <input asp-for="Country" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3 opacity-25" />
+
+                @* ── Education ── *@
+                <div class="mb-4">
+                    <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Education</div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <label asp-for="HighestDegree" class="form-label small fw-semibold">Highest Degree</label>
+                            <select asp-for="HighestDegree" class="form-select form-select-sm">
+                                <option value="">— Select —</option>
+                                <option>Matriculation</option>
+                                <option>Intermediate / A-Levels</option>
+                                <option>Bachelor's</option>
+                                <option>Master's</option>
+                                <option>MBA</option>
+                                <option>PhD</option>
+                                <option>Other</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="FieldOfStudy" class="form-label small fw-semibold">Field of Study</label>
+                            <input asp-for="FieldOfStudy" class="form-control form-control-sm" placeholder="e.g. Computer Science" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="University" class="form-label small fw-semibold">University / Institution</label>
+                            <input asp-for="University" class="form-control form-control-sm" />
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3 opacity-25" />
+
+                @* ── Work Experience ── *@
+                <div class="mb-4">
+                    <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Work Experience</div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                            <label asp-for="TotalExperienceYears" class="form-label small fw-semibold">Experience (Years)</label>
+                            <input asp-for="TotalExperienceYears" type="number" step="0.5" min="0" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="IsCurrentlyEmployed" class="form-label small fw-semibold">Employment Status</label>
+                            <select asp-for="IsCurrentlyEmployed" class="form-select form-select-sm">
+                                <option value="">— Select —</option>
+                                <option value="true">Currently Employed</option>
+                                <option value="false">Not Employed</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="NoticePeriod" class="form-label small fw-semibold">Notice Period</label>
+                            <select asp-for="NoticePeriod" class="form-select form-select-sm">
+                                <option value="">— Select —</option>
+                                <option>Immediate</option>
+                                <option>1 Week</option>
+                                <option>2 Weeks</option>
+                                <option>1 Month</option>
+                                <option>2 Months</option>
+                                <option>3 Months</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="CurrentEmployer" class="form-label small fw-semibold">Current / Last Employer</label>
+                            <input asp-for="CurrentEmployer" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="CurrentDesignation" class="form-label small fw-semibold">Current / Last Designation</label>
+                            <input asp-for="CurrentDesignation" class="form-control form-control-sm" />
+                        </div>
+                        <div class="col-12 col-md-5">
+                            <label asp-for="LinkedInProfile" class="form-label small fw-semibold">LinkedIn URL</label>
+                            <input asp-for="LinkedInProfile" type="url" class="form-control form-control-sm" placeholder="https://linkedin.com/in/…" />
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3 opacity-25" />
+
+                @* ── Document Upload ── *@
+                <div class="mb-4">
+                    <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Document (Optional)</div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                            <label asp-for="DocumentType" class="form-label small fw-semibold">Document Type</label>
+                            <select asp-for="DocumentType" class="form-select form-select-sm">
+                                <option>Resume</option>
+                                <option>Cover Letter</option>
+                                <option>Certification</option>
+                                <option>Passport</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-5">
+                            <label asp-for="DocumentFile" class="form-label small fw-semibold">Upload File</label>
+                            <input asp-for="DocumentFile" type="file" class="form-control form-control-sm" />
+                            <div class="form-text">PDF, DOCX, JPG accepted.</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 px-4 pb-4 pt-2 border-top">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                <button type="submit" class="btn btn-primary btn-sm">Save Candidate</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

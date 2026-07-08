@@ -1,0 +1,353 @@
+@model AlignHR.Models.HrJobPostingDetailsViewModel
+
+@{
+    ViewData["Title"] = "Job Posting — " + Model.JobCode;
+    ViewBag.ActivePage = "HrJobPostings";
+
+    var statusClass = Model.PostingStatus switch
+    {
+        "Published" => "badge-success",
+        "Paused"    => "badge-warning",
+        "Closed"    => "badge-danger",
+        _           => "badge-secondary"
+    };
+
+    // Build the copy text server-side
+    var sb = new System.Text.StringBuilder();
+    sb.AppendLine($"Position: {Model.JobTitle ?? Model.PositionTitle ?? "—"}");
+    if (!string.IsNullOrWhiteSpace(Model.DepartmentName))   sb.AppendLine($"Department: {Model.DepartmentName}");
+    if (!string.IsNullOrWhiteSpace(Model.EmploymentType))   sb.AppendLine($"Employment Type: {Model.EmploymentType}");
+    if (!string.IsNullOrWhiteSpace(Model.Nature))           sb.AppendLine($"Nature: {Model.Nature}");
+    if (!string.IsNullOrWhiteSpace(Model.Location))         sb.AppendLine($"Location: {Model.Location}");
+    sb.AppendLine($"Open Date: {Model.OpenDate:dd MMM yyyy}");
+    if (Model.CloseDate.HasValue)                            sb.AppendLine($"Close Date: {Model.CloseDate.Value:dd MMM yyyy}");
+    if (Model.BudgetAmountPerMonth.HasValue)                 sb.AppendLine($"Budget / Month: {Model.BudgetAmountPerMonth.Value:N0}");
+    sb.AppendLine();
+
+    if (!string.IsNullOrWhiteSpace(Model.JobDescription))
+    {
+        sb.AppendLine("About the Role:");
+        sb.AppendLine(Model.JobDescription.Trim());
+        sb.AppendLine();
+    }
+
+    if (!string.IsNullOrWhiteSpace(Model.Reason))
+    {
+        sb.AppendLine("Reason / Justification:");
+        sb.AppendLine(Model.Reason.Trim());
+        sb.AppendLine();
+    }
+
+    if (Model.Skills.Any())
+    {
+        sb.AppendLine("Required Skills:");
+        int sn = 1;
+        foreach (var s in Model.Skills)
+        {
+            var line = $"{sn++}. {s.SkillName}";
+            if (s.YearsExperience.HasValue)
+                line += $" — {s.YearsExperience.Value:0.#} yr{(s.YearsExperience.Value != 1 ? "s" : "")}";
+            if (!s.IsMandatory) line += " (optional)";
+            sb.AppendLine(line);
+        }
+        sb.AppendLine();
+    }
+
+    if (Model.Offerings.Any())
+    {
+        sb.AppendLine("What We Offer:");
+        int on = 1;
+        foreach (var o in Model.Offerings)
+        {
+            var line = $"{on++}. {o.OfferingName}";
+            if (!string.IsNullOrWhiteSpace(o.Description)) line += $" — {o.Description}";
+            sb.AppendLine(line);
+        }
+    }
+
+    if (Model.PostingStatus == "Published")
+    {
+        var applyUrl = Url.Action("Apply", "PublicApply", new { id = Model.Id }, Context.Request.Scheme);
+        sb.AppendLine();
+        sb.AppendLine($"Apply Here: {applyUrl}");
+    }
+
+    var copyText = sb.ToString().Trim();
+}
+
+<style>
+    .rec-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--ahr-text-tertiary);
+    }
+</style>
+
+<div class="animate-fade-in">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* ── Hero + posting details ── *@
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                        <h1 class="h5 fw-bold mb-0">@(Model.JobTitle ?? "—")</h1>
+                        <span class="status-badge @statusClass">@(Model.PostingStatus ?? "—")</span>
+                    </div>
+                    <div class="text-muted small font-monospace">@(Model.JobCode ?? "—")</div>
+                </div>
+
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+
+                    @if (Model.PostingStatus == "Draft" || Model.PostingStatus == "Paused")
+                    {
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">Edit</a>
+                    }
+                    @if (Model.PostingStatus == "Published")
+                    {
+                        <form asp-action="Pause" asp-route-id="@Model.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-secondary btn-sm">Pause</button>
+                        </form>
+                        <form asp-action="Close" asp-route-id="@Model.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Close this posting?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Close</button>
+                        </form>
+                    }
+                    @if (Model.PostingStatus == "Paused")
+                    {
+                        <form asp-action="Publish" asp-route-id="@Model.Id" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-primary btn-sm">Re-Publish</button>
+                        </form>
+                        <form asp-action="Close" asp-route-id="@Model.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Close this posting?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Close</button>
+                        </form>
+                    }
+                    @if (Model.PostingStatus != "Published")
+                    {
+                        <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Delete this job posting?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
+                        </form>
+                    }
+                    @if (Model.PostingStatus == "Draft")
+                    {
+                        <form asp-action="Publish" asp-route-id="@Model.Id" method="post" class="d-inline"
+                              onsubmit="return confirm('Publish this job posting?');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-primary btn-sm">Publish</button>
+                        </form>
+                    }
+                    <a asp-controller="HrApplications" asp-action="Index" asp-route-jobPostingId="@Model.Id"
+                       class="btn btn-primary btn-sm">View Candidates</a>
+                </div>
+            </div>
+
+            <hr class="my-3" />
+
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="rec-label mb-1">Employment Type</div>
+                    <div class="small fw-medium">@(Model.EmploymentType ?? "—")</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rec-label mb-1">Location</div>
+                    <div class="small fw-medium">@(Model.Location ?? "—")</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rec-label mb-1">Open Date</div>
+                    <div class="small fw-medium">@Model.OpenDate.ToString("dd MMM yyyy")</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rec-label mb-1">Close Date</div>
+                    <div class="small fw-medium">@(Model.CloseDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                </div>
+
+                @if (Model.RequisitionFK.HasValue)
+                {
+                    <div class="col-6 col-md-3">
+                        <div class="rec-label mb-1">Requisition</div>
+                        <div class="small fw-medium">
+                            <a asp-controller="HrRequisitions" asp-action="Details" asp-route-id="@Model.RequisitionFK">
+                                @(Model.RequisitionNo ?? "View")
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="rec-label mb-1">Department</div>
+                        <div class="small fw-medium">@(Model.DepartmentName ?? "—")</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="rec-label mb-1">Type</div>
+                        <div class="small fw-medium">@(Model.RequisitionType ?? "—")</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="rec-label mb-1">Nature</div>
+                        <div class="small fw-medium">@(Model.Nature ?? "—")</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="rec-label mb-1">Budget / Month</div>
+                        <div class="small fw-medium font-monospace">
+                            @(Model.BudgetAmountPerMonth.HasValue ? Model.BudgetAmountPerMonth.Value.ToString("N0") : "—")
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="rec-label mb-1">Initial Date</div>
+                        <div class="small fw-medium">@(Model.InitialDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="rec-label mb-1">Promised Date</div>
+                        <div class="small fw-medium">@(Model.PromisedDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    @* ── Job Description ── *@
+    @if (!string.IsNullOrWhiteSpace(Model.JobDescription))
+    {
+        <div class="card mb-3">
+            <div class="card-header">Job Description</div>
+            <div class="card-body">
+                <div class="small" style="line-height:1.7;white-space:pre-wrap;">@Model.JobDescription</div>
+            </div>
+        </div>
+    }
+
+    @* ── Reason ── *@
+    @if (!string.IsNullOrWhiteSpace(Model.Reason))
+    {
+        <div class="card mb-3">
+            <div class="card-header">Reason / Justification</div>
+            <div class="card-body">
+                <div class="small" style="line-height:1.65;white-space:pre-wrap;">@Model.Reason</div>
+            </div>
+        </div>
+    }
+
+    @* ── Skills + Offerings ── *@
+    @if (Model.Skills.Any() || Model.Offerings.Any())
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-12 col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">Required Skills</div>
+                    <div class="card-body">
+                        @if (Model.Skills.Any())
+                        {
+                            <ol class="mb-0 ps-3">
+                                @foreach (var skill in Model.Skills)
+                                {
+                                    <li class="small py-1">
+                                        @skill.SkillName
+                                        @if (skill.YearsExperience.HasValue)
+                                        {
+                                            <span class="text-muted"> — @(skill.YearsExperience.Value.ToString("0.#")) yr@(skill.YearsExperience.Value != 1 ? "s" : "")</span>
+                                        }
+                                        @if (!skill.IsMandatory)
+                                        {
+                                            <span class="text-muted"> (optional)</span>
+                                        }
+                                    </li>
+                                }
+                            </ol>
+                        }
+                        else
+                        {
+                            <div class="text-muted small">—</div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">Company Offerings</div>
+                    <div class="card-body">
+                        @if (Model.Offerings.Any())
+                        {
+                            <ol class="mb-0 ps-3">
+                                @foreach (var offering in Model.Offerings)
+                                {
+                                    <li class="small py-1">
+                                        @offering.OfferingName
+                                        @if (!string.IsNullOrWhiteSpace(offering.Description))
+                                        {
+                                            <span class="text-muted"> — @offering.Description</span>
+                                        }
+                                    </li>
+                                }
+                            </ol>
+                        }
+                        else
+                        {
+                            <div class="text-muted small">—</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    @* ── Copy-Ready Text ── *@
+    <div class="card mb-3">
+        <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+            <span class="d-flex flex-column">
+                Ready to Post
+                <span class="text-muted fw-normal" style="font-size:11.5px;">Copy and paste into LinkedIn, Indeed, or any external platform.</span>
+            </span>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="btnCopyPost">Copy Text</button>
+        </div>
+        <div class="card-body">
+            <textarea id="copyPostText" readonly class="form-control font-monospace"
+                      style="min-height:220px;font-size:12.5px;line-height:1.65;resize:vertical;">@copyText</textarea>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('btnCopyPost').addEventListener('click', function () {
+        var ta = document.getElementById('copyPostText');
+        ta.select();
+        ta.setSelectionRange(0, 99999);
+        try {
+            navigator.clipboard.writeText(ta.value).then(function () {
+                var btn = document.getElementById('btnCopyPost');
+                btn.textContent = 'Copied!';
+                setTimeout(function () { btn.textContent = 'Copy Text'; }, 2000);
+            });
+        } catch (e) {
+            document.execCommand('copy');
+            var btn = document.getElementById('btnCopyPost');
+            btn.textContent = 'Copied!';
+            setTimeout(function () { btn.textContent = 'Copy Text'; }, 2000);
+        }
+    });
+</script>
+}

@@ -1,0 +1,95 @@
+@model AlignHR.Models.MasterLoanAdvanceDetail
+
+@if (ViewBag.NetBalance != null)
+{
+    <div class="loan-summary-card animate-fade-in" id="loanSummaryData" data-net-balance="@ViewBag.NetBalance">
+        <div class="summary-header">
+            <i class="fas fa-info-circle"></i>
+            <span>Loan Summary (Actual Values from Master)</span>
+        </div>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <div class="label">Approved Principal</div>
+                <div class="value">@(((decimal)ViewBag.LoanPrincipal).ToString("N2"))</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Total Paid So Far</div>
+                <div class="value text-success">- @(((decimal)ViewBag.TotalPaid).ToString("N2"))</div>
+            </div>
+            <div class="summary-item">
+                <div class="label">Total Debt (Inc. Interest)</div>
+                <div class="value text-warning">@(((decimal)ViewBag.InitialTotalDebt).ToString("N2"))</div>
+            </div>
+            <div class="summary-item highlighted">
+                <div class="label">Remaining Tenure</div>
+                <div class="value">@ViewBag.RemainingTenure <small>Months</small></div>
+            </div>
+        </div>
+    </div>
+}
+
+<div class="form-grid animate-fade-in" id="installmentFieldsInner">
+    <input type="hidden" asp-for="Status" />
+
+    <div class="form-item">
+        <label asp-for="InstallmentNo" class="form-label">Installment No. <span class="required">*</span></label>
+        <input asp-for="InstallmentNo" type="number" class="form-control" placeholder="e.g. 1" min="1" required />
+        <span asp-validation-for="InstallmentNo" class="text-danger small"></span>
+    </div>
+
+    <div class="form-item">
+        <label asp-for="DeductionMonth" class="form-label">Deduction Month <span class="required">*</span></label>
+        <input asp-for="DeductionMonth" class="form-control" placeholder="YYYY/MM (e.g. 2024/04)" required />
+        <span asp-validation-for="DeductionMonth" class="text-danger small"></span>
+    </div>
+
+    <div class="form-item">
+        <label asp-for="TotalDeductionAmount" class="form-label">Scheduled Amount (EMI) <span class="required">*</span></label>
+        <input asp-for="TotalDeductionAmount" type="number" step="0.01" class="form-control" placeholder="0.00" required id="totalAmt" />
+        <span asp-validation-for="TotalDeductionAmount" class="text-danger small"></span>
+    </div>
+
+    <div class="form-item">
+        <label asp-for="DeductedAmount" class="form-label">Actually Deducted <span class="required">*</span></label>
+        <input asp-for="DeductedAmount" type="number" step="0.01" class="form-control" placeholder="0.00" required id="deductedAmt" />
+        <span asp-validation-for="DeductedAmount" class="text-danger small"></span>
+    </div>
+
+    <div class="form-item">
+        <label asp-for="InterestAmount" class="form-label">Monthly Interest portion</label>
+        <input asp-for="InterestAmount" type="number" step="0.01" class="form-digit form-control" placeholder="0.00" id="interestAmt" />
+        <span asp-validation-for="InterestAmount" class="text-danger small"></span>
+    </div>
+
+    <div class="form-item">
+        <label asp-for="RemainingAmount" class="form-label" title="Global remaining balance after this deduction">Net Remaining Balance</label>
+        <input asp-for="RemainingAmount" type="number" step="0.01" class="form-control" placeholder="0.00" id="remainingAmt" readonly style="background-color: #f8fafc; font-weight: 700; color: #1d4ed8;" />
+        <span asp-validation-for="RemainingAmount" class="text-danger small"></span>
+    </div>
+</div>
+<script>
+    (function() {
+        const totalInput = document.getElementById('totalAmt');
+        const deductedInput = document.getElementById('deductedAmt');
+        const remainingInput = document.getElementById('remainingAmt');
+        const summaryCard = document.getElementById('loanSummaryData');
+
+        function updateRemaining() {
+            if (!deductedInput || !remainingInput || !summaryCard) return;
+            
+            // Get the balance BEFORE this entry from the summary card data attribute
+            const balanceBefore = parseFloat(summaryCard.getAttribute('data-net-balance')) || 0;
+            const currentDeducted = parseFloat(deductedInput.value) || 0;
+            
+            // New Remaining Balance = Previous Balance - Current Deduction
+            remainingInput.value = (balanceBefore - currentDeducted).toFixed(2);
+        }
+
+        if (deductedInput) {
+            deductedInput.addEventListener('input', updateRemaining);
+        }
+        
+        // Run once on load to show initial suggestion correctly
+        updateRemaining();
+    })();
+</script>

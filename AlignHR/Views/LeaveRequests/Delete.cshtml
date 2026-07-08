@@ -1,0 +1,66 @@
+@model AlignHR.Models.LeaveRequest
+
+@{
+    ViewData["Title"] = "Delete Leave Request";
+}
+
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a asp-action="Index">Leave Requests</a>
+        <span>/</span>
+        <span>Delete</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Delete Leave Request</h1>
+            <p class="page-subtitle text-danger">Are you sure you want to delete this application?</p>
+        </div>
+    </div>
+</div>
+
+<div class="hr-card animate-fade border-danger">
+    <div class="card-header bg-danger bg-opacity-10">
+        <div class="card-title text-danger">
+            <i class="fas fa-exclamation-triangle"></i>
+            Confirm Deletion
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="alert alert-warning border-warning">
+            <strong>Warning!</strong> Deleting this leave request is permanent and cannot be undone. This will remove it from the employee's history.
+        </div>
+
+        <div class="row g-4 mt-2">
+            <div class="col-md-6">
+                <div class="text-muted small">Employee</div>
+                <div class="font-bold">@Model.Employee?.FullName (@Model.Employee?.Code)</div>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small">Leave Type</div>
+                <div class="font-bold">@Model.LeaveType?.Name</div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-muted small">Dates</div>
+                <div>@Model.FromDate.ToString("MMM dd") - @Model.ToDate.ToString("MMM dd, yyyy")</div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-muted small">Days</div>
+                <div>@Model.DaysCount.ToString("0.##")</div>
+            </div>
+            <div class="col-md-4">
+                <div class="text-muted small">Current Status</div>
+                <div class="font-medium">@Model.Status</div>
+            </div>
+        </div>
+
+        <form asp-action="Delete" class="mt-5 pt-4 border-top">
+            <input type="hidden" asp-for="Id" />
+            <button type="submit" class="btn btn-danger">Confirm Delete</button>
+            <a asp-action="Index" class="btn btn-light">Cancel and Go Back</a>
+        </form>
+    </div>
+</div>

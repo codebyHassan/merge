@@ -1,0 +1,332 @@
+ALIGN HR - BOTPRESS KNOWLEDGE BASE
+====================================
+
+GENERAL
+-------
+AlignHR is an enterprise-grade Human Resource management system developed by VISACME. It streamlines the complete employee lifecycle from recruitment and onboarding through attendance, leave, payroll, and reporting. The system is role-based, meaning each user sees only the modules and actions they are authorized to access. It uses ASP.NET Core 8.0 with a SQL Server database, Bootstrap 5 for the UI, and supports both light and dark themes.
+
+Core modules include: Dashboard (Workspace), Workforce (Employees, Departments, Shifts, Locations), Operations (Attendance, Leave, Overtime), Documents and Approvals, Recruitment (Requisitions, Postings, Candidates, Offers, Onboarding), Payroll (Structures, Deductions, Execution, Salary Slips), Administration (Users, Roles, Permissions, Settings), and Reports.
+
+LOGIN
+-----
+To log into AlignHR, open your browser and navigate to the AlignHR URL. The login page shows the AlignHR brand with a split layout - a left panel with mockup dashboard statistics and a right panel with the login form. Enter your email address and password, then click "Sign In". If login fails, an error message appears in a red alert box. The default redirect after login is the Dashboard page.
+
+NAVIGATION
+----------
+The sidebar on the left is the primary navigation. It is organized into labeled sections: Workspace (Dashboard, Workforce), Operations (Attendance, Leave Management), Documents (Documents, Approvals), Recruitment, Payroll, and Admin (Reports, Administration). Click section headers to expand or collapse submenus. The top navbar includes a mobile hamburger menu, a sidebar collapse button, global search (Ctrl+K to open command palette), a New Employee button, notifications bell, and a user dropdown with links to Dashboard, Preferences, and Sign Out.
+
+DASHBOARD
+---------
+The Dashboard is the default landing page. It provides a centralized overview of organizational KPIs and pending actions. Features include a time-based greeting with your name and role, a Smart Digest summary of pending items, a KPI strip showing Total Employees, Active Employees, New Hires This Month, Pending Approvals, and On Leave Today. It also includes a unified Approvals Inbox, a personal profile snapshot with completeness bar, team availability for managers, workforce charts (department distribution doughnut and hire-type mix bar), celebrations (anniversaries and new joiners), leave balance donut chart, net pay trend sparkline, document expiry radar, attendance heatmap, and quick action buttons.
+
+WORKFORCE - EMPLOYEES
+---------------------
+The Employees page under Workforce lets you manage all employee records. The list view is a searchable, filterable, paginated table with filters for Employee Code, Name, Department, Location, Designation, Grade, Division, and Status. Columns include Code, Name with photo or initials, Department, Designation, Location, Status, and Salary Status. Actions per row include View Details, Edit, and Delete.
+
+To create a new employee, click "Create New" and fill in personal details, contact information, employment details, salary information, and upload documents including a photo. Required fields include Employee Code, Name, Date of Birth, CNIC/NIC, Phone, Email, Department, Designation, Location, Grade, Division, Employment Type, Date of Joining, and Salary.
+
+To edit an employee, use the Edit action to update any field or change the photo. Employee status can be set to Active, Terminated, Resigned, or other values. The Details view shows a comprehensive profile with profile completeness badge and linked records.
+
+WORKFORCE - DEPARTMENTS
+-----------------------
+The Departments page allows you to manage organizational departments. You can create a department with a Code, Name, Description, and Head of Department. Existing departments can be edited, deleted (only if no employees are assigned), or viewed in detail.
+
+WORKFORCE - LOCATIONS
+---------------------
+The Locations page manages office or geographic locations. Each location has a Code, Name, Address, City, and Country. You can create, edit, delete, or view location details.
+
+WORKFORCE - SHIFTS
+------------------
+The Shifts page defines work shifts with a Shift Code, Name, Start Time, End Time, and Grace Period. You can create, edit, delete, or view shift details.
+
+WORKFORCE - EMPLOYEE SHIFTS
+---------------------------
+The Employee Shifts page assigns shifts to individual employees. You can search and select employees, assign an existing shift definition, view current assignments, and bulk assign shifts to multiple employees.
+
+ATTENDANCE - LOGS
+-----------------
+Attendance Logs record daily employee check-in and check-out times including GPS coordinates (latitude and longitude). You can create manual log entries, edit existing ones, and filter by employee or date range.
+
+ATTENDANCE - POLICIES
+---------------------
+Attendance Policies define rules for check-in and check-out windows, grace periods, and late or early thresholds. Policies can be assigned to specific departments or employee categories.
+
+ATTENDANCE - EXCEPTIONS
+-----------------------
+Attendance Exceptions handle special cases where employees could not punch in or out. Each exception includes the reason (system issue, forgot to punch, etc.) and can be approved or rejected.
+
+ATTENDANCE - DAILY ATTENDANCE
+-----------------------------
+Daily Attendance shows a dashboard overview with present, absent, and on-leave counts for the current day, plus department-wise attendance summaries.
+
+LEAVE MANAGEMENT - LEAVE TYPES
+------------------------------
+Leave Types define the categories of leave available in the system. Common types include Annual Leave, Sick Leave, Casual Leave, Maternity Leave, Paternity Leave, and Hajj or Umrah Leave. Each type has a code, name, and description. You can create, edit, or delete leave types.
+
+LEAVE MANAGEMENT - LEAVE POLICIES
+---------------------------------
+Leave Policies group leave rules together. Each policy has a name, description, and effective dates, and can be assigned to specific employee groups.
+
+LEAVE MANAGEMENT - POLICY RULES
+-------------------------------
+Policy Rules map leave types to policies. For each policy, you define which leave types are included along with per-leave-type rules such as maximum days per request and minimum notice period.
+
+LEAVE MANAGEMENT - EMPLOYEE LEAVE POLICIES
+------------------------------------------
+Employee Leave Policies assigns leave policies to individual employees. You search and select employees and assign an existing leave policy.
+
+LEAVE MANAGEMENT - CONFIGURATION
+--------------------------------
+Leave Configuration sets up the approval hierarchy per department or employee. You define multi-level approval chains such as Line Manager, then Higher Management, then HR Final. Auto-approval rules can also be configured.
+
+LEAVE MANAGEMENT - LEAVE BALANCES
+---------------------------------
+Leave Balances shows employee leave balances per leave type. You can view opening balances, make adjustments (add or deduct), manage annual carry-forward, and search by employee.
+
+LEAVE MANAGEMENT - LEAVE REQUESTS
+---------------------------------
+Leave Requests is where employees apply for leave. To apply, select a leave type, specify From and To dates, optionally mark as half-day, enter a reason, and submit for approval. The list view shows all requests with their status (Pending, Approved, Rejected, Cancelled) and filters by employee, leave type, date range, and status.
+
+The Approval Inbox under Leave Management shows all pending leave requests awaiting a decision. Each entry displays Employee Code, Name, Leave Type, Dates, Days Count, Current Stage (Line Manager, Higher Mgmt, or HR Final), and Applied Date. Click "Review and Decide" to approve or reject with comments.
+
+LEAVE MANAGEMENT - LEAVE ACCOUNTING
+-----------------------------------
+Leave Accounting has four sub-functions: Year-End/Adjust performs year-end leave balance adjustments, carries forward balances to the new year, and allows bulk adjustment. Individual Transfer transfers leave balance from one employee to another, useful for leave donations. Company Summary shows a company-wide view of leave balances and utilization with department breakdowns and exportable data. Leave Compensation calculates and processes leave encashment or compensation, converting unused leave days to monetary payment.
+
+OVERTIME - POLICIES
+-------------------
+Overtime Policies define overtime rules including hourly rates for regular and holiday overtime, eligibility criteria, and approval requirements.
+
+OVERTIME - HOURS
+----------------
+Overtime Hours records overtime worked by employees. Each entry includes employee, date, hours worked, and OT type. You can create individual entries, bulk upload via Excel using a downloadable template, and search or filter by employee or date.
+
+PAYROLL - DASHBOARD
+-------------------
+The Payroll Dashboard shows active employee count, employees with EOBI, PF, and Tax deductions, active salary period information, configuration statistics, and the lock or unlock status of payroll periods.
+
+PAYROLL - FISCAL YEAR
+---------------------
+Fiscal Year defines the financial year for payroll processing. Create a fiscal year with a name (like "FY 2025-26"), start date, and end date. You can set it as active, edit, or delete it.
+
+PAYROLL - SALARY PERIODS
+------------------------
+Salary Periods are defined within a fiscal year. Create a period with a name (like "July 2025"), month, year, and start and end dates. Link it to a fiscal year and mark it as open for processing or closed.
+
+PAYROLL - STRUCTURES
+--------------------
+Payroll Structures define salary and payroll components. These include earnings components (Basic, House Rent Allowance, Transport, Medical, etc.) and deduction components (Tax, EOBI, PF, Loan, etc.). Each component has a type (earning or deduction), calculation method (percentage or fixed), and value or rate.
+
+PAYROLL - BREAKUPS
+------------------
+Payroll Breakups generate detailed payroll breakdowns by employee. Select a salary period and structure to view employee-level earnings and deductions. The employee card view shows detailed calculations and supports export to Excel.
+
+PAYROLL - TAX SLABS
+-------------------
+Tax Slabs configure progressive income tax rates. Create slabs with minimum income, maximum income, tax rate, and fixed tax amount, with effective dates. Multiple slabs create a progressive tax structure.
+
+PAYROLL - TAX SURCHARGES
+------------------------
+Tax Surcharges define additional tax charges. Each surcharge has a percentage or fixed amount, applicable income range, and effective dates.
+
+PAYROLL - INCOME TAX DEDUCTION
+------------------------------
+Income Tax Deduction manages tax deductions for employees. Generate tax deductions for active employees, view calculation results, use bulk upload via Excel, or bulk add tax records to multiple employees.
+
+PAYROLL - WITHOUT PAY DAYS
+--------------------------
+Without Pay Days tracks unpaid leave days. Record employee, period, number of days, and reason. Bulk upload via Excel is supported. These days reduce the payable salary.
+
+PAYROLL - EOBI DEDUCTION
+------------------------
+EOBI Deduction manages Employees Old-Age Benefits Institution deductions. Generate EOBI deductions for eligible employees, use bulk upload or bulk add, view calculation results, and configure rates.
+
+PAYROLL - LOAN AND ADVANCE
+--------------------------
+Loan and Advance manages employee loans and salary advances. Create a record with employee, amount, purpose, repayment terms, loan type (Loan or Advance), and approval status. Link to an installment schedule.
+
+PAYROLL - INSTALLMENTS
+----------------------
+Installments manages loan repayment schedules. View all installments for active loans, create or edit installment amounts and due dates, mark as paid or pending. Installments are deducted automatically during payroll execution.
+
+PAYROLL - PROVIDENT FUNDS
+-------------------------
+Provident Funds manages PF member records. Each record includes employee, salary period, and PF configuration (percentage-based or fixed amount). Use bulk upload via Excel, execute PF contribution calculation, and view, edit, or delete member details.
+
+PAYROLL - BONUSES
+-----------------
+Bonuses manages one-time or periodic bonuses. Create a bonus with employee, bonus type, amount, and period. The system supports an approval workflow for bonus disbursement.
+
+PAYROLL - SALARY ADJUSTMENTS
+----------------------------
+Salary Adjustments manages salary corrections and arrears. Create adjustments by type or category (Increment, Arrears, Correction, etc.) with employee, amount, and effective period. Bulk upload via Excel is supported.
+
+PAYROLL - EXECUTION
+-------------------
+Payroll Execution is the central payroll processing hub. Follow these steps in order:
+Step 1: Select a Salary Period from the dropdown.
+Step 2: Execute each module in sequence:
+1. Income Tax Deduction - Click "Execute" to generate tax deductions for all active employees.
+2. EOBI Deduction - Click "Execute" to generate EOBI deductions.
+3. Loan and Advance Deduction - Click "Execute" to generate installment deductions for approved active loans.
+4. Provident Fund - Click "Execute" to create PF records for PF-marked employees.
+5. Bonuses and Perks - Click "Fetch" to include approved bonus records.
+6. Salary Adjustments - Click "Fetch" to include approved adjustments or arrears.
+7. Final Salary Slips - Click "Generate Slips" to create salary slips and lock the period. This is the final step.
+A green checkmark indicates a completed step. The "Generate Slips" button is hidden until all previous steps are completed. Once slips are generated, the period is locked and no further changes can be made.
+
+PAYROLL - SALARY SLIPS
+----------------------
+Salary Slips views and prints salary slips. Filter by period, department, and employee name or code. The table shows Employee ID, Name, Department, Status (Finalized or Pending), and Net Salary. Click "Print" to open a printable salary slip showing all earning and deduction components.
+
+PAYROLL - LOCKING
+-----------------
+The system enforces a payroll lock mechanism. Once a period is locked after salary slip generation, no modifications can be made to any payroll data for that period, ensuring data integrity for accounting and audit purposes.
+
+RECRUITMENT - REQUISITIONS
+--------------------------
+Requisitions manages hiring requests. Create a requisition with job title, department, location, number of positions, employment type, grade, justification, budget information, required skills, and qualifications. Submit for approval through the workflow. The list view shows all requisitions with status (Draft, Pending Approval, Approved, Rejected, Filled, Closed) and search and filter options.
+
+The Approval Inbox shows pending requisitions awaiting a decision. Review details and approve or reject. The Recruiter Inbox (Recruitment Head) shows all requisitions assigned to recruiters and allows assignment. My Interviews shows interviews scheduled for you to conduct. Provide feedback and scores.
+
+RECRUITMENT - JOB POSTINGS
+--------------------------
+Job Postings creates and manages external job listings. Create a posting with job code, title, description, requirements, and location. Link to an approved requisition. Publish or unpublish postings. Published postings appear automatically on the public career portal.
+
+RECRUITMENT - ATS DASHBOARD
+---------------------------
+The ATS Dashboard (Applicant Tracking System) shows summary cards for Open Postings, Active Applications, Candidates in Pipeline, and Active Stages. Applications by Stage are shown with progress bars for each stage: Applied, Screening, Shortlisted, Interview, Final Review, Selected, Hired, Rejected, and Withdrawn. It also shows Open Job Postings and Recent Applications tables.
+
+RECRUITMENT - CANDIDATES
+------------------------
+Candidates manages candidate profiles. Create a candidate with name, unique email, phone, resume, and skills. View the full profile, edit information, and upload documents.
+
+RECRUITMENT - APPLICATIONS
+--------------------------
+Applications manages job applications through the hiring pipeline. The Pipeline view shows a visual kanban-style stage progression. You can move candidates between stages, view stage history, shortlist candidates, and view application details.
+
+RECRUITMENT - INTERVIEWS
+------------------------
+Interviews schedules and manages interviews. Schedule an interview for an application, define the interview round (1st, 2nd, Final, etc.), select panel members, set date, time, and mode (in-person or virtual). Submit feedback with scores, comments, and recommendations.
+
+RECRUITMENT - OFFERS
+--------------------
+Offers manages offer letters. Create an offer for a selected candidate or application with salary, benefits, joining date, and terms. The system supports version control so you can add new versions if terms change. Upload offer documents.
+
+The Offer Approval workflow submits the offer for internal approval. The Offer Inbox (My Approvals) shows offers pending your decision with a badge count. For external responses, candidates receive a secure token link via email. They can view the offer and accept or decline. The system updates the offer status accordingly. The Hiring Decision step is performed after offer acceptance to finalize the hire and trigger the onboarding process.
+
+RECRUITMENT - ONBOARDING
+------------------------
+Onboarding manages the new hire process. The list view shows candidates being onboarded with their name, position, planned joining date, actual joining date, task completion (completed out of total), and status. Status badges include: Completed or Joined (green), Ready To Join or Tasks In Progress (amber or yellow), Documents Pending (grey), and Cancelled (red). Click View to see full onboarding details. Use Confirm Joining to update status to Joined on the joining date.
+
+RECRUITMENT - ONBOARDING TASK TEMPLATES
+---------------------------------------
+Onboarding Task Templates creates reusable onboarding checklists. Define tasks like document collection, IT setup, orientation, and training. Assign templates to specific positions or departments. Tasks are automatically created when onboarding begins.
+
+RECRUITMENT - DEPARTMENT APPROVERS
+-----------------------------------
+Department Approvers configures department-level approval authorities. Map approvers (users) to departments and define the approval hierarchy and order. Used for requisition and offer approval workflows.
+
+RECRUITMENT - SETTINGS
+----------------------
+Recruitment Settings configures module defaults, workflow configurations, email templates for candidate communication, and integration settings for job boards.
+
+DOCUMENTS - ALL DOCUMENTS
+-------------------------
+All Documents is the central document repository. Upload employee documents such as CNIC, educational certificates, experience letters, and contracts. Document expiry tracking provides automatic alerts on the dashboard. Filter by employee, document type, or category. Edit metadata and delete documents.
+
+DOCUMENTS - CATEGORIES
+----------------------
+Document Categories defines categories like Personal, Educational, Employment, Medical, and Identification.
+
+DOCUMENTS - DOCUMENT TYPES
+--------------------------
+Document Types defines types within categories. For example, under Personal you might have CNIC and Passport, and under Educational you might have Degree and Transcript.
+
+DOCUMENTS - DMS DEFINITIONS
+---------------------------
+DMS Definitions configures the Document Management System. Define which document types are mandatory per employee category, set up document approval workflows, and configure auto-expiry notifications.
+
+APPROVALS - APPROVAL INBOX
+--------------------------
+The Approval Inbox under Approvals shows all document approval requests pending your action. Review document details and approve or reject with comments. Filter by status, type, or date.
+
+APPROVALS - APPROVAL HISTORY
+----------------------------
+Approval History shows the complete history of document approval actions including approved requests (with approver name, date, and comments) and rejected requests. It provides a full status audit trail.
+
+APPROVALS - APPROVAL TEMPLATES
+------------------------------
+Approval Templates defines reusable approval workflow templates. Each template has a name, description, steps or levels with approvers in sequence, and conditions for routing based on amount thresholds or department. Assign templates to document types or processes.
+
+ADMINISTRATION - USERS
+----------------------
+Users manages system access. Create a user with username, email, password, and employee link. Edit user details, reset passwords, disable or enable accounts, and delete users. The Profile page has personal settings. Login history tracks activity.
+
+ADMINISTRATION - ROLES
+----------------------
+Roles defines user roles. Create a role with a name and description and assign permissions (Functions) to roles. Pre-defined roles include ERP Admin, HR Manager, and Payroll Manager.
+
+ADMINISTRATION - USER ROLES
+---------------------------
+User Roles assigns roles to users. Select a user and assign one or more roles. Permissions are aggregated from all assigned roles.
+
+ADMINISTRATION - FUNCTIONS
+--------------------------
+Functions defines system permissions. Each function corresponds to a controller or page. Each has a Function Code, Name, Description, and Module. These are the atomic permission units.
+
+ADMINISTRATION - FUNCTION ROLES
+-------------------------------
+Function Roles maps functions to roles. Select a role and grant specific functions for granular page-level permission control.
+
+ADMINISTRATION - VALUE SETS
+---------------------------
+Value Sets manages lookup or dropdown values across the system. This includes Employment Types (Permanent, Contract, Intern), Status values (Active, Inactive, Terminated), Grades, Divisions, Sub-Departments, and any configurable dropdown list.
+
+ADMINISTRATION - SETTINGS
+-------------------------
+Settings configures global application settings including company information, system configuration options, email server settings, and notification preferences.
+
+REPORTS
+-------
+Reports provides access to pre-built reports and analytics including employee listings, attendance summaries, leave utilization reports, payroll reports, and recruitment pipeline reports. Data can be exported to Excel or PDF.
+
+PUBLIC FEATURES - CAREER PORTAL
+-------------------------------
+The public career portal is accessible at the /jobs URL without requiring login. It lists all published job postings with search and filter options by title, department, or location. External candidates can click a job to view details and apply.
+
+PUBLIC FEATURES - JOB APPLICATION
+---------------------------------
+External candidates can apply directly through the public portal by filling in personal information and uploading a resume or CV. A confirmation page is shown upon successful submission.
+
+PUBLIC FEATURES - OFFER RESPONSE
+--------------------------------
+Candidates receive a secure email with a token link to respond to an offer. The link opens a page where they can view the offer details and accept or decline. The system records the response and updates the offer status.
+
+WORKFLOW - APPROVALS
+--------------------
+Most approval items in AlignHR go through a configurable multi-step workflow. The current stage is always visible, such as "Line Manager - Level 1". Approvers can add comments when approving or rejecting. The system maintains a complete audit trail of all approval actions.
+
+WORKFLOW - PERMISSIONS
+----------------------
+Each user's sidebar shows only the modules they can access. If a user cannot see a menu item, they do not have the required permission. Contact the system administrator to request additional access. Permissions are managed through Functions and Roles in the Administration module.
+
+GENERAL - BULK OPERATIONS
+-------------------------
+Several modules support bulk upload via Excel files. Always download the provided template first, fill it in, and then upload. The system validates the data and shows errors for any invalid rows.
+
+GENERAL - THEME
+---------------
+AlignHR supports both light and dark themes. Click the moon or stars icon in the sidebar footer to switch between themes. The preference persists during your session.
+
+GENERAL - KEYBOARD SHORTCUTS
+----------------------------
+Ctrl+K opens the Command Palette for global search and quick actions. Esc closes modals and dropdowns. All data tables support in-table search, column sorting by clicking headers, pagination controls, and column visibility toggles.
+
+GENERAL - DATE FIELDS
+---------------------
+Date fields use the Flatpickr calendar picker. Click the calendar icon or type a date directly.
+
+GENERAL - FILE UPLOADS
+----------------------
+File upload fields accept common document formats including PDF, DOC, DOCX, XLS, XLSX, and images.

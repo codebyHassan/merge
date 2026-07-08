@@ -1,0 +1,64 @@
+@model AlignHR.Models.Valueset
+
+@{
+    ViewData["Title"] = "Valueset Details";
+}
+
+<div class="page-header animate-fade-in">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a href="/Valueset">Valuesets</a>
+        <span>/</span>
+        <span>Details</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">@Model.Name</h1>
+            <p class="page-subtitle">Configuration valueset details</p>
+        </div>
+
+        <div class="flex gap-12">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i>
+                Edit Valueset
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="details-grid animate-slide-up">
+    <div class="erp-card">
+        <div class="card-header-premium">
+            <i class="fas fa-cogs"></i>
+            <span>System Configuration</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-group">
+                <label>Valueset Name</label>
+                <div class="value-highlight">@Model.Name</div>
+            </div>
+            <div class="info-group">
+                <label>Group / Category</label>
+                <div class="value">@Model.GroupName</div>
+            </div>
+            <hr class="divider" />
+            <div class="info-group">
+                <label>Status</label>
+                <div class="value">
+                    <span class="status-pill @(Model.IsActive ? "active" : "locked")">
+                        @(Model.IsActive ? "System Active" : "Inactive")
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-actions-footer span-all">
+        <a href="/Valueset" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i>
+            Back to List
+        </a>
+    </div>
+</div>

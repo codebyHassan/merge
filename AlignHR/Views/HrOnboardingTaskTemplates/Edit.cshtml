@@ -1,0 +1,56 @@
+@model AlignHR.Models.HrTaskTemplateFormViewModel
+
+@{
+    ViewData["Title"] = "Edit Task Template";
+    ViewBag.ActivePage = "HrOnboardingTaskTemplates";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label asp-for="TaskName" class="form-label small fw-semibold">Task Name <span class="text-danger">*</span></label>
+                    <input asp-for="TaskName" class="form-control form-control-sm" required />
+                    <span asp-validation-for="TaskName" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="ResponsibleDepartment" class="form-label small fw-semibold">Responsible Department <span class="text-danger">*</span></label>
+                    <input asp-for="ResponsibleDepartment" class="form-control form-control-sm" required />
+                    <span asp-validation-for="ResponsibleDepartment" class="text-danger small"></span>
+                </div>
+                <div class="col-6 col-md-auto d-flex align-items-end gap-3 pb-1">
+                    <div class="form-check">
+                        <input asp-for="IsMandatory" type="checkbox" class="form-check-input" />
+                        <label asp-for="IsMandatory" class="form-check-label small">Mandatory</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="IsActive" type="checkbox" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label small">Active</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-check me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

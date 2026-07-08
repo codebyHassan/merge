@@ -1,0 +1,103 @@
+@model IList<AlignHR.Models.HrDepartmentApproverListItemViewModel>
+
+@{
+    ViewData["Title"] = "Department Approvers";
+    ViewBag.ActivePage = "HrDepartmentApprovers";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small">
+        @TempData["Error"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="filter-bar mb-2" aria-label="Department approvers filters">
+    <p class="text-muted small mb-0 me-auto">
+        Configure which employee acts as <strong>HRBP</strong> or <strong>HOD</strong> per department — controls who receives requisition approval requests.
+    </p>
+    <div class="filter-group">
+        <a asp-action="Create" class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-plus me-1"></i>Add Approver
+        </a>
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table>
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Department</th>
+                    <th>Approver Type</th>
+                    <th>Approver (Employee)</th>
+                    <th>Status</th>
+                    <th class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.DepartmentName</td>
+                        <td>
+                            @{
+                                var badgeClass = item.ApproverType switch
+                                {
+                                    "HRBP"      => "badge-info",
+                                    "HOD"       => "badge-warning",
+                                    "Recruiter" => "badge-primary",
+                                    _           => "badge-secondary"
+                                };
+                            }
+                            <span class="status-badge @badgeClass">@item.ApproverType</span>
+                        </td>
+                        <td>@item.EmployeeName</td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span class="status-badge badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-danger">Inactive</span>
+                            }
+                        </td>
+                        <td class="text-end sticky-actions">
+                            <a asp-action="Edit" asp-route-id="@item.Id"
+                               class="btn btn-icon btn-sm btn-icon-primary" title="Edit">
+                                <i class="fa-solid fa-pen"></i>
+                            </a>
+                            @if (item.IsActive)
+                            {
+                                <form asp-action="Deactivate" asp-route-id="@item.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Deactivate this department approver?');">
+                                    @Html.AntiForgeryToken()
+                                    <button class="btn btn-icon btn-sm btn-icon-danger" title="Deactivate">
+                                        <i class="fa-solid fa-ban"></i>
+                                    </button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-sliders"></i>
+                <h3 class="h6 mt-2 mb-1">No department approvers configured</h3>
+                <p class="text-muted mb-0">Add approvers to enable department-specific requisition routing.</p>
+            </div>
+        }
+    </div>
+</section>

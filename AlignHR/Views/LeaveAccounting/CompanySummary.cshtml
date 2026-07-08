@@ -1,0 +1,128 @@
+@model List<AlignHR.Models.CompanyLeaveSummaryViewModel>
+
+@{
+    ViewData["Title"] = "Company Summary";
+    ViewBag.ActivePage = "CompanySummary";
+    int currentYear = ViewBag.Year;
+    int currentPage = ViewBag.CurrentPage;
+    int totalPages = ViewBag.TotalPages;
+}
+
+<section class="filter-bar mb-2" aria-label="Company summary filters">
+    <div class="input-group input-group-sm me-auto" style="width:auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control" type="search" id="summarySearch"
+               placeholder="Search employee" form="none" />
+    </div>
+    <div class="filter-group">
+        <form method="get" class="d-flex align-items-center gap-2">
+            <label class="form-label small fw-semibold mb-0">Year</label>
+            <select name="year" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                @for (int y = DateTime.Now.Year - 2; y <= DateTime.Now.Year + 1; y++)
+                {
+                    <option value="@y" selected="@(y == currentYear)">@y</option>
+                }
+            </select>
+        </form>
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table>
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table" id="summaryTable">
+            <thead>
+                <tr>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="1">Code</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="2">Name</button></th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Total Quota</th>
+                    <th scope="col">Used</th>
+                    <th scope="col">Balance</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var emp in Model)
+                {
+                    var isInitialized = emp.Details.Any(d => d.Opening > 0);
+
+                    <tr class="summary-row" data-name="@emp.EmployeeName.ToLower()" data-code="@emp.EmployeeCode.ToLower()">
+                        <td data-label="Code"><span class="fw-semibold">@emp.EmployeeCode</span></td>
+                        <td data-label="Name"><span class="fw-semibold">@emp.EmployeeName</span></td>
+                        <td data-label="Status">
+                            <span class="status-badge @(isInitialized ? "status-active" : "badge-warning")">
+                                @(isInitialized ? "Initialized" : "Not Processed")
+                            </span>
+                        </td>
+                        <td data-label="Total Quota" class="fw-semibold">@emp.TotalOpening.ToString("0.##")</td>
+                        <td data-label="Used" class="fw-semibold" style="color:var(--erp-danger);">@emp.TotalAvailed.ToString("0.##")</td>
+                        <td data-label="Balance">
+                            <span class="status-badge @(emp.TotalBalance > 0 ? "badge-info" : "badge-danger")">
+                                @emp.TotalBalance.ToString("0.##")
+                            </span>
+                        </td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <form asp-action="ViewEmployeeDashboard" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="employeeId" value="@emp.EmployeeId" />
+                                <input type="hidden" name="year" value="@emp.Year" />
+                                <button type="submit" class="btn btn-icon btn-sm btn-icon-info" title="View Dashboard">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-inbox"></i>
+                <h3 class="h6 mt-2 mb-1">No employees found</h3>
+                <p class="text-muted mb-0">No employees have an active leave policy assigned for @currentYear.</p>
+            </div>
+        }
+    </div>
+
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Page @currentPage of @totalPages</span>
+        @if (totalPages > 1)
+        {
+            <nav aria-label="Company summary pagination">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("CompanySummary", new { year = currentYear, page = currentPage - 1 })">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(currentPage == i ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("CompanySummary", new { year = currentYear, page = i })">@i</a>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("CompanySummary", new { year = currentYear, page = currentPage + 1 })">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</section>
+
+@section Scripts {
+<script>
+    document.getElementById('summarySearch').addEventListener('input', function () {
+        var q = this.value.toLowerCase().trim();
+        document.querySelectorAll('.summary-row').forEach(function (row) {
+            var name = row.dataset.name || '';
+            var code = row.dataset.code || '';
+            row.style.display = (!q || name.includes(q) || code.includes(q)) ? '' : 'none';
+        });
+    });
+</script>
+}

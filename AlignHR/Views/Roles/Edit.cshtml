@@ -1,0 +1,39 @@
+@model AlignHR.Models.Role
+@{
+    ViewData["Title"] = "Edit Role";
+    ViewBag.ActivePage = "Roles";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label asp-for="Name" class="form-label small fw-semibold">Role Name <span class="text-danger">*</span></label>
+                    <input asp-for="Name" class="form-control form-control-sm" placeholder="e.g. HR Manager" required />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Description" class="form-label small fw-semibold">Description</label>
+                    <input asp-for="Description" class="form-control form-control-sm" placeholder="Briefly describe what this role can do..." />
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Update Role</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

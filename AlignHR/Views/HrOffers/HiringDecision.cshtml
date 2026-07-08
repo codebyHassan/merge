@@ -1,0 +1,64 @@
+@model AlignHR.Models.HrHiringDecisionFormViewModel
+
+@{
+    ViewData["Title"] = "Hiring Decision";
+    ViewBag.ActivePage = "HrOffers";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <div class="mb-3 small text-muted">
+            Candidate: <strong>@(Model.CandidateName ?? "—")</strong>
+            @if (!string.IsNullOrEmpty(Model.JobTitle)) { <span>· @Model.JobTitle</span> }
+        </div>
+
+        <form asp-action="HiringDecision" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ApplicationFk" />
+            <input type="hidden" asp-for="CandidateName" />
+            <input type="hidden" asp-for="JobTitle" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label asp-for="Decision" class="form-label small fw-semibold">Decision <span class="text-danger">*</span></label>
+                    <select asp-for="Decision" class="form-select form-select-sm" required>
+                        <option value="">— Select —</option>
+                        <option value="Selected">Selected</option>
+                        <option value="Hired">Hired</option>
+                        <option value="Hold">Hold</option>
+                        <option value="Rejected">Rejected</option>
+                    </select>
+                    <span asp-validation-for="Decision" class="text-danger small"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Remarks" class="form-label small fw-semibold">Remarks</label>
+                    <textarea asp-for="Remarks" class="form-control form-control-sm" rows="2"
+                              placeholder="Optional notes about the hiring decision…"></textarea>
+                </div>
+            </div>
+
+            <div class="alert alert-info py-2 small mt-3">
+                <i class="fa-solid fa-circle-info me-1"></i>
+                Selecting <strong>Hired</strong> will move the candidate to the <em>Selected</em> stage and mark the requisition as filled.
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-user-check me-1"></i>Save Decision
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }
