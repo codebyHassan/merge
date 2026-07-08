@@ -1,0 +1,183 @@
+@model AlignHR.Models.HrScheduleFormViewModel
+
+@{
+    ViewBag.ActivePage = "HrJobPostings";
+    ViewData["Title"] = "Schedule Interview";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small">
+        @TempData["Error"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner p-0">
+
+        @* Candidate strip *@
+        <div class="d-flex align-items-center px-4 py-3 border-bottom">
+            <span class="fw-semibold">@Model.CandidateName</span>
+            @if (!string.IsNullOrEmpty(Model.JobTitle))
+            {
+                <span class="text-muted small ms-2">— @Model.JobTitle</span>
+            }
+        </div>
+
+        <div class="p-4">
+            <form asp-action="Schedule" method="post" class="needs-validation" novalidate>
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="ApplicationId" />
+                <input type="hidden" asp-for="JobPostingId" />
+                <input type="hidden" asp-for="CandidateName" />
+                <input type="hidden" asp-for="JobTitle" />
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger p-2 mb-3 small">
+                        <div asp-validation-summary="ModelOnly"></div>
+                    </div>
+                }
+
+                @* ── Interview Details ────────────────────────── *@
+                <div class="mb-4">
+                    <div class="small fw-semibold text-uppercase text-muted mb-3" style="letter-spacing:.05em;">Interview Details</div>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-3">
+                            <label asp-for="InterviewRoundId" class="form-label small fw-semibold">
+                                Round <span class="text-danger">*</span>
+                            </label>
+                            <select asp-for="InterviewRoundId" asp-items="ViewBag.Rounds"
+                                    class="form-select form-select-sm" required>
+                                <option value="">— Select Round —</option>
+                            </select>
+                            <span asp-validation-for="InterviewRoundId" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="ScheduledDateTime" class="form-label small fw-semibold">
+                                Date &amp; Time <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="ScheduledDateTime" type="datetime-local"
+                                   class="form-control form-control-sm" required />
+                            <span asp-validation-for="ScheduledDateTime" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="MeetingLink" class="form-label small fw-semibold">
+                                Meeting Link
+                            </label>
+                            <input asp-for="MeetingLink" type="url" class="form-control form-control-sm"
+                                   placeholder="https://meet.google.com/..." />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <label asp-for="Location" class="form-label small fw-semibold">
+                                Location
+                            </label>
+                            <input asp-for="Location" class="form-control form-control-sm"
+                                   placeholder="e.g. Board Room 2" />
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-3 opacity-25" />
+
+                @* ── Interview Panel ──────────────────────────── *@
+                <div class="mb-4">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="small fw-semibold text-uppercase text-muted" style="letter-spacing:.05em;">
+                            Interview Panel
+                        </div>
+                        <span id="selectedCount" class="small text-muted">None selected</span>
+                    </div>
+
+                    <input type="text" id="panelSearch" class="form-control form-control-sm mb-2"
+                           placeholder="Search employees..." style="max-width:320px;" autocomplete="off" />
+
+                    <div id="panelList"
+                         style="max-height:240px; overflow-y:auto; border:1px solid var(--border-color,#444); border-radius:.375rem;">
+                        @{
+                            var groups = ViewBag.PanelDeptGroups as Dictionary<string, List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>>;
+                            var hasAny = groups != null && groups.Values.Any(g => g.Count > 0);
+                        }
+                        @if (!hasAny)
+                        {
+                            <div class="px-3 py-2 small text-muted">No employees found for this department.</div>
+                        }
+                        else
+                        {
+                            @foreach (var grp in groups!)
+                            {
+                                <div class="px-3 pt-2 pb-1 small fw-semibold text-uppercase text-muted sticky-top"
+                                     style="letter-spacing:.05em; background:var(--sidebar-bg,#1e1e1e); font-size:.65rem;">
+                                    @grp.Key
+                                </div>
+                                @foreach (var emp in grp.Value)
+                                {
+                                    <label class="panel-item d-flex align-items-center gap-2 px-3 py-2 border-bottom border-opacity-10 mb-0"
+                                           style="cursor:pointer;" data-name="@emp.Text.ToLowerInvariant()">
+                                        <input class="form-check-input flex-shrink-0 mt-0 panel-check"
+                                               type="checkbox" name="PanelEmployeeIds" value="@emp.Value" />
+                                        <span class="small">@emp.Text</span>
+                                    </label>
+                                }
+                            }
+                        }
+                    </div>
+
+                    <div id="selectedChips" class="d-flex flex-wrap gap-1 mt-2" style="min-height:1.5rem;"></div>
+                </div>
+
+                @* ── Actions ──────────────────────────────────── *@
+                <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                    <a asp-controller="HrInterviews" asp-action="ApplicationInterviews"
+                       asp-route-applicationId="@Model.ApplicationId"
+                       class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Schedule Interview</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const searchInput = document.getElementById('panelSearch');
+            const countEl     = document.getElementById('selectedCount');
+            const chipsEl     = document.getElementById('selectedChips');
+
+            function updateUI() {
+                const checked = [...document.querySelectorAll('.panel-check:checked')];
+                countEl.textContent = checked.length === 0
+                    ? 'None selected'
+                    : `${checked.length} selected`;
+
+                chipsEl.innerHTML = '';
+                checked.forEach(cb => {
+                    const label = cb.closest('label').querySelector('span').textContent.trim();
+                    const chip  = document.createElement('span');
+                    chip.className = 'badge rounded-pill bg-secondary fw-normal small';
+                    chip.textContent = label;
+                    chipsEl.appendChild(chip);
+                });
+            }
+
+            document.querySelectorAll('.panel-check').forEach(cb => {
+                cb.addEventListener('change', updateUI);
+            });
+
+            searchInput.addEventListener('input', function () {
+                const q = this.value.toLowerCase();
+                document.querySelectorAll('.panel-item').forEach(el => {
+                    el.style.display = el.dataset.name.includes(q) ? '' : 'none';
+                });
+            });
+        })();
+    </script>
+}

@@ -1,0 +1,173 @@
+@model AlignHR.Models.Overtime
+
+@{
+    ViewData["Title"] = "Create Overtime Policy";
+    ViewBag.ActivePage = "Overtime";
+}
+
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <i class="fas fa-home"></i>
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">Overtime Policies</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Create Policy</div>
+</div>
+
+<div class="form-shell">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" id="createOvertimeForm">
+            @Html.AntiForgeryToken()
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="custom-alert-danger animate-fade-in">
+                    <div class="alert-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="alert-content">
+                        <h4 class="alert-title">Validation Failed</h4>
+                        <div asp-validation-summary="ModelOnly" class="alert-messages"></div>
+                    </div>
+                </div>
+            }
+
+            <h3 style="margin-bottom: 1.5rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">Basic Information</h3>
+            <div class="form-grid">
+                <div class="form-item span-full">
+                    <label asp-for="PolicyName" class="form-label">Policy Name <span class="required">*</span></label>
+                    <input asp-for="PolicyName" class="form-control" placeholder="e.g. Standard Weekday OT" required />
+                    <span asp-validation-for="PolicyName" class="text-danger small"></span>
+                </div>
+
+                <div class="form-item">
+                    <label asp-for="DayType" class="form-label">Day Type <span class="required">*</span></label>
+                    <select asp-for="DayType" class="form-control" required>
+                        <option value="">-- Select Day Type --</option>
+                        <option value="Weekday">Weekday</option>
+                        <option value="Weekend">Weekend</option>
+                        <option value="Holiday">Holiday</option>
+                    </select>
+                    <span asp-validation-for="DayType" class="text-danger small"></span>
+                </div>
+
+                <div class="form-item">
+                    <label asp-for="CalculationBase" class="form-label">Calculation Base <span class="required">*</span></label>
+                    <select asp-for="CalculationBase" class="form-control" required>
+                        <option value="BASIC">Basic Salary</option>
+                        <option value="GROSS">Gross Salary</option>
+                        <option value="HOURLY">Hourly Rate</option>
+                    </select>
+                    <span asp-validation-for="CalculationBase" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1.5rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">Hours & Rates</h3>
+            <div class="form-grid">
+                <div class="form-item">
+                    <label asp-for="MinHours" class="form-label">Minimum OT Hours <span class="required">*</span></label>
+                    <input asp-for="MinHours" type="number" step="0.01" class="form-control" placeholder="0.5" required />
+                    <span asp-validation-for="MinHours" class="text-danger small"></span>
+                </div>
+                <div class="form-item">
+                    <label asp-for="MaxHours" class="form-label">Maximum OT Hours <span class="required">*</span></label>
+                    <input asp-for="MaxHours" type="number" step="0.01" class="form-control" placeholder="4.0" required />
+                    <span asp-validation-for="MaxHours" class="text-danger small"></span>
+                </div>
+
+                <div class="form-item">
+                    <label asp-for="RateType" class="form-label">Rate Type <span class="required">*</span></label>
+                    <select asp-for="RateType" class="form-control" required>
+                        <option value="MULTIPLIER">Multiplier (e.g. 1.5x)</option>
+                        <option value="FIXED">Fixed Amount (e.g. Rs. 500)</option>
+                    </select>
+                    <span asp-validation-for="RateType" class="text-danger small"></span>
+                </div>
+                <div class="form-item">
+                    <label asp-for="RateValue" class="form-label">Rate Value <span class="required">*</span></label>
+                    <input asp-for="RateValue" type="number" step="0.01" class="form-control" placeholder="1.5" required />
+                    <span asp-validation-for="RateValue" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1.5rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">Rules & Rounding</h3>
+            <div class="form-grid">
+                <div class="form-item">
+                    <label asp-for="AfterShiftMinutes" class="form-label">Grace Period (Minutes after shift)</label>
+                    <input asp-for="AfterShiftMinutes" type="number" class="form-control" placeholder="30" />
+                    <span asp-validation-for="AfterShiftMinutes" class="text-danger small"></span>
+                </div>
+                <div class="form-item"></div>
+
+                <div class="form-item">
+                    <label asp-for="RoundType" class="form-label">Rounding Type <span class="required">*</span></label>
+                    <select asp-for="RoundType" class="form-control" required>
+                        <option value="NONE">No Rounding</option>
+                        <option value="UP">Round Up</option>
+                        <option value="DOWN">Round Down</option>
+                    </select>
+                    <span asp-validation-for="RoundType" class="text-danger small"></span>
+                </div>
+                <div class="form-item">
+                    <label asp-for="RoundValue" class="form-label">Rounding Value (Minutes)</label>
+                    <input asp-for="RoundValue" type="number" class="form-control" placeholder="30" />
+                    <span asp-validation-for="RoundValue" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 2rem; margin-bottom: 1.5rem; color: var(--text-main); font-size: 1.1rem; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.5rem;">Settings & Validity</h3>
+            <div class="form-grid">
+                <div class="form-item">
+                    <label asp-for="EffectiveFrom" class="form-label">Effective From <span class="required">*</span></label>
+                    <input asp-for="EffectiveFrom" type="date" class="form-control" required />
+                    <span asp-validation-for="EffectiveFrom" class="text-danger small"></span>
+                </div>
+                <div class="form-item">
+                    <label asp-for="EffectiveTo" class="form-label">Effective To (Optional)</label>
+                    <input asp-for="EffectiveTo" type="date" class="form-control" />
+                    <span asp-validation-for="EffectiveTo" class="text-danger small"></span>
+                </div>
+
+                <div class="form-item" style="display: flex; flex-direction: row; align-items: center; gap: 1rem; margin-top: 1rem;">
+                    <label class="switch">
+                        <input type="checkbox" asp-for="IsActive">
+                        <span class="slider round"></span>
+                    </label>
+                    <label class="form-label" style="margin: 0;">Is Active</label>
+                </div>
+
+                <div class="form-item" style="display: flex; flex-direction: row; align-items: center; gap: 1rem; margin-top: 1rem;">
+                    <label class="switch">
+                        <input type="checkbox" asp-for="IsTaxable">
+                        <span class="slider round"></span>
+                    </label>
+                    <label class="form-label" style="margin: 0;">Is Taxable</label>
+                </div>
+
+                <div class="form-item" style="display: flex; flex-direction: row; align-items: center; gap: 1rem; margin-top: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <label class="switch">
+                            <input type="checkbox" asp-for="IsDefault">
+                            <span class="slider round"></span>
+                        </label>
+                        <label class="form-label" style="margin: 0;">Is Default Policy</label>
+                    </div>
+                    <span asp-validation-for="IsDefault" class="text-danger small" style="display: block; margin-top: 5px;"></span>
+                </div>
+
+            </div>
+
+            <div class="form-actions-sticky mt-4">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                <button type="submit" class="btn btn-primary btn-sm">Save Policy</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

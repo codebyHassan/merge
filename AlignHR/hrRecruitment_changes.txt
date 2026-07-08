@@ -1,0 +1,325 @@
+# Recruitment Workflow Refactor Review
+
+## Root Cause
+
+The current workflow routes approvals using RoleId.
+
+Current design:
+
+```text
+HR_WorkflowStep
+---------------
+RoleId
+```
+
+Current behavior:
+
+```text
+Step 1 = HRBP Role
+Step 2 = HOD Role
+Step 3 = Recruiter Role
+```
+
+Inbox logic then retrieves pending requests by matching user roles.
+
+Example:
+
+```csharp
+step.RoleId == currentUserRoleId
+```
+
+This causes:
+
+* All HRBPs to see all HRBP approvals.
+* All HODs to see all HOD approvals.
+* No department-level ownership.
+* Incorrect approval visibility.
+* Poor scalability for enterprise organizations.
+
+This is the primary architectural flaw.
+
+---
+
+# Remove / Refactor
+
+## Remove dependency on RoleId for approval execution
+
+Workflow routing should never determine approvers directly from user roles.
+
+Keep roles only for permissions:
+
+Examples:
+
+```text
+CanCreateRequisition
+CanApproveRequisition
+CanManageRecruitment
+```
+
+Do not use roles to determine who receives a workflow task.
+
+---
+
+# Add Department Approver Configuration
+
+Create:
+
+```text
+HR_DepartmentApprover
+```
+
+Columns:
+
+```text
+Id
+DepartmentId
+ApproverType
+EmployeeId
+IsActive
+```
+
+Examples:
+
+IT
+HRBP = Sara
+HOD = Ahmed
+Recruiter = Ali
+
+Finance
+HRBP = Ayesha
+HOD = Bilal
+
+````
+
+This table becomes the source of approver assignment.
+
+---
+
+# Keep
+
+Keep these tables:
+
+```text
+HR_Requisition
+
+HR_WorkflowDefinition
+
+HR_WorkflowStep
+
+HR_WorkflowInstance
+````
+
+They are valid.
+
+---
+
+# Modify WorkflowStep
+
+Current:
+
+```text
+Id
+WorkflowDefinitionId
+StepOrder
+StepName
+RoleId
+IsFinalStep
+```
+
+Replace with:
+
+```text
+Id
+WorkflowDefinitionId
+StepOrder
+StepName
+ApproverType
+IsFinalStep
+```
+
+Examples:
+
+```text
+HRBP
+HOD
+Recruiter
+FinanceApprover
+CEOApprover
+```
+
+Remove:
+
+```text
+RoleId
+```
+
+from workflow routing.
+
+---
+
+# Remove WorkflowHistory
+
+Current table:
+
+```text
+HR_WorkflowHistory
+```
+
+mixes:
+
+1. Current workflow state
+2. Audit history
+
+into a single structure.
+
+Replace it.
+
+---
+
+# Add WorkflowInstanceStep
+
+Create:
+
+```text
+HR_WorkflowInstanceStep
+```
+
+Columns:
+
+```text
+Id
+WorkflowInstanceId
+StepOrder
+ApproverType
+EmployeeId
+Status
+AssignedDate
+ActionDate
+Comments
+```
+
+Purpose:
+
+Store actual resolved approvers.
+
+Example:
+
+```text
+Step 1
+HRBP
+Sara
+
+Step 2
+HOD
+Ahmed
+
+Step 3
+Recruiter
+Ali
+```
+
+---
+
+# Add WorkflowAction
+
+Create:
+
+```text
+HR_WorkflowAction
+```
+
+Columns:
+
+```text
+Id
+WorkflowInstanceStepId
+ActionByEmployeeId
+ActionType
+Comments
+ActionDate
+```
+
+Purpose:
+
+Permanent audit trail.
+
+Actions:
+
+```text
+Submitted
+Approved
+Rejected
+SentBack
+```
+
+---
+
+# New Submission Logic
+
+When requisition is submitted:
+
+1. Read DepartmentId.
+2. Load WorkflowDefinition.
+3. Load WorkflowSteps.
+4. Resolve each ApproverType from HR_DepartmentApprover.
+5. Create WorkflowInstanceStep records.
+6. Mark first step Pending.
+7. Mark remaining steps Waiting.
+
+---
+
+# New Inbox Logic
+
+Current:
+
+```csharp
+RoleId == CurrentUserRoleId
+```
+
+Replace with:
+
+```csharp
+EmployeeId == CurrentEmployeeId
+```
+
+Only assigned approvers should see requests.
+
+---
+
+# What To Delete
+
+Delete workflow routing based on:
+
+```text
+RoleId
+UserRoles
+Role Matching
+```
+
+for approval assignment.
+
+Keep RBAC only for authorization.
+
+---
+
+# Expected Result
+
+IT Requisition:
+
+```text
+HRBP      Sara
+HOD       Ahmed
+Recruiter Ali
+```
+
+Only Sara sees first approval.
+
+After approval:
+
+Only Ahmed sees second approval.
+
+After approval:
+
+Only Ali sees recruiter assignment.
+
+No other department users can see or act on the request.

@@ -1,0 +1,86 @@
+@model AlignHR.Models.IncomeTaxDetuction
+@{
+    ViewData["Title"] = "Delete Income Tax Deduction";
+    ViewBag.ActivePage = "IncomeTaxDetuction";
+}
+
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <i class="fas fa-home"></i>
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">Income Tax Deduction</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Delete</div>
+</div>
+
+<div class="delete-container animate-slide-up">
+    <div class="danger-card">
+        <div class="danger-header">
+            <div class="danger-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="danger-text">
+                <h2>Delete This Record?</h2>
+                <p>This action is permanent and cannot be undone. Please confirm before proceeding.</p>
+            </div>
+        </div>
+
+        <div class="record-details-section">
+            <div class="employee-summary">
+                @if (Model.Employee != null)
+                {
+                    <div class="detail-avatar-container">
+                        @if (!string.IsNullOrEmpty(Model.Employee.ProfileImage))
+                        {
+                            <img src="/uploads/employees/@Model.Employee.ProfileImage" class="detail-avatar" alt="Avatar" />
+                        }
+                        else
+                        {
+                            <div class="detail-avatar-placeholder">
+                                @(Model.Employee.FirstName.Substring(0, 1) + Model.Employee.LastName.Substring(0, 1))
+                            </div>
+                        }
+                        <div class="employee-id-badge">#@Model.Employee.Code</div>
+                    </div>
+                    <div class="employee-meta">
+                        <h3>@Model.Employee.FirstName @Model.Employee.LastName</h3>
+                        <span class="dept-badge">@(Model.Employee.Department?.Name ?? "General")</span>
+                    </div>
+                }
+            </div>
+
+            <div class="details-grid">
+                <div class="detail-item">
+                    <span class="detail-label">Salary Period</span>
+                    <span class="detail-value">@(Model.SalaryPeriod?.PeriodName ?? "N/A")</span>
+                </div>
+                <div class="detail-item highlighted">
+                    <span class="detail-label">Deduction Amount</span>
+                    <span class="detail-value text-danger">@Model.incometaxdetection.ToString("N2")</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Created At</span>
+                    <span class="detail-value">@Model.createat.ToString("dd-MMM-yyyy HH:mm")</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Created By</span>
+                    <span class="detail-value">System Admin</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="danger-actions">
+            <a asp-action="Index" class="btn-cancel-white">No, Keep Record</a>
+            <form asp-action="Delete" method="post">
+                <input type="hidden" asp-for="id" />
+                <button type="submit" class="btn-delete-full">
+                    <i class="fas fa-trash-alt mr-2"></i> Yes, Delete Permanently
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

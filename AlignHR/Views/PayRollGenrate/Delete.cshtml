@@ -1,0 +1,51 @@
+@model AlignHR.Models.PayRollGenrate
+@{
+    ViewData["Title"] = "Delete Payroll";
+    ViewBag.ActivePage = "PayRollGenrate";
+}
+
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item"><a href="/">Home</a></div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item"><a asp-action="Index">Salary Breakups</a></div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Delete</div>
+</div>
+
+<div class="form-shell" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-inner" style="text-align: center;">
+        <div style="width: 80px; height: 80px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+        
+        <h2 class="card-subtitle" style="color: #991b1b; margin-bottom: 1rem;">Confirm Deletion</h2>
+        <p style="color: #64748b; margin-bottom: 2rem;">
+            Are you sure you want to delete the payroll record for 
+            <strong style="color: #1e293b;">@Model.Employee?.FirstName @Model.Employee?.LastName</strong>? 
+            This action cannot be undone.
+        </p>
+
+        <div style="background: #f8fafc; padding: 1.5rem; border-radius: 12px; margin-bottom: 2rem; border: 1px solid #e2e8f0; text-align: left;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: #64748b;">Employee Code:</span>
+                <span style="font-weight: 600;">@Model.Employee?.Code</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: #64748b;">Gross Salary:</span>
+                <span style="font-weight: 600; color: #6366f1;">@Model.salery.ToString("N0")</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #64748b;">Date:</span>
+                <span style="font-weight: 600;">@Model.createat.ToString("MMM dd, yyyy")</span>
+            </div>
+        </div>
+
+        <form asp-action="Delete" method="post">
+            <input type="hidden" asp-for="id" />
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">No, Keep it</a>
+                <button type="submit" class="btn-delete-confirm">Yes, Delete Record</button>
+            </div>
+        </form>
+    </div>
+</div>

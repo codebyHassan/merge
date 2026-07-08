@@ -1,0 +1,100 @@
+@model List<DailyAttendanceVM>
+
+@{
+    ViewData["Title"] = "Daily Attendance";
+    ViewBag.ActivePage = "DailyAttendance";
+}
+
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="#">Home</a>
+        <span>/</span>
+        <span>Daily Attendance</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Daily Attendance</h1>
+            <p class="page-subtitle">View and filter daily employee attendance</p>
+        </div>
+    </div>
+</div>
+
+<div class="table-shell">
+    <div class="table-toolbar">
+        <div class="table-card-title">Attendance Logs</div>
+
+        <div class="table-filters mb-2">
+            <form method="get" class="d-flex align-items-center gap-2">
+                <input type="date"
+                       name="date"
+                       class="filter-input form-control me-2"
+                       value="@ViewBag.Date.ToString("yyyy-MM-dd")"
+                       style="max-width: 200px;" />
+
+                <button type="submit" class="btn btn-primary me-2">
+                    Filter
+                </button>
+
+                <a asp-action="ExportToExcel"
+                       asp-route-date="@ViewBag.Date"
+                       class="btn btn-success">
+                    Export to Excel
+                </a>
+            </form>
+        </div>
+    </div>
+
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Emp #</th>
+                    <th>Emp Name</th>
+                    <th>Date</th>
+                    <th>In</th>
+                    <th>Out</th>
+                    <th>W/Hours</th>
+                    <th>Late</th>
+                    <th>Early</th>
+                    <th>Extra</th>
+                    <th>Shift</th>
+                    <th>Shift Start Time</th>
+                    <th>Shift End Time</th>
+                    <th>Total Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td>@item.EmployeeCode</td>
+                            <td>@item.EmployeeName</td>
+                            <td>@item.Date.ToString("dd-MMM-yyyy")</td>
+                            <td>@item.InTime?.ToString("HH:mm:ss")</td>
+                            <td>@(item.OutTime.HasValue ? item.OutTime.Value.ToString("HH:mm:ss") : "-")</td>
+                            <td>@item.WorkingHoursFormatted</td>
+                            <td>@(item.LateMinutes > 0 ? $"{item.LateMinutes} m" : "-")</td>
+                            <td>@(item.EarlyMinutes > 0 ? $"{item.EarlyMinutes} m" : "-")</td>
+                            <td>@(item.ExtraMinutes > 0 ? $"{item.ExtraMinutes} m" : "-")</td>
+                            <td>@item.ShiftName</td>
+                            <td>@item.ShiftStart.ToString("HH:mm:ss")</td>
+                            <td>@item.ShiftEnd.ToString("HH:mm:ss")</td>
+                            <td>@item.TotalTimeFormatted</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="12" class="text-center py-5 text-muted">
+                            No attendance records found for this date.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

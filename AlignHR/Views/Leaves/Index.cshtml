@@ -1,0 +1,576 @@
+@model AlignHR.Controllers.LeaveDashboardViewModel
+@using System.Collections.Generic
+@{
+    ViewData["Title"] = "Leave Dashboard";
+    ViewBag.ActivePage = "Leaves";
+    var recentRequests = Model.RecentRequests ?? new List<AlignHR.Models.LeaveRequest>();
+    var ledger = Model.Ledger ?? new List<AlignHR.Models.LeaveTransaction>();
+    bool isHRView = ViewBag.IsHRView == true;
+    bool canApplyForOthers = ViewBag.CanApplyForOthers == true;
+}
+
+@* ── HR View Banner ────────────────────────── *@
+@if (isHRView)
+{
+    <div class="ld-hr-banner animate-fade-in mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <span>HR View — Viewing <strong>@Model.EmployeeName (@Model.EmployeeCode)</strong></span>
+        </div>
+        <a asp-action="ClearHRView" class="ld-hr-back-btn">
+            <i class="fa-solid fa-rotate-left me-1"></i>Back to My Dashboard
+        </a>
+    </div>
+}
+
+@* ── Top Bar ───────────────────────────────── *@
+<section class="ld-filter-bar mb-3" aria-label="Leave dashboard filters">
+    @if (canApplyForOthers)
+    {
+        <div class="position-relative search-wrapper">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input class="form-control search-input" type="search" id="deptSearchInput" name="term" autocomplete="off"
+                   placeholder="Search team member"
+                   hx-get="@Url.Action("SearchDepartmentEmployees","Leaves")"
+                   hx-target="#deptSearchResults" hx-trigger="keyup changed delay:300ms" form="none" />
+            <div id="deptSearchResults" class="search-results-container shadow-lg"></div>
+        </div>
+        <form asp-controller="LeaveAccounting" asp-action="ViewEmployeeDashboard" method="post" id="secureSwitchForm" class="d-none">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="employeeId" id="switchEmpId" />
+            <input type="hidden" name="year" value="@Model.CurrentYear" />
+        </form>
+    }
+    else
+    {
+        <div class="ld-emp-pill">
+            <div class="ld-emp-avatar">@(Model.EmployeeName?.Substring(0, 1).ToUpper() ?? "?")</div>
+            <div class="ld-emp-info">
+                <span class="fw-semibold small">@Model.EmployeeName</span>
+                @if (!string.IsNullOrWhiteSpace(Model.EmployeeCode))
+                {
+                    <span class="text-muted" style="font-size:11px;">@Model.EmployeeCode</span>
+                }
+            </div>
+        </div>
+    }
+
+    @* Year Selector *@
+    <form method="get" class="d-flex align-items-center gap-2 ms-2">
+        <label class="form-label small fw-semibold mb-0 text-muted">Year</label>
+        <select name="year" class="form-select year-select" onchange="this.form.submit()">
+            @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 4; y--)
+            {
+                <option value="@y" selected="@(y == Model.CurrentYear)">@y</option>
+            }
+        </select>
+    </form>
+
+    <div class="filter-group ms-auto">
+        <a class="btn btn-export-custom" asp-controller="LeaveRequests" asp-action="ApprovalInbox">
+            <i class="fa-solid fa-inbox me-1.5"></i>Inbox
+        </a>
+        <a class="btn btn-export-custom" asp-controller="LeaveRequests" asp-action="Index">
+            <i class="fa-solid fa-list me-1.5"></i>All Requests
+        </a>
+        <a class="btn btn-primary" asp-controller="LeaveRequests" asp-action="Create">
+            <i class="fa-solid fa-plus me-1.5"></i>New Request
+        </a>
+    </div>
+</section>
+
+@* ── Leave Balance Cards ───────────────────── *@
+@if (Model.LeaveBalances.Any())
+{
+    <div class="ld-balance-grid mb-3">
+        @foreach (var bal in Model.LeaveBalances)
+        {
+            var pct = (double)bal.UsedPercent;
+            var barColor = pct >= 90 ? "var(--erp-danger,#ef4444)"
+                         : pct >= 65 ? "var(--erp-warning,#f59e0b)"
+                         : "var(--erp-success,#22c55e)";
+            <div class="ld-balance-card">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="ld-balance-type">@bal.LeaveTypeName</div>
+                    <div class="ld-balance-remaining">@bal.Remaining.ToString("0.##") <span>left</span></div>
+                </div>
+                <div class="ld-balance-bar-track">
+                    <div class="ld-balance-bar-fill" style="width:@(pct)%;background:@barColor;"></div>
+                </div>
+                <div class="d-flex justify-content-between mt-1" style="font-size:11px;color:var(--erp-text-muted);">
+                    <span>Used: <strong>@bal.Used.ToString("0.##")</strong></span>
+                    <span>Total: <strong>@bal.Allocated.ToString("0.##")</strong></span>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@* ── Stats Strip ──────────────────────────── *@
+<div class="ld-stats-strip mb-3">
+    <div class="ld-stat-item">
+        <div class="ld-stat-icon ld-stat-total"><i class="fa-solid fa-file-lines"></i></div>
+        <div>
+            <div class="ld-stat-val">@Model.TotalRequests</div>
+            <div class="ld-stat-lbl">Total</div>
+        </div>
+    </div>
+    <div class="ld-stat-divider"></div>
+    <div class="ld-stat-item">
+        <div class="ld-stat-icon ld-stat-pending"><i class="fa-solid fa-clock"></i></div>
+        <div>
+            <div class="ld-stat-val">@Model.PendingRequests</div>
+            <div class="ld-stat-lbl">Pending</div>
+        </div>
+    </div>
+    <div class="ld-stat-divider"></div>
+    <div class="ld-stat-item">
+        <div class="ld-stat-icon ld-stat-approved"><i class="fa-solid fa-circle-check"></i></div>
+        <div>
+            <div class="ld-stat-val">@Model.ApprovedRequests</div>
+            <div class="ld-stat-lbl">Approved</div>
+        </div>
+    </div>
+    <div class="ld-stat-divider"></div>
+    <div class="ld-stat-item">
+        <div class="ld-stat-icon ld-stat-rejected"><i class="fa-solid fa-circle-xmark"></i></div>
+        <div>
+            <div class="ld-stat-val">@Model.RejectedRequests</div>
+            <div class="ld-stat-lbl">Rejected</div>
+        </div>
+    </div>
+    <div class="ld-stat-divider"></div>
+    <div class="ld-stat-item">
+        <div class="ld-stat-icon ld-stat-policy"><i class="fa-solid fa-shield-check"></i></div>
+        <div>
+            <div class="ld-stat-val">@Model.ActivePoliciesCount</div>
+            <div class="ld-stat-lbl">Policies</div>
+        </div>
+    </div>
+</div>
+
+@* ── Two-Column Layout ─────────────────────── *@
+<div class="ld-two-col">
+
+    @* Recent Requests *@
+    <div class="ld-panel">
+        <div class="ld-panel-header">
+            <div class="ld-panel-title"><i class="fa-solid fa-clock-rotate-left"></i>Recent Requests</div>
+            <a asp-controller="LeaveRequests" asp-action="Index" class="ld-panel-link">View All <i class="fa-solid fa-arrow-right ms-1"></i></a>
+        </div>
+        <div class="ld-panel-body">
+            @if (!recentRequests.Any())
+            {
+                <div class="ld-empty">
+                    <i class="fa-solid fa-calendar-xmark"></i>
+                    <p>No requests for @Model.CurrentYear</p>
+                    <a asp-controller="LeaveRequests" asp-action="Create" class="btn btn-primary btn-sm mt-1">Apply for Leave</a>
+                </div>
+            }
+            else
+            {
+                foreach (var req in recentRequests)
+                {
+                    var dot = req.Status switch {
+                        "Approved"  => "ld-dot-approved",
+                        "Rejected"  => "ld-dot-rejected",
+                        "Cancelled" => "ld-dot-cancelled",
+                        _           => "ld-dot-pending"
+                    };
+                    var badge = req.Status switch {
+                        "Approved"  => "badge-success",
+                        "Rejected"  => "badge-danger",
+                        "Cancelled" => "badge-info",
+                        _           => "badge-warning"
+                    };
+                    <div class="ld-req-row">
+                        <div class="@dot ld-dot"></div>
+                        <div class="ld-req-info">
+                            <div class="fw-semibold small">@(req.LeaveType?.Name ?? "-")</div>
+                            <div class="text-muted" style="font-size:11px;">
+                                @req.FromDate.ToString("dd MMM") &ndash; @req.ToDate.ToString("dd MMM yyyy")
+                                &middot; @req.DaysCount.ToString("0.##") day@(req.DaysCount != 1 ? "s" : "")
+                                @if (req.IsHalfDay) { <span>&middot; Half day</span> }
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-1 ms-auto">
+                            <span class="status-badge @badge">@req.Status</span>
+                            <a class="btn btn-icon btn-sm btn-icon-info"
+                               asp-controller="LeaveRequests" asp-action="Details" asp-route-id="@req.Id"
+                               title="Details"><i class="fa-solid fa-eye"></i></a>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    @* Leave Ledger *@
+    <div class="ld-panel">
+        <div class="ld-panel-header">
+            <div class="ld-panel-title"><i class="fa-solid fa-book-open"></i>Leave Ledger — @Model.CurrentYear</div>
+            <a asp-controller="LeaveAccounting" asp-action="CompanySummary" asp-route-year="@Model.CurrentYear" class="ld-panel-link">
+                Summary <i class="fa-solid fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="ld-panel-body">
+            @if (!ledger.Any())
+            {
+                <div class="ld-empty">
+                    <i class="fa-solid fa-book"></i>
+                    <p>No ledger entries for @Model.CurrentYear</p>
+                </div>
+            }
+            else
+            {
+                foreach (var txn in ledger)
+                {
+                    var isDebit = txn.Debit > 0;
+                    <div class="ld-txn-row">
+                        <div class="ld-txn-side @(isDebit ? "ld-txn-credit" : "ld-txn-debit")">
+                            <i class="fa-solid @(isDebit ? "fa-plus" : "fa-minus")"></i>
+                        </div>
+                        <div class="ld-txn-info">
+                            <div class="fw-semibold small">@(txn.LeaveType?.Name ?? "-")</div>
+                            <div class="text-muted" style="font-size:11px;">@txn.Narration</div>
+                        </div>
+                        <div class="ld-txn-amount @(isDebit ? "ld-amount-credit" : "ld-amount-debit")">
+                            @(isDebit ? "+" : "-")@((isDebit ? txn.Debit : txn.Credit).ToString("0.##"))
+                        </div>
+                        <div class="ld-txn-date">@txn.TransactionDate.ToString("dd MMM")</div>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+</div>
+
+@section Styles {
+<style>
+/* ── HR Banner ───────────────────────────────────────────── */
+.ld-hr-banner { 
+    display: flex; 
+    align-items: center; 
+    justify-content: space-between; 
+    gap: .75rem; 
+    padding: .65rem 1.2rem; 
+    border-radius: 12px; 
+    background: var(--erp-info-soft, rgba(14,165,233,.08)); 
+    border: 1px solid var(--erp-info, #0ea5e9); 
+    color: var(--erp-info, #0ea5e9); 
+    font-size: .8125rem; 
+    flex-wrap: wrap; 
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.05);
+}
+.ld-hr-back-btn { 
+    border: 1px solid var(--erp-info, #0ea5e9); 
+    color: var(--erp-info, #0ea5e9); 
+    background: transparent; 
+    font-size: .75rem; 
+    padding: .25rem .75rem; 
+    border-radius: 8px; 
+    text-decoration: none; 
+    transition: all 0.2s ease;
+}
+.ld-hr-back-btn:hover { 
+    background: var(--erp-info, #0ea5e9); 
+    color: #fff; 
+    box-shadow: 0 4px 10px rgba(14, 165, 233, 0.2);
+}
+
+/* ── Unified Filter Bar Card ────────────────────────────── */
+.ld-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.25rem 0;
+    margin-bottom: 1rem;
+}
+.ld-filter-bar .search-wrapper {
+    width: 240px;
+    position: relative;
+}
+.ld-filter-bar .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--ahr-text-tertiary, #65738B);
+    pointer-events: none;
+    font-size: 0.8rem;
+    z-index: 5;
+    transition: color 0.2s ease;
+}
+.ld-filter-bar .search-input {
+    padding-left: 2.2rem;
+    height: 34px !important;
+    font-size: 12.5px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--ahr-border, #d8dee8) !important;
+    background: var(--ahr-surface, #ffffff) !important;
+    color: var(--ahr-text, #1f2937) !important;
+    transition: all 0.2s ease !important;
+}
+.ld-filter-bar .search-input:focus {
+    border-color: var(--erp-primary, #111827) !important;
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1) !important;
+}
+.ld-filter-bar .search-input:focus + .search-icon {
+    color: var(--erp-primary, #111827);
+}
+.ld-filter-bar .year-select {
+    width: 90px;
+    height: 34px !important;
+    font-size: 12.5px !important;
+    border-radius: 8px !important;
+    border: 1px solid var(--ahr-border, #d8dee8) !important;
+    background: var(--ahr-surface, #ffffff) !important;
+    color: var(--ahr-text, #1f2937) !important;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease !important;
+}
+.ld-filter-bar .year-select:focus {
+    border-color: var(--erp-primary, #111827) !important;
+    box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.1) !important;
+}
+.ld-filter-bar .btn {
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.85rem;
+    font-size: 12.5px !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease !important;
+}
+.ld-filter-bar .btn i {
+    font-size: 0.8rem;
+}
+.ld-filter-bar .btn-export-custom {
+    background: var(--ahr-card, #ffffff) !important;
+    border: 1px solid var(--ahr-border, #d8dee8) !important;
+    color: var(--ahr-text, #1f2937) !important;
+}
+.ld-filter-bar .btn-export-custom:hover {
+    background: var(--ahr-hover, rgba(0,0,0,0.03)) !important;
+    border-color: var(--ahr-border-strong, #b9c3d1) !important;
+    color: var(--ahr-text, #1f2937) !important;
+    transform: translateY(-1px);
+}
+.ld-filter-bar .btn-primary {
+    background: var(--erp-primary, #111827) !important;
+    border: 1px solid var(--erp-primary, #111827) !important;
+    color: #fff !important;
+}
+.ld-filter-bar .btn-primary:hover {
+    background: var(--erp-primary-600, #1f2937) !important;
+    border-color: var(--erp-primary-600, #1f2937) !important;
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15) !important;
+    transform: translateY(-1px);
+}
+
+/* ── Emp Pill ─────────────────────────────────────────────── */
+.ld-emp-pill { display:flex; align-items:center; gap:.5rem; padding:.3rem .65rem; background:var(--erp-surface-subtle); border:1px solid var(--erp-border); border-radius:8px; }
+.ld-emp-avatar { width:28px; height:28px; border-radius:7px; background:var(--erp-primary-soft); color:var(--erp-primary); font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.ld-emp-info { display:flex; flex-direction:column; line-height:1.3; }
+.ld-year-chip { margin-left:.25rem; padding:.1rem .5rem; border-radius:20px; background:var(--erp-primary-soft); color:var(--erp-primary); font-size:11px; font-weight:700; }
+
+/* ── Balance Grid ─────────────────────────────────────────── */
+.ld-balance-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:.75rem; }
+.ld-balance-card { 
+    background: var(--ahr-card, #ffffff); 
+    border: 1px solid var(--ahr-border, #d8dee8); 
+    border-radius: 14px; 
+    padding: 1.2rem; 
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); 
+    position: relative;
+    overflow: hidden;
+}
+.ld-balance-card:hover { 
+    border-color: var(--ahr-border-strong, #b9c3d1);
+    box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.04), 0 8px 8px -6px rgba(0, 0, 0, 0.04); 
+    transform: translateY(-2px);
+}
+.ld-balance-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: var(--erp-primary, #111827);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+.ld-balance-card:hover::before {
+    opacity: 1;
+}
+.ld-balance-type { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ahr-text-secondary, #97A3BA); }
+.ld-balance-remaining { font-size:1.45rem; font-weight:800; color:var(--ahr-text, #1f2937); line-height:1; }
+.ld-balance-remaining span { font-size:.65rem; font-weight:600; color:var(--ahr-text-tertiary, #65738B); text-transform:uppercase; letter-spacing:.04em; }
+.ld-balance-bar-track { height:7px; background:var(--ahr-border-subtle, rgba(0,0,0,0.04)); border-radius:99px; overflow:hidden; margin: 0.65rem 0; }
+.ld-balance-bar-fill { height:100%; border-radius:99px; transition:width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* ── Stats Strip ──────────────────────────────────────────── */
+.ld-stats-strip { 
+    display:flex; 
+    align-items:center; 
+    background:var(--ahr-card, #ffffff); 
+    border:1px solid var(--ahr-border, #d8dee8); 
+    border-radius:14px; 
+    padding:.6rem 1.2rem; 
+    flex-wrap:wrap;
+    gap: 0.25rem;
+    box-shadow: var(--ahr-shadow-xs, 0 1px 2px rgba(16, 24, 40, 0.05));
+}
+.ld-stat-item { 
+    display:flex; 
+    align-items:center; 
+    gap:.75rem; 
+    padding:.5rem .75rem; 
+    flex:1; 
+    min-width:120px; 
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+.ld-stat-item:hover {
+    background: var(--ahr-hover, rgba(0,0,0,0.02));
+}
+.ld-stat-divider { width:1px; height:28px; background:var(--ahr-border, #d8dee8); flex-shrink:0; }
+.ld-stat-icon { 
+    width:36px; 
+    height:36px; 
+    border-radius:10px; 
+    display:flex; 
+    align-items:center; 
+    justify-content:center; 
+    font-size:.9rem; 
+    flex-shrink:0; 
+    transition: transform 0.2s ease;
+}
+.ld-stat-item:hover .ld-stat-icon {
+    transform: scale(1.08);
+}
+.ld-stat-val { font-size:1.2rem; font-weight:800; line-height:1; color:var(--ahr-text, #1f2937); }
+.ld-stat-lbl { font-size:.65rem; text-transform:uppercase; letter-spacing:.05em; font-weight:600; color:var(--ahr-text-secondary, #97A3BA); margin-top:1px; }
+.ld-stat-total   { background:rgba(14,165,233,.1);  color:#0ea5e9; }
+.ld-stat-pending { background:rgba(107,114,128,.1); color:#6b7280; }
+.ld-stat-approved{ background:rgba(34,197,94,.1);   color:#22c55e; }
+.ld-stat-rejected{ background:rgba(239,68,68,.1);   color:#ef4444; }
+.ld-stat-policy  { background:rgba(99,102,241,.1);  color:var(--erp-primary,#6366f1); }
+
+/* ── Two-column layout ────────────────────────────────────── */
+.ld-two-col { display:grid; grid-template-columns:1fr 1fr; gap:.75rem; }
+@@media(max-width:768px) { .ld-two-col { grid-template-columns:1fr; } }
+
+/* ── Panel ────────────────────────────────────────────────── */
+.ld-panel { 
+    background:var(--ahr-card, #ffffff); 
+    border:1px solid var(--ahr-border, #d8dee8); 
+    border-radius:14px; 
+    display:flex; 
+    flex-direction:column; 
+    overflow:hidden; 
+    box-shadow: var(--ahr-shadow-xs, 0 1px 2px rgba(16, 24, 40, 0.05));
+}
+.ld-panel-header { 
+    display:flex; 
+    align-items:center; 
+    justify-content:space-between; 
+    padding:0.95rem 1.2rem; 
+    border-bottom:1px solid var(--ahr-border, #d8dee8); 
+}
+.ld-panel-title { 
+    display:flex; 
+    align-items:center; 
+    gap:.55rem; 
+    font-size:.75rem; 
+    font-weight:700; 
+    text-transform:uppercase; 
+    letter-spacing:.05em; 
+    color:var(--ahr-text, #1f2937); 
+}
+.ld-panel-title i { color:var(--erp-primary, #111827); font-size: 0.85rem; }
+.ld-panel-link { 
+    font-size:.75rem; 
+    font-weight:600; 
+    color:var(--erp-primary, #111827); 
+    text-decoration:none; 
+    transition: opacity 0.2s ease;
+}
+.ld-panel-link:hover { opacity: 0.8; text-decoration: none; }
+.ld-panel-body { flex:1; overflow-y:auto; max-height:380px; }
+
+/* ── Empty ────────────────────────────────────────────────── */
+.ld-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2.5rem 1.2rem; color:var(--ahr-text-secondary, #97A3BA); font-size:.8125rem; gap:.25rem; }
+.ld-empty i { font-size:1.75rem; margin-bottom:.5rem; opacity: 0.7; }
+
+/* ── Request Row ──────────────────────────────────────────── */
+.ld-req-row { 
+    display:flex; 
+    align-items:center; 
+    gap:.75rem; 
+    padding:.75rem 1.2rem; 
+    border-bottom:1px solid var(--ahr-border, #d8dee8); 
+    transition:all 0.2s ease; 
+}
+.ld-req-row:last-child { border-bottom:none; }
+.ld-req-row:hover { background:var(--ahr-hover, rgba(0,0,0,0.02)); }
+.ld-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.ld-dot-pending  { background:#f59e0b; }
+.ld-dot-approved { background:#22c55e; }
+.ld-dot-rejected { background:#ef4444; }
+.ld-dot-cancelled{ background:#6b7280; }
+.ld-req-info { flex:1; min-width:0; }
+
+/* ── Ledger Transaction Row ───────────────────────────────── */
+.ld-txn-row { 
+    display:flex; 
+    align-items:center; 
+    gap:.75rem; 
+    padding:.75rem 1.2rem; 
+    border-bottom:1px solid var(--ahr-border, #d8dee8); 
+    transition: all 0.2s ease;
+}
+.ld-txn-row:last-child { border-bottom:none; }
+.ld-txn-row:hover { background:var(--ahr-hover, rgba(0,0,0,0.02)); }
+.ld-txn-side { width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; font-size:.65rem; flex-shrink:0; }
+.ld-txn-credit { background:rgba(34,197,94,.12); color:#22c55e; }
+.ld-txn-debit  { background:rgba(239,68,68,.12); color:#ef4444; }
+.ld-txn-info { flex:1; min-width:0; }
+.ld-txn-amount { font-size:.8125rem; font-weight:700; flex-shrink:0; }
+.ld-amount-credit { color:#22c55e; }
+.ld-amount-debit  { color:#ef4444; }
+.ld-txn-date { font-size:.7rem; color:var(--ahr-text-tertiary, #65738B); flex-shrink:0; }
+
+/* ── Search Dropdown override ── */
+.search-results-container {
+    border: 1px solid var(--ahr-border, #d8dee8) !important;
+    background: var(--ahr-card, #ffffff) !important;
+    border-radius: 8px !important;
+    margin-top: 4px !important;
+}
+</style>
+}
+
+@section Scripts {
+<script>
+    document.addEventListener('click', function (e) {
+        const resultItem = e.target.closest('.search-result-item');
+        if (resultItem) {
+            const switchEmpId = document.getElementById('switchEmpId');
+            const secureSwitchForm = document.getElementById('secureSwitchForm');
+            if (switchEmpId && secureSwitchForm) {
+                switchEmpId.value = resultItem.getAttribute('data-id');
+                secureSwitchForm.submit();
+            }
+        }
+        if (!e.target.closest('#deptSearchInput') && !e.target.closest('#deptSearchResults')) {
+            const el = document.getElementById('deptSearchResults');
+            if (el) el.innerHTML = '';
+        }
+    });
+</script>
+}

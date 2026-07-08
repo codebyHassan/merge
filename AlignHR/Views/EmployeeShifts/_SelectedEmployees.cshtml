@@ -1,0 +1,29 @@
+@model IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>
+
+@if (Model != null && Model.Any())
+{
+    foreach (var emp in Model)
+    {
+        <div class="selected-employee-chip">
+            <span class="selected-employee-chip__name">@emp.Text</span>
+            <button type="button"
+                    class="selected-employee-chip__remove"
+                    onclick="removeEmployee('@emp.Value')"
+                    aria-label="Remove @emp.Text">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    }
+}
+else
+{
+    <div class="selected-empty-state w-100">
+        <div class="selected-empty-state__icon">
+            <i class="fa-solid fa-user-check"></i>
+        </div>
+        <div>
+            <div class="selected-empty-state__title">No employees selected</div>
+            <div class="selected-empty-state__text">Search and click employees to add them to this shift assignment.</div>
+        </div>
+    </div>
+}

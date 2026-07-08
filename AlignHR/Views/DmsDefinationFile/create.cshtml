@@ -1,0 +1,284 @@
+@model List<AlignHR.Models.DmsDefinationFile>
+@{
+    ViewData["Title"] = "Create DMS Checklist Structure";
+    ViewBag.ActivePage = "DmsDefinationFile";
+    var categories        = ViewBag.Categories as List<AlignHR.Models.DocumentCategory>;
+    var documentTypes     = ViewBag.DocumentTypes as List<AlignHR.Models.DocumentType>;
+    var defName = ViewBag.DefinitionName as string;
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <span id="totalBadge" class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 fs-6">Total: 0%</span>
+        </div>
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger small py-2 px-3 mb-4">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <form asp-action="create" method="post" id="dmsForm" class="needs-validation" novalidate>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Definition Name <span class="text-danger">*</span></label>
+                    <input type="text" name="DefinitionName" value="@defName" class="form-control form-control-sm" placeholder="e.g. Executive Employee Onboarding Checklist" required />
+                </div>
+            </div>
+
+            <div class="table-responsive mb-4 border rounded">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="fw-semibold px-3 py-2" style="width: 25%;">Category</th>
+                            <th class="fw-semibold px-3 py-2" style="width: 25%;">Document Type</th>
+                            <th class="fw-semibold px-3 py-2" style="width: 30%;">Label</th>
+                            <th class="fw-semibold px-3 py-2" style="width: 15%;">Weight Percentage %</th>
+                            <th class="fw-semibold px-3 py-2 text-center" style="width: 5%;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                        @if (Model != null && Model.Count > 0)
+                        {
+                            for (var i = 0; i < Model.Count; i++)
+                            {
+                                <tr>
+                                    <td class="px-3 py-2">
+                                        <select class="form-select form-select-sm category-select" name="items[@i].CategoryID" required>
+                                            <option value="">Select Category...</option>
+                                            @if (categories != null)
+                                            {
+                                                foreach (var c in categories)
+                                                {
+                                                    if (Model[i].CategoryID == c.CategoryID) {
+                                                        <option value="@c.CategoryID" selected>@c.CategoryName</option>
+                                                    } else {
+                                                        <option value="@c.CategoryID">@c.CategoryName</option>
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                    </td>
+                                    <td class="px-3 py-2">
+                                        <select class="form-select form-select-sm type-select" name="items[@i].DocumentTypeID" required>
+                                            <option value="">Select Type...</option>
+                                            @if (documentTypes != null)
+                                            {
+                                                foreach (var t in documentTypes)
+                                                {
+                                                    if (t.CategoryID == Model[i].CategoryID)
+                                                    {
+                                                        if (Model[i].DocumentTypeID == t.DocumentTypeID) {
+                                                            <option value="@t.DocumentTypeID" selected>@t.TypeName</option>
+                                                        } else {
+                                                            <option value="@t.DocumentTypeID">@t.TypeName</option>
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                    </td>
+                                    <td class="px-3 py-2">
+                                        <input type="text" class="form-control form-control-sm" name="items[@i].label" value="@Model[i].label" required />
+                                    </td>
+                                    <td class="px-3 py-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="number" class="form-control percentage-input" name="items[@i].Percentage" value="@Model[i].Percentage" step="0.01" min="0" max="100" required />
+                                            <span class="input-group-text">%</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-2 text-center">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-btn" title="Remove">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mb-4">
+                <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" id="addItemBtn">
+                    <i class="fas fa-plus-circle"></i> Add Item
+                </button>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm" id="saveBtn" disabled>Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<template id="rowTemplate">
+    <tr>
+        <td class="px-3 py-2">
+            <select class="form-select form-select-sm category-select" name="items[{index}].CategoryID" required>
+                <option value="">Select Category...</option>
+                @if (categories != null)
+                {
+                    foreach (var c in categories)
+                    {
+                        <option value="@c.CategoryID">@c.CategoryName</option>
+                    }
+                }
+            </select>
+        </td>
+        <td class="px-3 py-2">
+            <select class="form-select form-select-sm type-select" name="items[{index}].DocumentTypeID" required>
+                <option value="">Select Type...</option>
+            </select>
+        </td>
+        <td class="px-3 py-2">
+            <input type="text" class="form-control form-control-sm" name="items[{index}].label" placeholder="e.g. Employee Degree Certificate" required />
+        </td>
+        <td class="px-3 py-2">
+            <div class="input-group input-group-sm">
+                <input type="number" class="form-control percentage-input" name="items[{index}].Percentage" step="0.01" min="0" max="100" placeholder="0" required />
+                <span class="input-group-text">%</span>
+            </div>
+        </td>
+        <td class="px-3 py-2 text-center">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-btn" title="Remove">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script>
+        const documentTypes = [
+            @if (documentTypes != null)
+            {
+                foreach (var t in documentTypes)
+                {
+                    @:{ id: @t.DocumentTypeID, name: "@Html.Raw(System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(t.TypeName))", categoryId: @t.CategoryID },
+                }
+            }
+        ];
+
+        document.addEventListener('DOMContentLoaded', function () {
+            let rowIdx = 0;
+            const itemsBody = document.getElementById('itemsBody');
+            const template = document.getElementById('rowTemplate').innerHTML;
+            const addItemBtn = document.getElementById('addItemBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            const totalBadge = document.getElementById('totalBadge');
+            
+            let preRenderedItemsCount = document.querySelectorAll('#itemsBody tr').length;
+            if (preRenderedItemsCount === 0) {
+                addRow(); 
+            } else {
+                rowIdx = preRenderedItemsCount;
+                bindExistingRows();
+                recalculateTotal();
+            }
+
+            addItemBtn.addEventListener('click', () => {
+                addRow();
+            });
+            
+            function addRow() {
+                const tr = document.createElement('tr');
+                tr.innerHTML = template.replace(/\{index\}/g, rowIdx);
+                itemsBody.appendChild(tr);
+                rowIdx++;
+                
+                bindRowEvents(tr);
+                recalculateTotal();
+            }
+            
+            function bindExistingRows() {
+                const rows = itemsBody.querySelectorAll('tr');
+                rows.forEach(tr => bindRowEvents(tr));
+            }
+            
+            function bindRowEvents(tr) {
+                const removeBtn = tr.querySelector('.remove-btn');
+                if(removeBtn) {
+                     removeBtn.addEventListener('click', function() {
+                        tr.remove();
+                        recalculateTotal();
+                    });
+                }
+                
+                const percentInput = tr.querySelector('.percentage-input');
+                if(percentInput) {
+                    percentInput.addEventListener('input', recalculateTotal);
+                }
+
+                // Cascading Filter
+                const categorySelect = tr.querySelector('.category-select');
+                const typeSelect = tr.querySelector('.type-select');
+                if (categorySelect && typeSelect) {
+                    categorySelect.addEventListener('change', function() {
+                        const selectedCatId = parseInt(this.value);
+                        
+                        // Clear existing options
+                        typeSelect.innerHTML = '<option value="">Select Type...</option>';
+                        
+                        if (selectedCatId) {
+                            const filtered = documentTypes.filter(t => t.categoryId === selectedCatId);
+                            filtered.forEach(t => {
+                                const opt = document.createElement('option');
+                                opt.value = t.id;
+                                opt.textContent = t.name;
+                                typeSelect.appendChild(opt);
+                            });
+                        }
+                    });
+                }
+            }
+            
+            function recalculateTotal() {
+                let total = 0;
+                document.querySelectorAll('.percentage-input').forEach(input => {
+                    const val = parseFloat(input.value);
+                    if (!isNaN(val)) {
+                        total += val;
+                    }
+                });
+                
+                total = Math.round(total * 100) / 100;
+                totalBadge.textContent = `Total: ${total}%`;
+                
+                totalBadge.className = 'badge px-3 py-2 fs-6 ' + 
+                    (total === 100 ? 'bg-success bg-opacity-10 text-success' : (total > 100 ? 'bg-danger bg-opacity-10 text-danger' : 'bg-warning bg-opacity-10 text-warning'));
+                
+                saveBtn.disabled = (total !== 100);
+            }
+
+            document.getElementById('dmsForm').addEventListener('submit', function(e) {
+                let total = 0;
+                document.querySelectorAll('.percentage-input').forEach(input => {
+                    total += parseFloat(input.value) || 0;
+                });
+                total = Math.round(total * 100) / 100;
+                
+                if (total !== 100) {
+                    e.preventDefault();
+                    alert('Total percentage must be exactly 100%');
+                } else {
+                    const rows = itemsBody.querySelectorAll('tr');
+                    rows.forEach((row, newIdx) => {
+                        row.querySelectorAll('input, select').forEach(input => {
+                            const name = input.getAttribute('name');
+                            if(name) {
+                                input.setAttribute('name', name.replace(/items\[\d+\]/, `items[${newIdx}]`));
+                            }
+                        });
+                    });
+                }
+            });
+        });
+    </script>
+}

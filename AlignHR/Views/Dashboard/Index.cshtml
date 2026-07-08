@@ -1,0 +1,207 @@
+@{
+    ViewData["Title"]  = "Dashboard";
+    ViewBag.ActivePage = "Dashboard";
+}
+
+@* ── Page header ── *@
+<div class="ahr-page-header">
+    <div>
+        <h1 class="ahr-page-title">Dashboard</h1>
+        <p class="ahr-page-subtitle">Overview of people, payroll, and attendance.</p>
+    </div>
+    <div class="ahr-page-actions">
+        <a class="btn btn-secondary btn-sm" asp-controller="Reports" asp-action="Index">
+            <i class="bi bi-download"></i> Export
+        </a>
+        <a class="btn btn-primary btn-sm" asp-controller="Employees" asp-action="Create">
+            <i class="bi bi-plus-lg"></i> New employee
+        </a>
+    </div>
+</div>
+
+@* ── KPI row ── *@
+<section class="row g-2 mb-3" aria-label="Key performance indicators">
+    <div class="col-6 col-xl-3">
+        <article class="metric-card">
+            <div class="ahr-stat-icon"><i class="bi bi-people"></i></div>
+            <div class="metric-label">Employees</div>
+            <div class="metric-value">@ViewBag.TotalEmployees</div>
+            <div class="metric-meta">
+                <span class="trend-up"><i class="bi bi-arrow-up-short"></i> Active</span>
+            </div>
+        </article>
+    </div>
+    <div class="col-6 col-xl-3">
+        <article class="metric-card">
+            <div class="ahr-stat-icon"><i class="bi bi-person-check"></i></div>
+            <div class="metric-label">Active staff</div>
+            <div class="metric-value">@ViewBag.ActiveEmployees</div>
+            <div class="metric-meta">
+                <span class="trend-up"><i class="bi bi-arrow-up-short"></i> Live</span>
+            </div>
+        </article>
+    </div>
+    <div class="col-6 col-xl-3">
+        <article class="metric-card">
+            <div class="ahr-stat-icon"><i class="bi bi-diagram-3"></i></div>
+            <div class="metric-label">Departments</div>
+            <div class="metric-value">@ViewBag.TotalDepartments</div>
+            <div class="metric-meta">
+                <span>Configured units</span>
+            </div>
+        </article>
+    </div>
+    <div class="col-6 col-xl-3">
+        <article class="metric-card">
+            <div class="ahr-stat-icon"><i class="bi bi-person-plus"></i></div>
+            <div class="metric-label">New hires</div>
+            <div class="metric-value">@ViewBag.NewHiresThisMonth</div>
+            <div class="metric-meta">
+                <span>This month</span>
+            </div>
+        </article>
+    </div>
+</section>
+
+@* ── Charts row ── *@
+<section class="row g-2 mb-3">
+    <div class="col-12 col-xl-8">
+        <article class="erp-card h-100">
+            <div class="card-title-row">
+                <div>
+                    <h2>Attendance</h2>
+                    <p>Daily attendance over the past week.</p>
+                </div>
+                <a class="btn btn-soft btn-sm" asp-controller="Reports" asp-action="Index">View report</a>
+            </div>
+            <div class="ahr-chart-container">
+                <canvas id="attendanceChart" aria-label="Attendance chart" role="img"></canvas>
+            </div>
+        </article>
+    </div>
+    <div class="col-12 col-xl-4">
+        <article class="erp-card h-100">
+            <div class="card-title-row">
+                <div>
+                    <h2>Module load</h2>
+                    <p>Activity distribution.</p>
+                </div>
+            </div>
+            <div class="ahr-chart-container">
+                <canvas id="moduleChart" aria-label="Module distribution" role="img"></canvas>
+            </div>
+        </article>
+    </div>
+</section>
+
+@* ── Workflow + shortcuts ── *@
+<section class="row g-2">
+    <div class="col-12 col-xl-8">
+        <article class="table-shell" data-erp-table>
+            <div class="table-toolbar">
+                <div>
+                    <h2 class="h5">Workflow queue</h2>
+                    <p>Tasks waiting on you.</p>
+                </div>
+                <div class="filter-group">
+                    <div class="input-group ahr-w-200">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input class="form-control" type="search" placeholder="Search…"
+                               erp-table-search aria-label="Search workflow" />
+                    </div>
+                    <select class="form-select ahr-w-140" erp-table-filter aria-label="Filter status">
+                        <option value="">All</option>
+                        <option value="active">Active</option>
+                        <option value="pending">Pending</option>
+                        <option value="risk">Risk</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="erp-table-wrap">
+                <table class="table erp-table">
+                    <thead>
+                        <tr>
+                            <th>Module</th>
+                            <th>Task</th>
+                            <th>Status</th>
+                            <th>Due</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr data-status="pending">
+                            <td>Leave</td>
+                            <td><strong>Review pending leave requests</strong></td>
+                            <td><span class="status-badge status-pending">Pending</span></td>
+                            <td>Today</td>
+                            <td class="text-end">
+                                <a class="btn btn-icon btn-sm" asp-controller="LeaveRequests" asp-action="ApprovalInbox"
+                                   data-bs-toggle="tooltip" title="Open">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr data-status="active">
+                            <td>Attendance</td>
+                            <td><strong>Validate daily attendance</strong></td>
+                            <td><span class="status-badge status-active">Active</span></td>
+                            <td>Tomorrow</td>
+                            <td class="text-end">
+                                <a class="btn btn-icon btn-sm" asp-controller="AttendenceLogs" asp-action="Index"
+                                   data-bs-toggle="tooltip" title="Open">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        <tr data-status="risk">
+                            <td>Payroll</td>
+                            <td><strong>Resolve payroll cycle items</strong></td>
+                            <td><span class="status-badge status-rejected">Risk</span></td>
+                            <td>Overdue</td>
+                            <td class="text-end">
+                                <a class="btn btn-icon btn-sm" asp-controller="Payroll" asp-action="Index"
+                                   data-bs-toggle="tooltip" title="Open">
+                                    <i class="bi bi-arrow-right"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </article>
+    </div>
+
+    <div class="col-12 col-xl-4">
+        <article class="erp-card h-100">
+            <div class="card-title-row">
+                <div>
+                    <h2>Shortcuts</h2>
+                    <p>Jump to common areas.</p>
+                </div>
+            </div>
+            <div class="module-grid">
+                <a class="module-shortcut" asp-controller="Employees" asp-action="Index">
+                    <i class="bi bi-people"></i>
+                    <span>Employees</span>
+                    <small>Directory</small>
+                </a>
+                <a class="module-shortcut" asp-controller="LeaveRequests" asp-action="Index">
+                    <i class="bi bi-calendar-check"></i>
+                    <span>Leave</span>
+                    <small>Requests</small>
+                </a>
+                <a class="module-shortcut" asp-controller="AttendenceLogs" asp-action="Index">
+                    <i class="bi bi-clock"></i>
+                    <span>Attendance</span>
+                    <small>Logs</small>
+                </a>
+                <a class="module-shortcut" asp-controller="Payroll" asp-action="Index">
+                    <i class="bi bi-cash"></i>
+                    <span>Payroll</span>
+                    <small>Cycles</small>
+                </a>
+            </div>
+        </article>
+    </div>
+</section>

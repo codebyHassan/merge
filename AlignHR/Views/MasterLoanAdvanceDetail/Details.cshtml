@@ -1,0 +1,103 @@
+@model AlignHR.Models.MasterLoanAdvanceDetail
+@using AlignHR.Services
+@inject IPayrollLockService LockService
+
+@{
+    ViewData["Title"] = "Installment Details";
+    // We don't have a direct SalaryPeriodFK, but we can check if the status is "Deducted"
+    bool isLocked = Model.Status == AlignHR.Models.LoanInstallmentStatus.Deducted;
+}
+
+<div class="page-header animate-fade-in">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a href="/MasterLoanAdvance">Loans</a>
+        <span>/</span>
+        <span>Installment Details</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Installment Details</h1>
+            <p class="page-subtitle">Loan repayment record for @Model.MasterLoanAdvance?.Employee?.FirstName</p>
+        </div>
+
+        <div class="flex gap-12">
+            @if (isLocked)
+            {
+                <div class="status-badge locked"><i class="fas fa-lock"></i><span>DEDUCTED</span></div>
+            }
+            else
+            {
+                <div class="status-badge active"><i class="fas fa-clock"></i><span>PENDING</span></div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="details-grid animate-slide-up">
+    <!-- Loan Info -->
+    <div class="erp-card main">
+        <div class="card-header-premium">
+            <i class="fas fa-hand-holding-usd"></i>
+            <span>Loan Information</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-group">
+                <label>Employee</label>
+                <div class="value-highlight">@Model.MasterLoanAdvance?.Employee?.FirstName @Model.MasterLoanAdvance?.Employee?.LastName</div>
+                <div class="value small text-muted">Emp Code: @Model.MasterLoanAdvance?.Employee?.Code</div>
+            </div>
+            <hr class="divider" />
+            <div class="info-group">
+                <label>Recovery Month</label>
+                <div class="value">@Model.DeductionMonth</div>
+            </div>
+            <div class="info-group">
+                <label>Installment Status</label>
+                <div class="value">
+                    <span class="status-pill @(isLocked ? "active" : "locked")">
+                        @Model.Status
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Card -->
+    <div class="erp-card secondary">
+        <div class="card-header-premium financial">
+            <i class="fas fa-calculator"></i>
+            <span>Recovery Amount</span>
+        </div>
+        <div class="card-body-premium centered">
+            <div class="stat-box-container">
+                <div class="stat-box">
+                    <label>Installment Amount</label>
+                    <div class="stat-value secondary">PKR @Model.TotalDeductionAmount.ToString("N0")</div>
+                </div>
+            </div>
+            <div class="meta-info">
+                <div class="meta-item"><i class="fas fa-calendar-alt"></i><span>Due In: @Model.DeductionMonth</span></div>
+                <div class="meta-item"><i class="fas fa-history"></i><span>Created: @Model.createat.ToString("dd MMM yyyy")</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Bar -->
+    <div class="details-actions-footer">
+        <a href="/MasterLoanAdvance" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i>
+            Back to Loans
+        </a>
+        
+        @if (!isLocked)
+        {
+            <a href="/MasterLoanAdvanceDetail/Edit/@Model.id" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i>
+                Edit Installment
+            </a>
+        }
+    </div>
+</div>

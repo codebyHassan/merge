@@ -1,0 +1,100 @@
+@model IEnumerable<AlignHR.Models.UserRole>
+@using AlignHR.Security
+@{
+    ViewData["Title"] = "User Roles";
+    ViewBag.ActivePage = "UserRole";
+}
+
+<section class="filter-bar mb-2" aria-label="User Roles filters">
+    <div class="input-group input-group-sm me-auto" style="width:auto;position:relative;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="search"
+               value="@Context.Request.Query["search"]"
+               placeholder="Search by user or role..."
+               aria-label="Search user roles"
+               hx-get="@Url.Action("Index")"
+               hx-target="#userroles-table"
+               hx-select="#userroles-table"
+               hx-indicator="#search-loader"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-push-url="true"
+               form="none" />
+        <span id="search-loader" class="htmx-indicator" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);z-index:10;">
+            <div class="spinner-border spinner-border-sm text-primary" role="status" style="width:.85rem;height:.85rem;border-width:1.5px;"></div>
+        </span>
+    </div>
+    <div class="filter-group">
+        @if (PermissionHelper.HasActionAccess(Context, "UserRole", "Create"))
+        {
+            <a class="btn btn-primary btn-sm" asp-action="Create">
+                <i class="fa-solid fa-plus me-1"></i>Assign Role
+            </a>
+        }
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table id="userroles-table">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">User</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Assigned On</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ur in Model)
+                {
+                    var initials = (ur.User?.FirstName?.Length > 0 ? ur.User.FirstName.Substring(0, 1).ToUpper() : "") +
+                                  (ur.User?.LastName?.Length  > 0 ? ur.User.LastName.Substring(0, 1).ToUpper()  : "");
+                    <tr>
+                        <td data-label="#">@ur.Id</td>
+                        <td data-label="User">
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6B7280,#374151);color:#fff;font-size:.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">@initials</div>
+                                <span class="fw-semibold">@ur.User?.FirstName @ur.User?.LastName</span>
+                            </div>
+                        </td>
+                        <td data-label="Email" class="text-muted">@ur.User?.Email</td>
+                        <td data-label="Role"><span class="status-badge status-approved">@ur.Role?.Name</span></td>
+                        <td data-label="Assigned On" class="text-muted">@ur.createat.ToString("dd MMM yyyy")</td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                @if (PermissionHelper.HasActionAccess(Context, "UserRole", "Delete"))
+                                {
+                                    <form asp-action="Delete" asp-route-id="@ur.Id" method="post" class="d-inline"
+                                          onsubmit="return confirm('Remove this role assignment?');">
+                                        <button class="btn btn-icon btn-sm btn-icon-danger" type="submit" title="Remove">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="empty-state" data-table-empty>
+                                <i class="fa-solid fa-user-tag"></i>
+                                <h3 class="h6 mt-2 mb-1">No role assignments found</h3>
+                                <p class="text-muted mb-0">Click <strong>Assign Role</strong> to get started.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">@Model.Count() assignments</span>
+    </div>
+</section>

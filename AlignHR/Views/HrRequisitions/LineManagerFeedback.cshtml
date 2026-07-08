@@ -1,0 +1,148 @@
+@model AlignHR.Models.HrLineManagerFeedbackViewModel
+
+@{
+    ViewData["Title"] = "Interview Feedback — " + Model.PositionTitle;
+    ViewBag.ActivePage = "HrRequisitions";
+
+    var statusClass = Model.Status switch
+    {
+        "Approved"  => "badge-success",
+        "Rejected"  => "badge-danger",
+        "Submitted" => "badge-warning",
+        _           => "badge-secondary"
+    };
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        @* ── Header ── *@
+        <div class="d-flex align-items-start justify-content-between mb-4">
+            <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                    <span class="fw-bold fs-6">@Model.PositionTitle</span>
+                    <span class="status-badge @statusClass">@Model.Status</span>
+                </div>
+                <div class="small text-muted">
+                    @Model.RequisitionNo
+                    @if (!string.IsNullOrEmpty(Model.DepartmentName))
+                    {
+                        <span class="mx-1">·</span>@Model.DepartmentName
+                    }
+                    @if (!string.IsNullOrEmpty(Model.RequisitionType))
+                    {
+                        <span class="mx-1">·</span>@Model.RequisitionType
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Nature))
+                    {
+                        <span class="mx-1">·</span>@Model.Nature
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(Model.InitiatedByName))
+                {
+                    <div class="small text-muted mt-1">Initiated by: <span class="fw-semibold text-body">@Model.InitiatedByName</span></div>
+                }
+            </div>
+            <a asp-action="Details" asp-route-id="@Model.RequisitionId"
+               class="btn btn-outline-secondary btn-sm" style="flex-shrink:0">Back</a>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Reason))
+        {
+            <div class="small border-start border-2 ps-3 mb-4 text-muted fst-italic">@Model.Reason</div>
+        }
+
+        <hr class="my-3 opacity-25" />
+
+        @* ── Candidates ── *@
+        @if (!Model.Candidates.Any())
+        {
+            <div class="text-muted small text-center py-4">No candidates have applied yet.</div>
+        }
+        else
+        {
+            @foreach (var candidate in Model.Candidates)
+            {
+                var appStatusClass = candidate.ApplicationStatus switch
+                {
+                    "Hired"     => "badge-success",
+                    "Rejected"  => "badge-danger",
+                    "Withdrawn" => "badge-danger",
+                    _           => "badge-secondary"
+                };
+
+                <div class="mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="fw-semibold">@candidate.CandidateName</span>
+                        @if (!string.IsNullOrEmpty(candidate.ApplicationStatus))
+                        {
+                            <span class="status-badge @appStatusClass">@candidate.ApplicationStatus</span>
+                        }
+                    </div>
+
+                    @if (!candidate.Interviews.Any())
+                    {
+                        <div class="small text-muted ps-2">No interviews scheduled.</div>
+                    }
+                    else
+                    {
+                        <table class="table table-sm erp-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Round</th>
+                                    <th>Scheduled</th>
+                                    <th>Status</th>
+                                    <th>Feedback</th>
+                                    <th class="text-end sticky-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var iv in candidate.Interviews)
+                                {
+                                    var ivStatusClass = iv.Status switch
+                                    {
+                                        "Completed"   => "badge-success",
+                                        "Cancelled"   => "badge-danger",
+                                        "NoShow"      => "badge-danger",
+                                        "Rescheduled" => "badge-warning",
+                                        _             => "badge-secondary"
+                                    };
+                                    <tr>
+                                        <td>@iv.RoundOrder</td>
+                                        <td class="fw-semibold">@iv.RoundName</td>
+                                        <td>@iv.ScheduledDateTime.ToString("dd MMM yyyy HH:mm")</td>
+                                        <td><span class="status-badge @ivStatusClass">@iv.Status</span></td>
+                                        <td>
+                                            @if (iv.HasFeedback)
+                                            {
+                                                <span class="status-badge badge-success">Submitted</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="status-badge badge-secondary">Pending</span>
+                                            }
+                                        </td>
+                                        <td class="text-end sticky-actions">
+                                            <a asp-controller="HrInterviews" asp-action="LineManagerFeedback"
+                                               asp-route-scheduleId="@iv.ScheduleId"
+                                               class="btn btn-icon btn-sm btn-icon-warning"
+                                               title="@(iv.HasFeedback ? "Edit Feedback" : "Give Feedback")">
+                                                <i class="fa-solid fa-@(iv.HasFeedback ? "pen-to-square" : "star")"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                </div>
+                @if (candidate != Model.Candidates.Last())
+                {
+                    <hr class="my-3 opacity-25" />
+                }
+            }
+        }
+
+    </div>
+</div>

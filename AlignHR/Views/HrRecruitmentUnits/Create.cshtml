@@ -1,0 +1,62 @@
+@model AlignHR.Models.HrRecruitmentUnitFormViewModel
+
+@{
+    ViewData["Title"] = "Add Recruitment Mapping";
+    ViewBag.ActivePage = "HrRecruitmentUnits";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-5">
+                    <label asp-for="BusinessDepartmentId" class="form-label small fw-semibold">
+                        Business Department <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="BusinessDepartmentId" asp-items="ViewBag.BusinessDepartments"
+                            class="form-select form-select-sm" required>
+                        <option value="">— Select Department —</option>
+                    </select>
+                    <div class="form-text small text-muted">The department that raises requisitions (e.g. IT, Finance).</div>
+                    <span asp-validation-for="BusinessDepartmentId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-auto d-flex align-items-center pt-4 mt-1">
+                    <i class="fa-solid fa-arrow-right fa-lg text-muted"></i>
+                </div>
+
+                <div class="col-12 col-md-5">
+                    <label asp-for="RecruitmentDepartmentId" class="form-label small fw-semibold">
+                        Recruitment Department <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="RecruitmentDepartmentId" asp-items="ViewBag.RecruitmentDepartments"
+                            class="form-select form-select-sm" required>
+                        <option value="">— Select Department —</option>
+                    </select>
+                    <div class="form-text small text-muted">The department whose employees handle the recruiting.</div>
+                    <span asp-validation-for="RecruitmentDepartmentId" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-check me-1"></i>Save Mapping
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

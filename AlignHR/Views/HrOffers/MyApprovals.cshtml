@@ -1,0 +1,74 @@
+@model List<AlignHR.Models.HrOfferApprovalInboxItemViewModel>
+
+@{
+    ViewData["Title"] = "Offer Inbox";
+    ViewData["BreadcrumbIsRoot"] = true;
+    ViewBag.ActivePage = "HrOfferApprovals";
+
+    var pending = Model.Where(x => x.Status == "Pending").ToList();
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small">
+        @TempData["Error"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="table-shell" data-erp-table>
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Offer No.</th>
+                    <th>Candidate</th>
+                    <th>Position</th>
+                    <th>Salary</th>
+                    <th>Expiry</th>
+                    <th class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in pending)
+                {
+                    <tr>
+                        <td class="fw-semibold" style="font-family:var(--ahr-font-mono,monospace);font-size:12px;">@(item.OfferNumber ?? "—")</td>
+                        <td>
+                            <div>@(item.CandidateName ?? "—")</div>
+                            @if (!string.IsNullOrWhiteSpace(item.CandidateEmail))
+                            {
+                                <div class="small text-muted">@item.CandidateEmail</div>
+                            }
+                        </td>
+                        <td>@(item.JobTitle ?? "—")</td>
+                        <td>@item.ProposedSalary.ToString("N0")</td>
+                        <td>@(item.ExpiryDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                        <td class="text-end sticky-actions">
+                            <a asp-action="ApproveOffer"
+                               asp-route-approvalId="@item.ApprovalId"
+                               asp-route-from="inbox"
+                               class="btn btn-icon btn-sm btn-icon-primary"
+                               title="Review &amp; Approve">
+                                <i class="fa-solid fa-stamp"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!pending.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-inbox"></i>
+                <h3 class="h6 mt-2 mb-1">All caught up</h3>
+                <p class="text-muted mb-0">No pending offer approvals.</p>
+            </div>
+        }
+    </div>
+</section>

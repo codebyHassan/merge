@@ -1,0 +1,55 @@
+name: Deploy to SmarterASP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore AlignHR/AlignHR.csproj
+
+      - name: Build
+        run: dotnet build AlignHR/AlignHR.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish AlignHR/AlignHR.csproj --configuration Release --no-build --output ./publish
+
+      # Injects the production DB connection string without touching appsettings.json
+      - name: Create appsettings.Production.json
+        shell: pwsh
+        run: |
+          $json = [ordered]@{
+            ConnectionStrings = [ordered]@{
+              DefaultConnection = "${{ secrets.DB_CONNECTION_STRING }}"
+            }
+          } | ConvertTo-Json -Depth 5
+          Set-Content -Path ./publish/appsettings.Production.json -Value $json -Encoding utf8
+
+      - name: Deploy via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: ./publish/
+          server-dir: /
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/obj/**
+            **/bin/**
+            **/uploads/**

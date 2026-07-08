@@ -1,0 +1,64 @@
+@model List<AlignHR.Controllers.EOBIDetuctionController.BulkAddPreviewItem>
+@{
+    int periodId = ViewBag.PeriodId;
+}
+
+<section class="table-shell animate-fade-in" data-erp-table id="bulk-add-preview-shell">
+    <div class="table-toolbar">
+        <div class="table-card-title">
+            <i class="fa-solid fa-list-check me-2 text-primary"></i>
+            EOBI Enrolled Staff Preview (@Model.Count Employees)
+        </div>
+        <div class="filter-group">
+            <form asp-action="BulkAdd" method="post" class="m-0">
+                <input type="hidden" name="periodId" value="@periodId" />
+                <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Register EOBI records for all listed employees?');">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> Process All Deductions
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 150px;">Emp Code</th>
+                    <th scope="col">Full Name</th>
+                    <th scope="col" style="width: 180px;">Gross Salary</th>
+                    <th scope="col" style="width: 180px;">EOBI Rate</th>
+                    <th scope="col" style="width: 180px;">Net After EOBI</th>
+                    <th scope="col" style="width: 150px;" class="text-center">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td data-label="Emp Code"><span class="fw-semibold">@item.Code</span></td>
+                            <td data-label="Full Name"><strong>@item.Name</strong></td>
+                            <td data-label="Gross Salary">@item.GrossSalary.ToString("N0")</td>
+                            <td data-label="EOBI Rate" class="text-danger">
+                                <strong>@item.EOBIAmount.ToString("N2")</strong>
+                            </td>
+                            <td data-label="Net After EOBI" class="text-primary">
+                                <strong>@item.NetSalary.ToString("N2")</strong>
+                            </td>
+                            <td data-label="Status" class="text-center">
+                                <span class="status-badge status-approved"><i class="fa-solid fa-circle-check me-1"></i>Eligible</span>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No employees with EOBI Active status found.</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

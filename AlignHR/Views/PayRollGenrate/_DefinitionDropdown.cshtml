@@ -1,0 +1,14 @@
+@model List<string>
+
+<label class="form-label">Salary Structure <span class="required">*</span></label>
+<select name="PayRollDefinationFK" id="definitionSelect" class="form-control" required 
+        hx-get="/PayRollGenrate/GenerateBreakdown" 
+        hx-target="#breakdownContainer" 
+        hx-trigger="change, salaryUpdate from:body"
+        hx-include="[name='salery']">
+    <option value="">-- Select Definition --</option>
+    @foreach (var name in Model)
+    {
+        <option value="@name">@name</option>
+    }
+</select>

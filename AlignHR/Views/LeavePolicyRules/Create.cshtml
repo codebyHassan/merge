@@ -1,0 +1,251 @@
+@model AlignHR.Models.LeavePolicyRule
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Create Policy Rule";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.ActivePage = "LeavePolicyRules";
+
+    var policyItems = ViewBag.LeavePolicyId as IEnumerable<SelectListItem> ?? Enumerable.Empty<SelectListItem>();
+    var currentPolicy = policyItems.FirstOrDefault(x => x.Value == Model.LeavePolicyId.ToString())?.Text ?? "Selected Policy";
+
+    ViewData["BreadcrumbPath"] = new[] { "Leave Policy", currentPolicy, "Create" };
+    ViewData["BreadcrumbUrls"] = Model.LeavePolicyId > 0
+        ? new[] { Url.Action("Index", "LeavePolicies"), Url.Action("Index", "LeavePolicyRules", new { leavePolicyId = Model.LeavePolicyId }), null }
+        : new[] { Url.Action("Index", "LeavePolicies"), null, null };
+}
+
+@section Styles {
+    <style>
+        .rule-compact {
+            border: 1px solid #d8dee8;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 4px 12px rgba(16, 24, 40, 0.06);
+        }
+
+        .rule-compact__head {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .rule-compact__head strong {
+            display: block;
+            font-size: 14px;
+            color: #111827;
+            line-height: 1.2;
+        }
+
+        .rule-compact__head span {
+            display: block;
+            margin-top: 2px;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .rule-compact__body {
+            padding: 12px;
+        }
+
+        .rule-section {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: #f8fafc;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .rule-section:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .rule-section__title {
+            margin: 0 0 8px;
+            font-size: 13px;
+            font-weight: 800;
+            color: #111827;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rule-section__title i {
+            color: #111827;
+            font-size: 12px;
+        }
+
+        .rule-toggle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+
+        .rule-toggle {
+            border: 1px solid #d8dee8;
+            border-radius: 7px;
+            background: #fff;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 42px;
+            cursor: pointer;
+        }
+
+        .rule-toggle.is-selected {
+            border-color: #111827;
+            background: #F3F4F6;
+        }
+
+        .rule-toggle strong {
+            font-size: 12px;
+            line-height: 1.2;
+            color: #111827;
+        }
+
+        .rule-actions {
+            padding-top: 10px;
+            margin-top: 10px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        @@media (max-width: 992px) {
+            .rule-toggle-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .rule-compact__head,
+            .rule-actions {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .rule-toggle-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<div class="rule-compact">
+    
+
+    <div class="rule-compact__body">
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <section class="rule-section">
+                <h2 class="rule-section__title"><i class="fa-solid fa-diagram-project"></i>Mapping</h2>
+                <input type="hidden" asp-for="LeavePolicyId" />
+                <div class="row g-2">
+                    <div class="col-12 col-md-6">
+                        <label class="form-label small fw-semibold mb-1">Leave Policy</label>
+                        <div class="form-control form-control-sm bg-light">@currentPolicy</div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label asp-for="LeaveTypeId" class="form-label small fw-semibold mb-1">Leave Type <span class="text-danger">*</span></label>
+                        <select asp-for="LeaveTypeId" class="form-select form-select-sm" asp-items="ViewBag.LeaveTypeId" required>
+                            <option value="">-- Select Leave Type --</option>
+                        </select>
+                        <span asp-validation-for="LeaveTypeId" class="text-danger small"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rule-section">
+                <h2 class="rule-section__title"><i class="fa-solid fa-scale-balanced"></i>Allocation</h2>
+                <div class="row g-2">
+                    <div class="col-6 col-lg">
+                        <label asp-for="AnnualQuota" class="form-label small fw-semibold mb-1">Annual Quota</label>
+                        <input asp-for="AnnualQuota" class="form-control form-control-sm" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="AnnualQuota" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <label asp-for="MonthlyAccrual" class="form-label small fw-semibold mb-1">Monthly Accrual</label>
+                        <input asp-for="MonthlyAccrual" class="form-control form-control-sm" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="MonthlyAccrual" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <label asp-for="CarryForwardLimit" class="form-label small fw-semibold mb-1">Carry Forward</label>
+                        <input asp-for="CarryForwardLimit" class="form-control form-control-sm" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="CarryForwardLimit" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <label asp-for="MaxConsecutiveDays" class="form-label small fw-semibold mb-1">Max Days</label>
+                        <input asp-for="MaxConsecutiveDays" class="form-control form-control-sm" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="MaxConsecutiveDays" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6 col-lg">
+                        <label asp-for="MinNoticeDays" class="form-label small fw-semibold mb-1">Notice Days</label>
+                        <input asp-for="MinNoticeDays" class="form-control form-control-sm" type="number" step="0.01" min="0" />
+                        <span asp-validation-for="MinNoticeDays" class="text-danger small"></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rule-section">
+                <h2 class="rule-section__title"><i class="fa-solid fa-sliders"></i>Options</h2>
+                <div class="rule-toggle-grid">
+                    <label class="rule-toggle">
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                        <strong>Active</strong>
+                    </label>
+                    <label class="rule-toggle">
+                        <input asp-for="IsEncashable" class="form-check-input" type="checkbox" />
+                        <strong>Encashable</strong>
+                    </label>
+                    <label class="rule-toggle">
+                        <input asp-for="AllowHalfDay" class="form-check-input" type="checkbox" />
+                        <strong>Half Day</strong>
+                    </label>
+                    <label class="rule-toggle">
+                        <input asp-for="AllowNegativeBalance" class="form-check-input" type="checkbox" />
+                        <strong>Negative Balance</strong>
+                    </label>
+                    <label class="rule-toggle">
+                        <input asp-for="AllowDuringProbation" class="form-check-input" type="checkbox" />
+                        <strong>Probation</strong>
+                    </label>
+                    <label class="rule-toggle">
+                        <input asp-for="ApplySandwichRule" class="form-check-input" type="checkbox" />
+                        <strong>Sandwich Rule</strong>
+                    </label>
+                </div>
+            </section>
+
+            <div class="rule-actions">
+                <a asp-action="Index" asp-route-leavePolicyId="@Model.LeavePolicyId" class="btn btn-outline-secondary btn-sm">Back</a>
+                <button type="submit" class="btn btn-primary btn-sm">
+                    Save
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const toggles = document.querySelectorAll('.rule-toggle');
+            function sync() {
+                toggles.forEach(toggle => {
+                    const input = toggle.querySelector('input');
+                    toggle.classList.toggle('is-selected', input && input.checked);
+                });
+            }
+            toggles.forEach(toggle => toggle.addEventListener('change', sync));
+            sync();
+        })();
+    </script>
+}

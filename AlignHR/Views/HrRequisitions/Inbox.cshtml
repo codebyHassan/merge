@@ -1,0 +1,71 @@
+@model List<AlignHR.Models.HrWorkflowInboxItemViewModel>
+
+@{
+    ViewData["Title"] = "Requisition Approval Inbox";
+    ViewBag.ActivePage = "HrRequisitionsInbox";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="table-shell" data-erp-table>
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Req. No</th>
+                    <th>Position</th>
+                    <th>Department</th>
+                    <th>Employee</th>
+                    <th>Assigned Step</th>
+                    <th>Started</th>
+                    <th class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td data-label="Req. No">@item.RequisitionNo</td>
+                        <td data-label="Position">@item.PositionTitle</td>
+                        <td data-label="Department">@(item.DepartmentName ?? "-")</td>
+                        <td data-label="Employee">@(item.EmployeeName ?? "-")</td>
+                        <td data-label="Assigned Step">
+                            <span class="status-badge badge-secondary">@item.StepName</span>
+                            @if (!string.IsNullOrWhiteSpace(item.ApproverType))
+                            {
+                                <div class="small text-muted">@item.ApproverType</div>
+                            }
+                        </td>
+                        <td data-label="Started">@item.StartedDate.ToString("dd MMM yyyy")</td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Action" asp-route-id="@item.WorkflowInstanceId" title="Open">
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-inbox"></i>
+                <h3 class="h6 mt-2 mb-1">No pending requisitions</h3>
+                <p class="text-muted mb-0">There are no requisitions assigned to you.</p>
+            </div>
+        }
+    </div>
+</section>

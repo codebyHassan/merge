@@ -1,0 +1,110 @@
+@model AlignHR.Models.Shift
+@{
+    ViewData["Title"] = "Shift Details";
+    ViewBag.ActivePage = "Shift";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        <div class="row g-3">
+            <!-- ID -->
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">ID</label>
+                <div class="value fw-bold text-primary">#@Model.Id</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">Shift Name</label>
+                <div class="value fw-bold">@Model.ShiftName</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">Group Name</label>
+                <div class="value">
+                    @if (Model.GroupName != null)
+                    {
+                        var groupBadge = Model.GroupName == AlignHR.Models.GroupName.Morning ? "badge-success" :
+                                         Model.GroupName == AlignHR.Models.GroupName.Evening ? "badge-warning" : "badge-dark";
+                        <span class="status-badge @groupBadge">@Model.GroupName</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">—</span>
+                    }
+                </div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">Is Night Shift?</label>
+                <div class="value">
+                    @if (Model.IsNightShift == true)
+                    {
+                        <span class="badge bg-danger bg-opacity-10 text-danger"><i class="fa-solid fa-moon me-1"></i>Yes — Night</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success bg-opacity-10 text-success"><i class="fa-solid fa-sun me-1"></i>No — Day</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Row 2 — Times -->
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">Start Time</label>
+                <div class="value fw-semibold text-primary">@(Model.StartTime?.ToString("HH:mm") ?? "—")</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">End Time</label>
+                <div class="value fw-semibold text-primary">@(Model.EndTime?.ToString("HH:mm") ?? "—")</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">Grace Time</label>
+                <div class="value">@(Model.GraceTime?.ToString("HH:mm") ?? "—")</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <!-- spacer -->
+            </div>
+
+            <!-- Row 3 — Break Times -->
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">Break Start Time</label>
+                <div class="value">@(Model.BreakStartTime?.ToString("HH:mm") ?? "—")</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">Break End Time</label>
+                <div class="value">@(Model.BreakEndTime?.ToString("HH:mm") ?? "—")</div>
+            </div>
+        </div>
+
+        <hr class="my-4 text-muted opacity-25" />
+
+        <!-- Audit Row -->
+        <div class="row g-3">
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">Created At</label>
+                <div class="value small">@Model.createat.ToString("dd MMM yyyy HH:mm:ss")</div>
+            </div>
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold text-muted mb-0">Created By</label>
+                <div class="value small">@Model.createdby</div>
+            </div>
+            @if (Model.updateat > DateTime.MinValue)
+            {
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold text-muted mb-0">Updated At</label>
+                    <div class="value small">@Model.updateat.ToString("dd MMM yyyy HH:mm:ss")</div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold text-muted mb-0">Updated By</label>
+                    <div class="value small">@Model.updatedby</div>
+                </div>
+            }
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mt-4">
+            <div class="col-12 d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+            </div>
+        </div>
+
+    </div>
+</div>

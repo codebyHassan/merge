@@ -1,0 +1,46 @@
+@model AlignHR.Models.AttendencePolicies
+
+@{
+    ViewData["Title"] = "Delete Policy";
+    ViewBag.ActivePage = "AttendencePolicies";
+}
+
+<!-- Breadcrumb Area -->
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <i class="fas fa-home"></i>
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">Attendance Policies</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Delete Policy</div>
+</div>
+
+<!-- Main Content Card -->
+<div class="form-shell" style="max-width: 600px; margin-left: auto; margin-right: auto;">
+    <div class="card-inner text-center">
+        <div class="delete-warning-icon mb-4" style="color: #e53e3e; font-size: 3rem;">
+            <i class="fas fa-exclamation-triangle"></i>
+        </div>
+
+        <h2 class="card-subtitle" style="font-size: 1.5rem;">Delete Attendance Policy?</h2>
+        <p class="text-muted mb-4">Are you sure you want to delete this policy? This action cannot be undone.</p>
+
+        <div class="policy-summary mb-4" style="background: var(--bg); padding: 1.5rem; border-radius: 8px; text-align: left;">
+            <div class="mb-2"><strong>ID:</strong> @Model.id</div>
+            <div class="mb-2"><strong>Late Grace:</strong> @Model.LateGraceTime Minutes</div>
+            <div class="mb-2"><strong>Effective Date:</strong> @Model.EffictiveTime.ToString("MMM dd, yyyy")</div>
+        </div>
+
+        <form asp-action="Delete">
+            <input type="hidden" asp-for="id" />
+            <div class="form-actions-sticky" style="justify-content: center;">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">No, Keep It</a>
+                <button type="submit" class="btn btn-primary btn-sm" style="background-color: #e53e3e;">Yes, Delete Policy</button>
+            </div>
+        </form>
+    </div>
+</div>

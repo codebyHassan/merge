@@ -1,0 +1,155 @@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    ViewData["Title"] = "Leave Compensation";
+    ViewBag.ActivePage = "Compensate";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        <div class="mb-3 pb-3" style="border-bottom:1px solid var(--erp-border);">
+            <div class="fw-semibold">Leave Compensation</div>
+            <p class="text-muted small mb-0">Manually credit additional leave days to an employee's balance. The transaction is recorded in the Leave Ledger as a Manual Adjustment.</p>
+        </div>
+
+        <form id="compensationForm" asp-action="ProcessCompensation" asp-controller="LeaveAccounting" method="post" novalidate>
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" name="empCode" id="empCodeHidden" />
+
+            <div class="row g-3">
+
+                @* Employee Search *@
+                <div class="col-12 col-md-3" style="position:relative;z-index:20;">
+                    <label class="form-label small fw-semibold">Employee <span class="text-danger">*</span></label>
+                    <div id="empSearchWrap">
+                        <input type="text" id="employeeSearch" class="form-control form-control-sm"
+                               placeholder="Search by name or code…"
+                               hx-get="@Url.Action("SearchEmployees", "LeaveAccounting")"
+                               hx-trigger="keyup changed delay:300ms"
+                               hx-target="#searchResults"
+                               name="term"
+                               autocomplete="off" />
+                        <div id="searchResults" class="la-search-drop"></div>
+                    </div>
+                    <div id="empChip" class="mt-1" style="display:none;">
+                        <span class="status-badge badge-success d-inline-flex align-items-center gap-1">
+                            <i class="fa-solid fa-circle-check" style="font-size:10px;"></i>
+                            <span id="empChipName"></span>
+                            <span class="ms-1 opacity-75 small" id="empChipCode"></span>
+                            <button type="button" class="btn-close btn-close-white ms-1"
+                                    style="font-size:8px;" onclick="clearEmployee()"></button>
+                        </span>
+                    </div>
+                </div>
+
+                @* Leave Type *@
+                <div class="col-12 col-md-3">
+                    <label for="leaveTypeSelect" class="form-label small fw-semibold">Leave Type <span class="text-danger">*</span></label>
+                    <select id="leaveTypeSelect" name="leaveTypeId" class="form-select form-select-sm"
+                            asp-items="@(ViewBag.LeaveTypes as SelectList)" required>
+                        <option value="">— Select Leave Type —</option>
+                    </select>
+                </div>
+
+                @* Leave Days *@
+                <div class="col-12 col-md-3">
+                    <label for="leaveDays" class="form-label small fw-semibold">Leave Days <span class="text-danger">*</span></label>
+                    <input type="number" id="leaveDays" name="leaveDays"
+                           class="form-control form-control-sm"
+                           step="0.5" min="0.5" placeholder="e.g. 1.5" required />
+                </div>
+
+                @* Year *@
+                <div class="col-12 col-md-3">
+                    <label for="year" class="form-label small fw-semibold">Year</label>
+                    <select id="year" name="year" class="form-select form-select-sm">
+                        @for (int y = DateTime.Now.Year; y >= DateTime.Now.Year - 3; y--)
+                        {
+                            <option value="@y" selected="@(y == DateTime.Now.Year)">@y</option>
+                        }
+                    </select>
+                </div>
+
+                @* Reason *@
+                <div class="col-12">
+                    <label for="narration" class="form-label small fw-semibold">Reason / Remarks <span class="text-danger">*</span></label>
+                    <textarea id="narration" name="narration" class="form-control form-control-sm"
+                              rows="2" maxlength="900"
+                              placeholder="Describe the reason for this leave compensation…" required></textarea>
+                </div>
+
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-primary btn-sm"
+                            onclick="return confirm('Are you sure you want to assign extra leave to this employee?');">
+                        <i class="fa-solid fa-circle-plus me-1"></i>Confirm
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@section Styles {
+<style>
+.la-search-drop {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0; right: 0;
+    z-index: 9999;
+    background: var(--erp-surface);
+    border: 1px solid var(--erp-border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(16,24,40,0.12);
+    max-height: 240px;
+    overflow-y: auto;
+}
+.la-search-drop:empty { display: none; }
+.la-result-item {
+    display: flex; align-items: center; gap: .65rem;
+    padding: .5rem .75rem; cursor: pointer;
+    border-bottom: 1px solid var(--erp-border);
+    transition: background .12s;
+}
+.la-result-item:last-child { border-bottom: none; }
+.la-result-item:hover { background: var(--erp-surface-subtle); }
+.la-result-avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: var(--erp-primary-soft); color: var(--erp-primary);
+    font-weight: 700; font-size: 11px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+</style>
+}
+
+@section Scripts {
+<script>
+    // ── Employee search ──────────────────────────────────────
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('#empSearchWrap'))
+            document.getElementById('searchResults').innerHTML = '';
+    });
+
+    function selectEmployee(code, name) {
+        document.getElementById('empCodeHidden').value = code;
+        document.getElementById('empChipName').textContent = name;
+        document.getElementById('empChipCode').textContent = code;
+        document.getElementById('empChip').style.display = 'block';
+        document.getElementById('empSearchWrap').style.display = 'none';
+        document.getElementById('searchResults').innerHTML = '';
+    }
+
+    function clearEmployee() {
+        document.getElementById('empCodeHidden').value = '';
+        document.getElementById('empChip').style.display = 'none';
+        document.getElementById('empSearchWrap').style.display = '';
+        document.getElementById('employeeSearch').value = '';
+        document.getElementById('employeeSearch').focus();
+    }
+
+</script>
+}

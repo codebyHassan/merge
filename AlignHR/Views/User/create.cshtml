@@ -1,0 +1,74 @@
+@model AlignHR.Models.User
+@using AlignHR.Security
+@{
+    ViewData["Title"] = "Create User";
+    ViewBag.ActivePage = "User";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" id="createUserForm" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label asp-for="FirstName" class="form-label small fw-semibold">First Name <span class="text-danger">*</span></label>
+                    <input asp-for="FirstName" class="form-control form-control-sm" placeholder="Enter first name" required />
+                    <span asp-validation-for="FirstName" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="LastName" class="form-label small fw-semibold">Last Name <span class="text-danger">*</span></label>
+                    <input asp-for="LastName" class="form-control form-control-sm" placeholder="Enter last name" required />
+                    <span asp-validation-for="LastName" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Email" class="form-label small fw-semibold">Email Address <span class="text-danger">*</span></label>
+                    <input asp-for="Email" type="email" class="form-control form-control-sm" placeholder="email@company.com" required />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Password" class="form-label small fw-semibold">Password <span class="text-danger">*</span></label>
+                    <input asp-for="Password" type="password" class="form-control form-control-sm" placeholder="Enter password" required />
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label for="RoleId" class="form-label small fw-semibold">Assign Role</label>
+                    <select name="RoleId" id="RoleId" class="form-select form-select-sm">
+                        <option value="">— No Role —</option>
+                        @foreach (var item in ViewBag.Roles as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem> ?? new List<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>())
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="EmployeeId" class="form-label small fw-semibold">Linked Employee</label>
+                    <select asp-for="EmployeeId" class="form-select form-select-sm" asp-items="ViewBag.Employees">
+                        <option value="">— Select Employee —</option>
+                    </select>
+                    <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="DmsDefinationFK" class="form-label small fw-semibold">DMS Definition</label>
+                    <select asp-for="DmsDefinationFK" class="form-select form-select-sm" asp-items="ViewBag.DmsDefinitions">
+                        <option value="">Select DMS Definition</option>
+                    </select>
+                    <span asp-validation-for="DmsDefinationFK" class="text-danger small"></span>
+                </div>
+
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save User</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

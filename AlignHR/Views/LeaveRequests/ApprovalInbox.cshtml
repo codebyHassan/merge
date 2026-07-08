@@ -1,0 +1,133 @@
+@model X.PagedList.IPagedList<AlignHR.Models.LeaveRequest>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+@using AlignHR.Models.Enums
+
+@{
+    ViewData["Title"] = "Leave Approval";
+    ViewBag.ActivePage = "ApprovalInbox";
+    var currentFilter = ViewData["CurrentFilter"]?.ToString();
+}
+
+<section class="filter-bar mb-2" aria-label="Leave approval filters">
+    <div class="input-group input-group-sm me-auto" style="width: auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="searchQuery"
+               value="@currentFilter"
+               placeholder="Search employee or leave type"
+               aria-label="Search records"
+               hx-get="@Url.Action("ApprovalInbox")"
+               hx-target="#approval-inbox-page"
+               hx-select="#approval-inbox-page"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-include="[name='searchQuery']"
+               hx-push-url="true"
+               form="none" />
+    </div>
+    <div class="filter-group">
+        <div class="dropdown">
+            <button class="btn btn-export-custom btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
+                Columns
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Employee Code" checked />Employee Code</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Employee Name" checked />Employee Name</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Leave Type" checked />Leave Type</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Dates" checked />Dates</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Days" checked />Days</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Stage" checked />Stage</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Applied" checked />Applied</label></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table id="approval-inbox-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="1">Employee Code</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="2">Employee Name</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="3">Leave Type</button></th>
+                    <th scope="col">Dates</th>
+                    <th scope="col">Days</th>
+                    <th scope="col">Stage</th>
+                    <th scope="col">Applied</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var stageClass = item.CurrentStage switch
+                    {
+                        WorkflowStage.LineManager      => "badge-info",
+                        WorkflowStage.HigherManagement => "badge-warning",
+                        WorkflowStage.HR               => "badge-primary",
+                        _                              => "badge-secondary"
+                    };
+                    var stageLabel = item.CurrentStage switch
+                    {
+                        WorkflowStage.LineManager      => "Line Manager",
+                        WorkflowStage.HigherManagement => "Higher Mgmt",
+                        WorkflowStage.HR               => "HR / Final",
+                        _                              => item.CurrentStage.ToString()
+                    };
+
+                    <tr>
+                        <td data-label="Employee Code"><span class="text-muted small">@(item.Employee?.Code ?? "-")</span></td>
+                        <td data-label="Employee Name" class="fw-semibold">@(item.Employee?.FullName ?? "-")</td>
+                        <td data-label="Leave Type">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span>@(item.LeaveType?.Name ?? "-")</span>
+                                @if (item.IsHalfDay)
+                                {
+                                    <span class="status-badge badge-info">Half Day</span>
+                                }
+                            </div>
+                        </td>
+                        <td data-label="Dates">@item.FromDate.ToString("MMM dd") - @item.ToDate.ToString("MMM dd, yyyy")</td>
+                        <td data-label="Days" class="fw-semibold">@item.DaysCount.ToString("0.##")</td>
+                        <td data-label="Stage">
+                            <div class="d-flex flex-column">
+                                <span class="status-badge @stageClass">@stageLabel</span>
+                                <span class="text-muted small">Level @item.ApprovalLevel</span>
+                            </div>
+                        </td>
+                        <td data-label="Applied" class="text-muted small">@item.AppliedAt?.ToString("MMM dd, yyyy")</td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a class="btn btn-icon btn-sm btn-icon-success" asp-action="Approve" asp-route-id="@item.Id" title="Review &amp; Decide"><i class="fa-solid fa-gavel"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-inbox"></i>
+                <h3 class="h6 mt-2 mb-1">No pending approvals</h3>
+                <p class="text-muted mb-0">All caught up! No leave requests need your attention right now.</p>
+            </div>
+        }
+    </div>
+
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage-@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav aria-label="Leave approval pagination">
+            @Html.PagedListPager(Model, page => Url.Action("ApprovalInbox", new { page, searchQuery = currentFilter }), new PagedListRenderOptions
+            {
+                UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" }
+            })
+        </nav>
+    </div>
+</section>

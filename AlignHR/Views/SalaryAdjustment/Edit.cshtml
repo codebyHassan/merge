@@ -1,0 +1,235 @@
+@model AlignHR.Models.SalaryAdjustments
+
+@{
+    ViewData["Title"] = "Edit Salary Adjustment";
+    ViewBag.ActivePage = "SalaryAdjustment";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6" style="position: relative; z-index: 1001;">
+                    <label class="form-label small fw-semibold">Search Employee <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        @{
+                            var selectList = (SelectList)ViewBag.Employees;
+                            var selectedItem = selectList?.FirstOrDefault(s => s.Value == Model.EmployeeId.ToString());
+                            var initialValue = selectedItem != null ? selectedItem.Text : "";
+                        }
+                        <input type="text" id="employeeSearch" name="term" class="form-control" placeholder="Type name or code..." autocomplete="off"
+                               value="@initialValue"
+                               hx-get="/Ajax/SearchEmployees"
+                               hx-trigger="keyup delay:300ms, search"
+                               hx-target="#employeeResults"
+                               hx-indicator=".profile-loader" />
+                    </div>
+                    <div id="employeeResults" class="search-results-container"></div>
+                    <input type="hidden" asp-for="EmployeeId" id="selectedEmployeeId" required />
+                    <p class="text-muted smallest mt-1"><i class="fas fa-info-circle mr-1"></i>Selection can be updated if needed.</p>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold">Salary Period <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
+                        <select asp-for="SalaryPeriodId" class="form-select" asp-items="ViewBag.SalaryPeriods">
+                        </select>
+                    </div>
+                    <span asp-validation-for="SalaryPeriodId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <style>
+                        .premium-toggle {
+                            display: inline-flex;
+                            background: #f1f5f9;
+                            border-radius: 50px;
+                            padding: 4px;
+                            width: 100%;
+                            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+                        }
+                        .premium-toggle input[type="radio"] {
+                            display: none;
+                        }
+                        .premium-toggle label {
+                            flex: 1;
+                            text-align: center;
+                            padding: 8px 12px;
+                            border-radius: 50px;
+                            cursor: pointer;
+                            font-weight: 600;
+                            font-size: 0.85rem;
+                            color: #64748b;
+                            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                            margin: 0;
+                        }
+                        .premium-toggle input[type="radio"]:checked + label {
+                            color: #fff;
+                        }
+                        .premium-toggle input[type="radio"]#typeEarning:checked + label {
+                            background-color: #10b981;
+                            box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);
+                        }
+                        .premium-toggle input[type="radio"]#typeDeduction:checked + label {
+                            background-color: #ef4444;
+                            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.3);
+                        }
+                    </style>
+                    <label class="form-label small fw-semibold">Adjustment Type <span class="text-danger">*</span></label>
+                    <div class="premium-toggle">
+                        <input type="radio" name="Type" id="typeEarning" value="Earning" @(Model.Type == AlignHR.Models.PayrollComponentTypes.Earning ? "checked" : "") onchange="updateCategories()">
+                        <label for="typeEarning"><i class="fas fa-plus"></i> Earning</label>
+
+                        <input type="radio" name="Type" id="typeDeduction" value="Deduction" @(Model.Type == AlignHR.Models.PayrollComponentTypes.Deduction ? "checked" : "") onchange="updateCategories()">
+                        <label for="typeDeduction"><i class="fas fa-minus"></i> Deduction</label>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Category <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-tags"></i></span>
+                        <select asp-for="AdjustmentCategory" id="AdjustmentCategory" class="form-select">
+                            <option value="@Model.AdjustmentCategory">@Model.AdjustmentCategory</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="AdjustmentCategory" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label class="form-label small fw-semibold">Amount (PKR) <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">PKR</span>
+                        <input asp-for="Amount" class="form-control amount-field" placeholder="0.00" type="number" step="0.01" />
+                    </div>
+                    <span asp-validation-for="Amount" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <div class="approval-panel d-flex justify-content-between align-items-center p-3 border rounded bg-light">
+                        <div class="approval-text">
+                            <label class="form-label small fw-semibold mb-0">Payroll Approval Status</label>
+                            <p class="text-muted smallest mb-0">Toggle to include this in the next payroll cycle.</p>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input asp-for="IsApproved" class="form-check-input" type="checkbox" role="switch" id="IsApproved" style="width: 3em; height: 1.5em; cursor: pointer;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label small fw-semibold">Reason / Remarks</label>
+                    <textarea asp-for="Reason" class="form-control" rows="3" placeholder="Describe the reason for this adjustment..."></textarea>
+                    <span asp-validation-for="Reason" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <div class="profile-loader htmx-indicator mb-2">
+                        <div class="loader-circle"></div>
+                        <span>Syncing Profile...</span>
+                    </div>
+
+                    <div id="side-profile-container" class="employee-profile-slot">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Clear hidden ID when user types
+            const searchInput = document.getElementById('employeeSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const hiddenInput = document.getElementById('selectedEmployeeId');
+                    if (hiddenInput) hiddenInput.value = '';
+                });
+            }
+
+            // Handle Employee Selection
+            document.body.addEventListener('click', function(e) {
+                const row = e.target.closest('.search-result-item');
+                if (row) {
+                    const id = row.dataset.id;
+                    const name = row.dataset.name;
+                    const code = row.dataset.code;
+                    
+                    const hiddenInput = document.getElementById('selectedEmployeeId');
+                    hiddenInput.value = id;
+                    document.getElementById('employeeResults').innerHTML = '';
+                    document.getElementById('employeeSearch').value = name + ' (' + code + ')';
+                    
+                    // Trigger profile card load
+                    htmx.ajax('GET', '@Url.Action("GetEmployeeCard", "SalaryAdjustment")?employeeId=' + id, {
+                        target: '#side-profile-container',
+                        indicator: '.profile-loader'
+                    });
+
+                    updateCategories();
+                }
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                    const results = document.getElementById('employeeResults');
+                    if (results) results.innerHTML = '';
+                }
+            });
+            
+            // Initial profile card load for Edit mode
+            const initialId = document.getElementById('selectedEmployeeId').value;
+            if (initialId) {
+                htmx.ajax('GET', '@Url.Action("GetEmployeeCard", "SalaryAdjustment")?employeeId=' + initialId, {
+                    target: '#side-profile-container',
+                    indicator: '.profile-loader'
+                });
+            }
+        });
+
+        function updateCategories() {
+            const employeeId = document.getElementById('selectedEmployeeId').value;
+            const typeSelect = document.querySelector('input[name="Type"]:checked');
+            if(!typeSelect) return;
+            const type = typeSelect.value;
+            const currentCat = "@Model.AdjustmentCategory";
+            if (!employeeId) return;
+
+            htmx.ajax('GET', `@Url.Action("GetAdjustmentCategories", "SalaryAdjustment")?employeeId=${employeeId}&type=${type}`, {
+                target: '#AdjustmentCategory',
+                swap: 'innerHTML'
+            }).then(() => {
+                 const select = document.getElementById('AdjustmentCategory');
+                 for(let i=0; i<select.options.length; i++) {
+                     if(select.options[i].value === currentCat) {
+                         select.selectedIndex = i;
+                         break;
+                     }
+                 }
+            });
+        }
+
+        // Initialize categories on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(updateCategories, 100);
+        });
+    </script>
+}

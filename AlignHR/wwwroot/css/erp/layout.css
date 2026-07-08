@@ -1,0 +1,386 @@
+.erp-shell {
+    min-height: 100vh;
+}
+
+.erp-main {
+    min-width: 0;
+    padding-top: var(--erp-topbar-height);
+    padding-left: var(--erp-sidebar-width);
+    transition: padding-left var(--erp-transition);
+}
+
+.erp-topbar {
+    left: var(--erp-sidebar-width);
+    min-height: var(--erp-topbar-height);
+    border-bottom: 1px solid var(--erp-border);
+    background: var(--erp-surface);
+    z-index: 1010;
+    transition: left var(--erp-transition);
+}
+
+.erp-topbar .container-fluid {
+    min-height: var(--erp-topbar-height);
+    padding-inline: 0.75rem;
+}
+
+.erp-workspace {
+    width: 100%;
+    padding: 30px 15px 0px 15px;
+}
+
+@media (max-width: 991px) {
+    .erp-main {
+        padding-left: 0 !important;
+    }
+    .erp-topbar {
+        left: 0 !important;
+    }
+    .erp-workspace {
+        padding-top: 25px; /* More space for breadcrumb on mobile */
+    }
+}
+
+.workspace-header,
+.page-header {
+    margin-bottom: 0.75rem;
+}
+
+.workspace-header h1,
+.page-header h1 {
+    margin: 0;
+    color: var(--erp-text);
+    font-size: 1.08rem;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+}
+
+.workspace-header p,
+.page-header p {
+    font-size: 0.78rem;
+}
+
+.header-actions,
+.page-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: var(--erp-surface);
+    padding: 7px 14px;
+    border-radius: 4px;
+    border: 1px solid var(--erp-border);
+    box-shadow: none;
+    margin-bottom: 14px;
+}
+
+@media (max-width: 768px) {
+    .breadcrumb-nav {
+        padding: 6px 10px;
+        font-size: 0.72rem;
+    }
+}
+
+.breadcrumb {
+    --bs-breadcrumb-divider-color: #d1d5db;
+    --bs-breadcrumb-item-active-color: #111827;
+    margin-bottom: 0;
+    padding: 0;
+    background: none;
+    border: none;
+    box-shadow: none;
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.breadcrumb-item a {
+    color: #9ca3af;
+    transition: color 0.15s ease;
+}
+
+.breadcrumb-item a:hover {
+    color: #374151;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.breadcrumb-item.active {
+    color: #111827 !important;
+    font-weight: 700;
+}
+
+.erp-sidebar {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-start: 0;
+    z-index: 1030;
+    width: var(--erp-sidebar-width);
+    height: 100vh;
+    transition: width var(--erp-transition);
+}
+
+.sidebar-backdrop {
+    display: none;
+}
+
+.sidebar-panel {
+    display: flex;
+    height: 100%;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
+    background: var(--erp-sidebar);
+    color: var(--erp-sidebar-text);
+}
+
+.sidebar-brand {
+    display: flex;
+    min-height: var(--erp-topbar-height);
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--erp-sidebar-2);
+}
+
+.brand-mark {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 0.55rem;
+    color: #fff;
+}
+
+.brand-icon {
+    display: inline-flex;
+    width: 1.85rem;
+    height: 1.85rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--erp-radius-sm);
+    background: var(--erp-primary);
+    color: #fff;
+    font-weight: 900;
+}
+
+.brand-copy {
+    display: grid;
+    min-width: 0;
+    line-height: 1.1;
+}
+
+.brand-copy strong {
+    overflow: hidden;
+    color: #fff;
+    font-size: 0.86rem;
+    font-weight: 800;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.brand-copy small {
+    color: var(--erp-sidebar-muted);
+    font-size: 0.66rem;
+    font-weight: 600;
+}
+
+.sidebar-section {
+    padding: 0.45rem;
+}
+
+.sidebar-label {
+    padding: 0.45rem 0.55rem 0.25rem;
+    color: var(--erp-sidebar-muted);
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.sidebar-link,
+.sidebar-sublink {
+    position: relative;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 0.5rem;
+    border: 0;
+    margin-bottom: 0.15rem;
+    border-radius: var(--erp-radius-sm);
+    background: transparent;
+    color: var(--erp-sidebar-text);
+    font-size: 0.78rem;
+    font-weight: 650;
+    padding: 0.35rem 0.5rem; /* Reduced vertical padding */
+    text-align: start;
+    transition: background var(--erp-transition), color var(--erp-transition);
+}
+
+.sidebar-link i:first-child {
+    width: 1rem;
+    color: var(--erp-sidebar-muted);
+    font-size: 0.92rem;
+}
+
+.sidebar-link:hover,
+.sidebar-sublink:hover,
+.sidebar-link.active,
+.sidebar-sublink.active {
+    background: var(--erp-primary) !important;
+    color: #fff !important;
+}
+
+.sidebar-link.active i,
+.sidebar-sublink.active i {
+    color: #fff !important;
+}
+
+.sidebar-link.active::before {
+    position: absolute;
+    inset-block: 0.35rem;
+    inset-inline-start: -0.45rem;
+    width: 0.18rem;
+    border-radius: 999px;
+    background: var(--erp-sidebar-active);
+    content: "";
+}
+
+.sidebar-submenu {
+    margin: 0.1rem 0 0.15rem 1.45rem;
+    padding-inline-start: 0.4rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-sublink {
+    padding: 0.28rem 0.45rem; /* Reduced padding for sublinks */
+    color: var(--erp-sidebar-muted);
+    font-size: 0.74rem;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding: 0.55rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--erp-sidebar-2);
+}
+
+.sidebar-footer .btn {
+    color: var(--erp-sidebar-text);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.global-search {
+    display: flex;
+    width: min(34rem, 46vw);
+    min-height: 1.95rem;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.45rem;
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-sm);
+    background: var(--erp-surface-soft);
+    color: var(--erp-muted);
+    padding: 0.18rem 0.4rem;
+    text-align: start;
+    font-size: 0.76rem;
+}
+
+.global-search kbd,
+.command-item kbd {
+    margin-left: auto;
+    border: 1px solid var(--erp-border);
+    background: var(--erp-surface);
+    color: var(--erp-muted);
+    font-size: 0.62rem;
+    font-weight: 700;
+    padding: 0.05rem 0.24rem;
+}
+
+.user-menu {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-sm);
+    background: var(--erp-surface);
+    color: var(--erp-text);
+    padding: 0.18rem 0.4rem 0.18rem 0.22rem;
+}
+
+.avatar {
+    display: inline-flex;
+    width: 1.55rem;
+    height: 1.55rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--erp-sidebar);
+    color: #fff;
+    font-size: 0.62rem;
+    font-weight: 800;
+}
+
+.user-name,
+.user-role {
+    display: block;
+    line-height: 1.08;
+}
+
+.user-name {
+    font-size: 0.74rem;
+    font-weight: 750;
+}
+
+.user-role {
+    color: var(--erp-muted);
+    font-size: 0.64rem;
+    font-weight: 600;
+}
+
+.notification-dot {
+    position: absolute;
+    inset-block-start: 0.35rem;
+    inset-inline-end: 0.4rem;
+    width: 0.42rem;
+    height: 0.42rem;
+    border: 1px solid var(--erp-surface);
+    border-radius: 50%;
+    background: var(--erp-danger);
+}
+
+.sidebar-collapsed .erp-main {
+    padding-left: var(--erp-sidebar-collapsed);
+}
+
+.sidebar-collapsed .erp-topbar {
+    left: var(--erp-sidebar-collapsed);
+}
+
+.sidebar-collapsed .erp-sidebar {
+    width: var(--erp-sidebar-collapsed);
+}
+
+.sidebar-collapsed .brand-copy,
+.sidebar-collapsed .sidebar-label,
+.sidebar-collapsed .sidebar-link span,
+.sidebar-collapsed .sidebar-sublink,
+.sidebar-collapsed .sidebar-parent .bi-chevron-down,
+.sidebar-collapsed .sidebar-footer {
+    display: none;
+}
+
+.sidebar-collapsed .sidebar-link {
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+.sidebar-collapsed .sidebar-submenu {
+    display: none !important;
+}

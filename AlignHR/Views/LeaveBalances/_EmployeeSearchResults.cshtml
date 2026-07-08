@@ -1,0 +1,22 @@
+@model IEnumerable<AlignHR.Models.Employee>
+
+<div class="search-results-list">
+    @if (Model != null && Model.Any())
+    {
+        foreach (var emp in Model)
+        {
+            <div class="search-result-item" 
+                 onclick="selectEmployee('@emp.Id', '@emp.FullName (@emp.Code)')"
+                 style="padding: 10px 15px; cursor: pointer; border-bottom: 1px solid var(--border-light); transition: background 0.2s;">
+                <div class="font-medium">@emp.FullName</div>
+                <div class="text-muted small">Code: @emp.Code</div>
+            </div>
+        }
+    }
+    else
+    {
+        <div style="padding: 15px; text-align: center; color: var(--text-muted);">
+            No employees found
+        </div>
+    }
+</div>

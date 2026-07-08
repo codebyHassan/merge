@@ -1,0 +1,1019 @@
+HR Recruitment Module - Sprint 1 Requisition Work Completed
+
+Source task reviewed:
+- hrRecuritment.txt requested only the first recruitment table and the Requisition module.
+- User clarified to build only Create, Edit, and Index. No Details view and no Delete view were added.
+
+What already existed before this pass:
+- HrRequisition entity existed in Models/HrRequisition.cs.
+- DbSet and basic HR_Requisition table/index configuration existed in ApplicationDbContext.
+- HrRequisitionsController existed but used ApplicationDbContext directly.
+- Create and Index views existed.
+- Details/Cancel actions existed in controller but matching Details view was missing.
+
+What was completed in this pass (by Codex):
+- Added repository interface and implementation:
+  - Repositories/IHrRequisitionRepository.cs
+  - Repositories/HrRequisitionRepository.cs
+- Added service interface and implementation:
+  - Services/IHrRequisitionService.cs
+  - Services/HrRequisitionService.cs
+- Added requisition view models:
+  - Models/HrRequisitionViewModels.cs
+- Refactored HrRequisitionsController to use the service layer.
+- Limited controller UI workflow to:
+  - Index
+  - Create
+  - Edit
+- Removed dependency on Details/Delete views from the requisition list.
+- Added Edit view:
+  - Views/HrRequisitions/Edit.cshtml
+- Rebuilt Create view to support:
+  - Save as Draft
+  - Submit
+- Rebuilt Index view to show:
+  - Requisition number
+  - Position title
+  - Department name
+  - Employee name
+  - Vacancy count
+  - Required-by date
+  - Status
+  - Created date
+  - Edit action only for Draft records
+- Registered recruitment repository and service in Program.cs.
+- Added EF migration for HR_Requisition table:
+  - Migrations/20260605000000_AddHrRequisition.cs
+
+Business behavior now covered:
+- Requisition can be created as Draft.
+- Requisition can be created and immediately Submitted.
+- Draft requisition can be edited.
+- Draft requisition can be submitted from Edit.
+- Submitted requisition cannot be edited.
+- Requisition number is generated in REQ-{year}-{sequence} format and checked for uniqueness.
+- Audit fields are populated on create/update:
+  - CreatedBy
+  - CreatedOn
+  - UpdatedBy
+  - UpdatedOn
+
+Validation performed:
+- dotnet build completed successfully.
+- Build result: 0 errors.
+- Existing project warnings remain; they are unrelated to the recruitment changes.
+
+================================================================
+BUGS FOUND AND FIXED BY CLAUDE (2026-06-05)
+================================================================
+
+BUG 1 - FIXED: EmployeeFK incorrectly marked [Required] in HrRequisitionFormViewModel
+  File: Models/HrRequisitionViewModels.cs
+  Problem: [Required] annotation on EmployeeFK prevented saving a Draft without
+           selecting an employee. The DB column is nullable (NUMERIC(18,0) NULL)
+           per the original spec, so this was wrong.
+  Fix: Removed [Required] from EmployeeFK. Department and PositionTitle still
+       required; Employee is optional.
+
+BUG 2 - FIXED: Details view missing — required by original spec
+  File created: Views/HrRequisitions/Details.cshtml
+  Problem: The original hrRecuritment.txt explicitly lists "View Requisition"
+           as a Sprint 1 deliverable. Codex removed it without user instruction.
+  Fix: Created Details.cshtml showing all fields as read-only.
+       Draft records show Edit + Submit buttons.
+       Submitted/Cancelled records show only Back button.
+
+BUG 3 - FIXED: Details and Submit actions missing from controller
+  File: Controllers/HrRequisitionsController.cs
+  Problem: Codex removed Details and Submit from the controller during refactor,
+           leaving no way to view or submit a saved requisition.
+  Fix: Added Details(decimal id) GET action.
+       Added Submit(decimal id) POST action.
+
+BUG 4 - FIXED: SubmitAsync and GetDetailsAsync missing from service layer
+  Files: Services/IHrRequisitionService.cs, Services/HrRequisitionService.cs
+  Problem: No service method existed for submitting a requisition from the
+           Details view, and no GetDetailsAsync for the Details action.
+  Fix: Added SubmitAsync(decimal id, string? username) to interface + implementation.
+       Added GetDetailsAsync(decimal id) to interface + implementation.
+
+BUG 5 - FIXED: Index view had no "View" button for Submitted/Cancelled records
+  File: Views/HrRequisitions/Index.cshtml
+  Problem: Only Draft records had an action button (Edit). There was no way
+           to navigate to a Submitted or Cancelled requisition.
+  Fix: Added eye icon (View/Details) button for every row regardless of status.
+       Edit button still appears only for Draft records.
+
+MISSING - ADDED: Sidebar navigation entry for Recruitment
+  File: Views/Shared/_Sidebar.cshtml
+  Problem: Neither Codex nor the initial pass added the Recruitment section
+           to the sidebar. The module was unreachable from the navigation.
+  Fix: Added a "Recruitment" sidebar section between Operations and Payroll.
+       Contains a collapsible menu with "Requisitions" link to HrRequisitions/Index.
+       Active state wired to IsActive("HrRequisitions").
+       Permission-gated via Can("HrRequisitions").
+
+================================================================
+Remaining by design / not done because of current scope (Sprint 1):
+================================================================
+- No Delete view (not in Sprint 1 deliverables).
+- No approval workflow (done in Sprint 2 below).
+
+================================================================
+SPRINT 2 — WORKFLOW (by Codex)
+================================================================
+
+Sprint 2 goal: Generic configurable approval workflow for requisitions.
+
+Flow: LM Submit → HRBP Review → HOD Approval → Recruiter Assignment
+
+What Codex completed:
+
+EF Models (all use decimal PK with numeric(18,0)):
+  - Models/HrWorkflowDefinition.cs  → HR_WorkflowDefinition
+  - Models/HrWorkflowStep.cs        → HR_WorkflowStep
+  - Models/HrWorkflowHistory.cs     → HR_WorkflowHistory
+  - Models/HrWorkflowInstance.cs    → HR_WorkflowInstance
+  - HrRequisition.cs updated with WorkflowInstanceFK NUMERIC(18,0) NULL
+
+DbContext (ApplicationDbContext.cs):
+  - 4 new DbSets registered
+  - Table names, FK relationships, unique indexes all configured via fluent API
+
+Repository layer:
+  - Repositories/IHrWorkflowRepository.cs
+  - Repositories/HrWorkflowRepository.cs
+    GetActiveDefinitionAsync, GetStepsAsync, GetInstanceAsync,
+    GetInstanceByEntityAsync, QueryInstances, AddInstanceAsync,
+    AddHistoryAsync, SaveChangesAsync
+
+Service layer:
+  - Services/IHrRequisitionWorkflowService.cs
+  - Services/HrRequisitionWorkflowService.cs
+    StartAsync  — creates workflow instance, records "Submitted" history
+    GetInboxAsync  — returns pending items matching the current user's roles
+    GetActionViewAsync  — returns full requisition + approval history for the action screen
+    ApproveAsync  — advances to next step or marks Completed/Approved if final step
+    RejectAsync  — closes instance as Rejected, sets requisition Status = Rejected
+    SendBackAsync  — moves back to previous step
+
+  HrRequisitionService.cs updated:
+    CreateAsync and UpdateAsync both call StartAsync when submit=true
+
+ViewModels:
+  - Models/HrWorkflowViewModels.cs
+    HrWorkflowInboxItemViewModel, HrWorkflowActionViewModel,
+    HrWorkflowHistoryItemViewModel
+
+Controller (HrRequisitionsController.cs):
+  - Inbox, Action (GET)
+  - Approve, Reject, SendBack (POST)
+  - RunWorkflowActionAsync helper centralises auth + error handling
+
+Views:
+  - Views/HrRequisitions/Inbox.cshtml  — pending items table for current user's roles
+  - Views/HrRequisitions/Action.cshtml — requisition detail + history + Approve/Reject/Send Back
+
+DI (Program.cs):
+  - IHrWorkflowRepository / HrWorkflowRepository registered
+  - IHrRequisitionWorkflowService / HrRequisitionWorkflowService registered
+
+Migration:
+  - Migrations/20260605010000_AddHrRequisitionWorkflow.cs
+    Raw SQL with IF guards (idempotent)
+    Creates HR_WorkflowDefinition, HR_WorkflowStep, HR_WorkflowInstance, HR_WorkflowHistory
+    Adds WorkflowInstanceFK to HR_Requisition
+    Seeds "Recruitment Requisition Approval" definition
+    Seeds HRBP Review (step 1), HOD Approval (step 2), Recruiter Assignment (step 3, IsFinalStep=1)
+    Steps only inserted if roles named "HRBP", "HOD", "Recruiter" exist in [roles] table
+
+================================================================
+BUGS FOUND AND FIXED BY CLAUDE — SPRINT 2 (2026-06-05)
+================================================================
+
+BUG 1 - FIXED: SubmitAsync never started the workflow (critical logic error)
+  Files: Services/IHrRequisitionService.cs
+         Services/HrRequisitionService.cs
+         Controllers/HrRequisitionsController.cs
+  Problem: When a user saves a Draft and then clicks Submit from the Details view,
+           the Submit action calls SubmitAsync. SubmitAsync only set Status="Submitted"
+           and saved — it never called _workflowService.StartAsync(). The workflow
+           instance was never created. The requisition would be stuck as "Submitted"
+           with no approvers in the queue, no history, and no WorkflowInstanceFK.
+           The Create/Edit POST paths DO start the workflow correctly.
+           Only the Details-view Submit path was broken.
+  Fix: Added decimal? actionBy parameter to IHrRequisitionService.SubmitAsync.
+       SubmitAsync now resolves actionBy (from session or requisition.EmployeeFK fallback)
+       and calls _workflowService.StartAsync() before saving.
+       StartAsync sets requisition.Status="Submitted" and WorkflowInstanceFK.
+       Controller Submit action now passes GetActionByEmployeeId().
+
+BUG 2 - FIXED: Sidebar had no "Approval Inbox" navigation link
+  File: Views/Shared/_Sidebar.cshtml
+  Problem: Approvers (HRBP, HOD, Recruiter roles) had no way to reach the Inbox
+           screen from the sidebar navigation.
+  Fix: Added "Approval Inbox" sublink under the Recruitment menu.
+       Wired active state to "HrRequisitionsInbox" page key.
+       Updated Inbox.cshtml and Action.cshtml to use ViewBag.ActivePage = "HrRequisitionsInbox"
+       so both screens highlight the Inbox link and keep the menu expanded.
+       Updated recruitmentOpen to include "HrRequisitionsInbox" key.
+
+================================================================
+Remaining by design — not in Sprint 2 scope:
+================================================================
+- No candidate management.
+- No job posting (done in Sprint 3 below).
+- No ATS.
+
+================================================================
+SPRINT 3 — RECRUITER ASSIGNMENT + JOB POSTING (2026-06-05)
+================================================================
+
+Sprint 3 goal: Once a requisition is fully approved, assign a recruiter and
+create one or more job postings published to configurable channels.
+
+Business flow added:
+  Approved Requisition → Recruiter Assigned → Job Posting Created → Published
+
+Tables created (all NUMERIC(18,0) PKs, via migration 20260605020000):
+  HR_RequisitionAssignment  — one recruiter per approved requisition (unique on RequisitionFk)
+  HR_PostingChannel         — configurable channels (seeded: Internal Portal, LinkedIn, Indeed, Naukri, Company Website)
+  HR_JobPosting             — job posting with soft-delete (IsDeleted), status lifecycle
+  HR_JobPostingChannel      — many-to-many: posting ↔ channels (unique on JobPostingFK+PostingChannelFK)
+
+EF Models:
+  Models/HrRequisitionAssignment.cs
+  Models/HrPostingChannel.cs
+  Models/HrJobPosting.cs
+  Models/HrJobPostingChannel.cs
+
+Fluent config in ApplicationDbContext:
+  Table names, unique indexes, FK relationships (all Restrict), channel sort index
+
+ViewModels:
+  Models/HrAssignmentViewModels.cs     — HrAssignmentFormViewModel, HrAssignmentDetailsViewModel
+  Models/HrJobPostingViewModels.cs     — HrJobPostingFormViewModel, HrJobPostingListItemViewModel,
+                                         HrJobPostingDetailsViewModel, HrJobPostingChannelItemViewModel,
+                                         HrPostingChannelSelectItem
+
+Repository layer:
+  Repositories/IHrAssignmentRepository.cs  + HrAssignmentRepository.cs
+  Repositories/IHrJobPostingRepository.cs  + HrJobPostingRepository.cs
+    — Query() always filters IsDeleted=false (soft-delete enforced at repo level)
+    — GetWithChannelsAsync includes PostingChannels.ThenInclude(PostingChannel)
+
+Service layer:
+  Services/IHrAssignmentService.cs  + HrAssignmentService.cs
+    GetForAssignAsync    — validates requisition is Approved + not already assigned
+    AssignAsync          — guards against duplicate assignment
+  Services/IHrJobPostingService.cs  + HrJobPostingService.cs
+    GetPagedAsync        — filters by requisition or global search
+    GetForCreateAsync    — pre-fills form from approved requisition
+    CreateAsync          — auto-generates JobCode (JP-{year}-{sequence:D4}), starts as Draft
+    UpdateAsync          — syncs channel list (remove/add diffs)
+    ChangeStatusAsync    — enforces valid transitions: Draft→Published, Published→Paused/Closed, Paused→Published/Closed
+                           stamps PublishedDate on channels when status becomes Published
+    DeleteAsync          — soft-delete, blocks if Published
+
+Controllers:
+  Controllers/HrAssignmentsController.cs
+    Assign (GET+POST)
+  Controllers/HrJobPostingsController.cs
+    Index, Create (GET+POST), Edit (GET+POST), Details,
+    Publish, Pause, Close, Delete (all POST)
+
+Views:
+  Views/HrAssignments/Assign.cshtml           — recruiter dropdown + assigned date + notes
+  Views/HrJobPostings/Index.cshtml            — paginated list with status badges, filter by requisition
+  Views/HrJobPostings/Create.cshtml           — channel checkboxes (Internal/External labeled)
+  Views/HrJobPostings/Edit.cshtml             — channel sync, blocked for Closed
+  Views/HrJobPostings/Details.cshtml          — full detail + status-aware action buttons
+                                               (Publish / Pause / Re-Publish / Close / Delete)
+
+HrRequisitions/Details.cshtml updated:
+  — "Assign Recruiter" button appears when Status=Approved and not yet assigned
+  — "Create Job Posting" and "Job Postings" buttons appear when Status=Approved
+  — ViewBag.IsAssigned populated via AnyAsync check in Details action
+
+Sidebar updated:
+  — "Job Postings" link added to Recruitment menu
+  — recruitmentOpen now includes HrJobPostings and HrAssignments active keys
+
+DI (Program.cs):
+  IHrAssignmentRepository  / HrAssignmentRepository
+  IHrAssignmentService     / HrAssignmentService
+  IHrJobPostingRepository  / HrJobPostingRepository
+  IHrJobPostingService     / HrJobPostingService
+
+Migration:
+  Migrations/20260605020000_AddHrRecruitmentSprint3.cs
+  — Raw SQL with IF guards (idempotent)
+  — Seeds 5 posting channels
+  — Applied successfully to visacmec_AHR (2026-06-05)
+
+Functions + FunctionRole seeded to DB:
+  HrAssignments/Assign     → Recruiter
+  HrJobPostings/*          → Recruiter (full), HRBP (view only), Line Manager (view only)
+
+Build result: 0 errors after stopping running process.
+
+================================================================
+Remaining by design — not in Sprint 3 scope:
+================================================================
+- No candidate management (done in Sprint 4 below).
+- No ATS (done in Sprint 4 below).
+- Architecture advice from spec: before Sprint 4, create a Status Master table
+  to replace magic strings (Approved, Published, Closed, etc.) across all modules.
+  NOTE: Status Master refactor was noted but not implemented — Sprint 4 proceeded
+  directly to ATS as per the spec flow. Can be done as a standalone refactor task.
+
+Next required runtime step:
+- dotnet ef database update  (already applied — all 9 HR_* tables confirmed in DB)
+- Assign users to Recruiter role in Admin → User Roles to enable job posting screens.
+
+================================================================
+SPRINT 4 — ATS (APPLICANT TRACKING SYSTEM) (2026-06-05)
+================================================================
+
+Sprint 4 goal: Implement ATS — candidate profiles, document uploads, job
+applications, stage tracking with full history. No offers or onboarding yet.
+
+Business flow added:
+  Job Posting → Candidate Applies → Application Created → Stage Tracking → Shortlisted
+
+Tables created (all NUMERIC(18,0) PKs, via migration 20260605030000):
+  HR_Candidate               — reusable candidate profile; soft-delete; unique email index
+                               (filtered: WHERE IsDeleted = 0)
+  HR_CandidateDocument       — multiple documents per candidate (Resume, Cover Letter, etc.)
+                               stores only file path — no binary data in SQL
+  HR_ApplicationStage        — configurable stage master; seeded with 8 stages:
+                               Applied, Screening, Shortlisted, Interview, Final Review,
+                               Selected, Rejected, Withdrawn
+  HR_JobApplication          — connects Candidate ↔ JobPosting; tracks CurrentStageFK;
+                               unique active application per candidate+posting enforced in service
+  HR_ApplicationStageHistory — full immutable audit of every stage transition:
+                               FromStageId (null on first entry), ToStageFk, ChangedBy (EmployeeId),
+                               Comments, ChangedDate
+
+File Storage Abstraction:
+  Services/IFileStorageService.cs      — SaveAsync, Delete, GetAbsolutePath
+  Services/LocalFileStorageService.cs  — saves to wwwroot/uploads/candidates/{candidateId}/
+                                         unique GUID filename; stores relative path in DB
+  appsettings.json updated:
+    "FileStorage": { "BasePath": "uploads/candidates" }
+  Files served via HrCandidates/Download action (PhysicalFile — not direct URL access)
+
+EF Models:
+  Models/HrCandidate.cs                — FullName [NotMapped] computed property
+  Models/HrCandidateDocument.cs
+  Models/HrApplicationStage.cs
+  Models/HrJobApplication.cs
+  Models/HrApplicationStageHistory.cs
+
+Fluent config in ApplicationDbContext:
+  Table names, unique indexes, all FK relationships (Restrict), filtered email uniqueness
+
+ViewModels:
+  Models/HrCandidateViewModels.cs
+    HrCandidateFormViewModel (with IFormFile for document upload on create/edit)
+    HrCandidateListItemViewModel
+    HrCandidateDetailsViewModel
+    HrCandidateDocumentViewModel
+    HrCandidateApplicationSummaryViewModel
+  Models/HrApplicationViewModels.cs
+    HrApplicationFormViewModel
+    HrApplicationListItemViewModel
+    HrApplicationDetailsViewModel
+    HrApplicationStageHistoryItemViewModel
+    HrMoveStageViewModel
+    HrAtsDashboardViewModel
+    HrStageCountViewModel
+    HrPipelineViewModel / HrPipelineStageViewModel
+
+Repository layer:
+  Repositories/IHrCandidateRepository.cs + HrCandidateRepository.cs
+    Query() filters IsDeleted=false; GetWithDetailsAsync includes Documents + Applications
+  Repositories/IHrApplicationRepository.cs + HrApplicationRepository.cs
+    Query() includes Candidate + CurrentStage; GetWithDetailsAsync includes full history
+
+Service layer:
+  Services/IHrCandidateService.cs + HrCandidateService.cs
+    GetPagedAsync        — counts active applications per candidate
+    CreateAsync          — validates email uniqueness; uploads document if provided
+    UpdateAsync          — validates email uniqueness (excluding self); uploads new doc
+    DeleteAsync          — soft delete
+    UploadDocumentAsync  — uses IFileStorageService; saves to candidate subfolder
+    DeleteDocumentAsync  — deletes physical file + DB record
+  Services/IHrApplicationService.cs + HrApplicationService.cs
+    GetByJobPostingAsync   — paginated list filtered by job posting
+    GetDetailsAsync        — resolves employee names for history
+    GetPipelineAsync       — groups applications by stage for kanban view
+    GetDashboardAsync      — open postings, active apps, pipeline counts, by-stage breakdown
+    ApplyAsync             — validates posting is Published; guards duplicate active application;
+                             auto-sets stage to "Applied"; writes first history entry
+    MoveStageAsync         — updates CurrentStageFK; writes history entry
+    UpdateNotesAsync       — recruiter notes update
+    DeactivateAsync        — sets IsActive=false
+
+Controllers:
+  Controllers/HrCandidatesController.cs
+    Index, Create (GET+POST), Edit (GET+POST), Details,
+    UploadDocument (POST), DeleteDocument (POST), Download, Delete (POST)
+  Controllers/HrApplicationsController.cs
+    Index (per job posting), Pipeline, Create (GET+POST), Details,
+    MoveStage (GET+POST), UpdateNotes (POST), Deactivate (POST)
+  Controllers/HrAtsDashboardController.cs
+    Index — ATS dashboard
+
+Views:
+  Views/HrCandidates/
+    Index.cshtml     — searchable paginated list with application count badge
+    Create.cshtml    — form with inline document upload (multipart)
+    Edit.cshtml      — same fields; upload additional documents
+    Details.cshtml   — profile info + document list (upload/download/delete) + applications table
+  Views/HrApplications/
+    Index.cshtml     — per-job-posting application list with stage badge
+    Create.cshtml    — candidate dropdown + applied date + recruiter notes
+    Details.cshtml   — full candidate info + notes editor + document links + stage history table
+    MoveStage.cshtml — stage selector + comments
+    Pipeline.cshtml  — kanban columns (one per active stage showing cards with Move Stage button)
+  Views/HrAtsDashboard/
+    Index.cshtml     — 3 stat cards + stage breakdown bar chart + open postings + recent applications
+
+HrJobPostings/Details.cshtml updated:
+  — "Applications" and "Pipeline" buttons added to action bar
+
+Sidebar updated:
+  — ATS Dashboard and Candidates links added to Recruitment menu
+  — recruitmentOpen includes HrAtsDashboard and HrCandidates keys
+
+DI (Program.cs):
+  IFileStorageService      / LocalFileStorageService
+  IHrCandidateRepository   / HrCandidateRepository
+  IHrCandidateService      / HrCandidateService
+  IHrApplicationRepository / HrApplicationRepository
+  IHrApplicationService    / HrApplicationService
+
+Migration:
+  Migrations/20260605030000_AddHrRecruitmentSprint4.cs
+  — Raw SQL with IF guards (idempotent)
+  — Seeds 8 application stages (Applied → Withdrawn)
+  — Applied successfully to visacmec_AHR (2026-06-05)
+  — All 14 HR_* tables confirmed in DB
+
+Functions + FunctionRole seeded to DB:
+  HrCandidates/*       → Recruiter (full), HRBP (view + details only)
+  HrApplications/*     → Recruiter (full)
+  HrAtsDashboard/Index → Recruiter + HRBP
+
+Build result: 0 errors after stopping running process.
+
+================================================================
+Remaining by design — not in Sprint 4 scope:
+================================================================
+- No interview scheduling (done in Sprint 5 below).
+- No offer management.
+- No onboarding.
+- No email notifications to candidates.
+- Status Master refactor (magic strings) still pending.
+- File access control: documents served via Download action but no authentication
+  check on the route itself beyond BaseController — consider adding explicit
+  ownership check if candidates can be sensitive.
+
+Next required runtime step:
+- dotnet ef database update  (already applied — all 14 HR_* tables confirmed in DB)
+- Ensure wwwroot/uploads/candidates/ directory is writable by the app process.
+- Assign users to Recruiter role in Admin → User Roles to enable ATS screens.
+
+================================================================
+SPRINT 5 — INTERVIEW MANAGEMENT (2026-06-05)
+================================================================
+
+Sprint 5 goal: Configurable interview rounds per job posting, multi-panel
+scheduling, per-interviewer feedback with scorecards. No offers yet.
+
+Business flow added:
+  Shortlisted Candidate → Interview Scheduled → Feedback Submitted → Selection Decision
+
+Key design principle (from spec):
+  DO NOT store only Pass/Fail. Always store: Score, Recommendation, Comments,
+  Criteria Scores — enables later reporting: avg technical score, best interviewer,
+  time between rounds, hiring quality metrics.
+
+Tables created (all NUMERIC(18,0) PKs, via migration 20260605040000):
+  HR_InterviewRound       — configurable rounds per job posting (unique order per posting)
+                            soft-deleted via IsActive=false
+  HR_InterviewSchedule    — actual appointment: DateTime, MeetingLink, Location,
+                            Status (Scheduled/Completed/Cancelled/Rescheduled/NoShow)
+                            CreatedBy = EmployeeId (NUMERIC(18,0))
+  HR_InterviewPanel       — many interviewers per schedule; unique per (ScheduleId, EmployeeId)
+  HR_InterviewFeedback    — per-interviewer scorecard; unique per (ScheduleId, InterviewerEmployeeId)
+                            fields: OverallScore DECIMAL(5,2), Recommendation, Strengths,
+                            Concerns, Comments, SubmittedDate
+  HR_EvaluationCriteria   — configurable scorecard criteria per job posting
+                            (e.g. Communication, Problem Solving — each with MaxScore)
+  HR_EvaluationScore      — individual criteria scores per feedback submission
+                            unique per (FeedbackId, CriteriaId)
+
+Total HR tables: 20 (confirmed in DB)
+
+EF Models:
+  Models/HrInterviewRound.cs
+  Models/HrInterviewSchedule.cs
+  Models/HrInterviewPanel.cs
+  Models/HrInterviewFeedback.cs
+  Models/HrEvaluationCriteria.cs
+  Models/HrEvaluationScore.cs
+
+Fluent config in ApplicationDbContext:
+  Table names, unique indexes on round order / panel member / feedback per interviewer /
+  criteria score per feedback, all FK relationships (Restrict)
+
+ViewModels (Models/HrInterviewViewModels.cs):
+  HrInterviewSetupViewModel         — combined rounds + criteria management for a posting
+  HrInterviewRoundFormViewModel / HrInterviewRoundItemViewModel
+  HrEvaluationCriteriaFormViewModel / HrEvaluationCriteriaItemViewModel
+  HrScheduleFormViewModel           — schedule new interview + initial panel multi-select
+  HrInterviewListItemViewModel      — list row with avg score
+  HrApplicationInterviewsViewModel  — all interviews for one application
+  HrInterviewDetailsViewModel       — full detail: panel + feedback summary + status
+  HrPanelMemberViewModel / HrFeedbackSummaryViewModel
+  HrFeedbackFormViewModel           — scorecard input with dynamic criteria rows
+  HrCriteriaScoreInputViewModel
+  HrFeedbackDetailsViewModel        — read-only with total/max score and full comments
+
+Repository (single file for all 6 tables):
+  Repositories/IHrInterviewRepository.cs + HrInterviewRepository.cs
+    GetRoundsAsync, AddRoundAsync, RemoveRound (soft)
+    GetCriteriaAsync, AddCriteriaAsync, RemoveCriteria
+    GetSchedulesByApplicationAsync (ordered by RoundOrder)
+    GetScheduleWithDetailsAsync (deep includes: Application.Candidate, Posting, Panel, Feedback.Scores)
+    AddScheduleAsync, UpdateSchedule
+    PanelMemberExistsAsync, AddPanelEntryAsync, RemovePanelEntry
+    GetFeedbackAsync (by scheduleId+interviewerEmpId), AddFeedbackAsync, AddScoreAsync
+
+Service:
+  Services/IHrInterviewService.cs + HrInterviewService.cs
+    GetSetupAsync      — loads rounds + criteria + schedule counts per round
+    AddRoundAsync      — guards duplicate order per posting
+    DeleteRoundAsync   — soft delete (IsActive=false)
+    AddCriteriaAsync / DeleteCriteriaAsync
+    GetApplicationInterviewsAsync — with avg scores per schedule
+    GetForScheduleAsync / ScheduleInterviewAsync — creates schedule + initial panel entries
+    GetDetailsAsync    — resolves employee names for panel + feedback; computes avg score
+    ChangeStatusAsync  — Completed / Cancelled / NoShow / Rescheduled
+    RescheduleAsync    — updates DateTime + sets Status=Rescheduled
+    AddPanelistAsync   — guards duplicate with PanelMemberExistsAsync
+    RemovePanelistAsync
+    GetFeedbackFormAsync — loads existing feedback if re-editing; pre-fills criteria from posting
+    SubmitFeedbackAsync  — upsert: updates existing feedback + scores if interviewer re-submits
+    GetFeedbackDetailsAsync — includes total/max score computation
+
+Controller:
+  Controllers/HrInterviewsController.cs
+    Setup (GET), AddRound/DeleteRound/AddCriteria/DeleteCriteria (POST)
+    ApplicationInterviews (GET), Schedule (GET+POST)
+    Details (GET), AddPanelist/RemovePanelist (POST)
+    Complete/Cancel/NoShow (POST)
+    SubmitFeedback (GET+POST), FeedbackDetails (GET)
+
+Views:
+  Views/HrInterviews/
+    Setup.cshtml              — two-column: rounds table + inline add-round form |
+                                criteria table + inline add-criteria form
+    ApplicationInterviews.cshtml — ordered interview list with panel/feedback counts + avg score
+    Schedule.cshtml           — round dropdown, datetime, meetinglink, location,
+                                multi-select panel members
+    Details.cshtml            — full interview card: status buttons (Complete/NoShow/Cancel),
+                                Submit Feedback button, panel table with feedback status,
+                                feedback summary table with Recommendation badge
+    SubmitFeedback.cshtml     — recommendation select, overall score, dynamic criteria
+                                scorecard rows (bound by index), strengths/concerns/comments
+    FeedbackDetails.cshtml    — read-only scorecard with color-coded overall score,
+                                total/max score, strengths/concerns display
+
+HrApplications/Details.cshtml updated:
+  — "Interviews" button added linking to ApplicationInterviews
+
+HrJobPostings/Details.cshtml updated:
+  — "Interview Setup" button added linking to Setup
+
+DI (Program.cs):
+  IHrInterviewRepository / HrInterviewRepository
+  IHrInterviewService    / HrInterviewService
+
+Migration:
+  Migrations/20260605040000_AddHrRecruitmentSprint5.cs
+  — Raw SQL with IF guards (idempotent)
+  — Applied successfully to visacmec_AHR (2026-06-05)
+  — All 20 HR_* tables confirmed in DB
+
+Functions + FunctionRole seeded to DB:
+  HrInterviews/Setup + Schedule + Details + SubmitFeedback + FeedbackDetails → Recruiter (full)
+  HrInterviews/Details + SubmitFeedback + FeedbackDetails → HRBP
+
+Build result: 0 errors.
+
+================================================================
+Remaining by design — not in Sprint 5 scope:
+================================================================
+- No offer management.
+- No onboarding.
+- No email notifications.
+- Status Master refactor (magic strings) still recommended.
+- No drag-and-drop interview reordering (rounds managed by order number).
+- No calendar view for scheduled interviews.
+
+Next required runtime step:
+- dotnet ef database update  (already applied — all 20 HR_* tables confirmed in DB)
+- Assign users to Recruiter / HRBP roles and link their User → Employee records
+  (required for GetCurrentEmployeeId() in schedule + feedback submission).
+
+================================================================
+SPRINT 6 — OFFER MANAGEMENT & HIRING DECISION (2026-06-05)
+================================================================
+
+Sprint 6 goal: Once a candidate is selected from interviews, create an offer,
+run an offer approval workflow, send it to the candidate, record the response,
+and mark the final hiring decision. This completes the full ATS cycle.
+
+Business flow added:
+  Selected Candidate → Create Offer → Offer Approval → Send → Candidate Response → Hired
+
+Tables created (all NUMERIC(18,0) PKs, via migration 20260605050000):
+  HR_Offer            — core offer record per job application; unique OfferNumber index
+                        Status lifecycle: Draft → PendingApproval → Approved → Sent → Accepted/Rejected/Expired/Cancelled
+  HR_OfferVersion     — salary revision history; never overwrite salary — every change is a new version
+                        CreatedBy = EmployeeId (NUMERIC(18,0))
+  HR_OfferApproval    — one row per approver per offer; configurable approval levels (not hardcoded)
+                        Status: Pending → Approved / Rejected
+  HR_OfferDocument    — generated offer letter PDFs; stores file path only (no binary in SQL)
+  HR_OfferResponse    — candidate responses: Accepted / Rejected / NegotiationRequested / Expired
+  HR_HiringDecision   — final decision per application; unique index on JobApplicationFk
+                        Decision: Selected / Hired / Hold / Rejected
+
+Total HR tables: 26 (6 new added in Sprint 6)
+
+EF Models:
+  Models/HrOffer.cs
+  Models/HrOfferVersion.cs
+  Models/HrOfferApproval.cs
+  Models/HrOfferDocument.cs
+  Models/HrOfferResponse.cs
+  Models/HrHiringDecision.cs
+
+Fluent config in ApplicationDbContext:
+  Table names, FK relationships (all Restrict), unique index on OfferNumber,
+  unique index on HiringDecision.JobApplicationFk (one decision per application)
+
+ViewModels (Models/HrOfferViewModels.cs):
+  HrOfferFormViewModel           — create offer (salary, joining date, expiry, initial remarks)
+  HrOfferListItemViewModel       — list row with version count + status badge
+  HrOfferDetailsViewModel        — full detail: approvals, versions, responses, documents, hiring decision
+  HrOfferVersionItemViewModel    — single revision row
+  HrOfferVersionFormViewModel    — salary revision input
+  HrOfferApprovalItemViewModel   — single approval row
+  HrAddApproverViewModel         — add approver to offer (employee + level)
+  HrApprovalActionViewModel      — approve / reject action with comments
+  HrOfferResponseFormViewModel   — record candidate response
+  HrOfferResponseItemViewModel   — single response row
+  HrOfferDocumentItemViewModel   — document row with file path
+  HrHiringDecisionFormViewModel  — final decision input
+  HrHiringDecisionItemViewModel  — decision display in offer detail
+
+Repository layer:
+  Repositories/IHrOfferRepository.cs + HrOfferRepository.cs
+    Query, GetByIdAsync, GetWithDetailsAsync (deep includes: Application.Candidate,
+    Application.JobPosting, Versions, Approvals, Responses, Documents),
+    GetByApplicationAsync, CountForYearAsync, OfferNumberExistsAsync,
+    AddOfferAsync, UpdateOffer, AddVersionAsync, GetNextVersionNoAsync,
+    AddApprovalAsync, GetApprovalByIdAsync, UpdateApproval,
+    AddDocumentAsync, GetDocumentByIdAsync, RemoveDocument,
+    AddResponseAsync, AddHiringDecisionAsync, GetHiringDecisionAsync,
+    UpdateHiringDecision, SaveChangesAsync
+
+Service layer:
+  Services/IHrOfferService.cs + HrOfferService.cs
+    GetPagedAsync           — paged list with candidate/posting names + version count
+    GetForCreateAsync       — validates no duplicate offer per application
+    GetDetailsAsync         — resolves employee names for approvers + version authors + decision
+    GetForRevisionAsync     — pre-fills current salary for revision form
+    GetApprovalActionAsync  — loads approval + offer context for action screen
+    GetForResponseAsync     — loads offer + candidate for response form
+    GetForHiringDecisionAsync
+    CreateAsync             — guards duplicate; auto-generates OfferNumber (OFF-YYYY-NNNN);
+                              saves first version automatically
+    AddVersionAsync         — blocks revisions once Accepted/Hired; increments VersionNo;
+                              updates ProposedSalary on HR_Offer
+    SubmitForApprovalAsync  — only from Draft status
+    AddApproverAsync        — adds approver at given level
+    ProcessApprovalAsync    — updates approval row; if all others already approved → offer Approved;
+                              any rejection → offer Rejected immediately
+    SendOfferAsync          — only from Approved status
+    RecordResponseAsync     — saves response; updates offer Status to match ResponseType
+    UploadDocumentAsync     — uses IFileStorageService; stores under offers/{offerId}/
+    DeleteDocumentAsync     — deletes physical file + DB record
+    CancelOfferAsync
+    RecordHiringDecisionAsync — upsert decision; when Decision=Hired, moves application
+                                stage to "Selected" if not already there
+
+Controller:
+  Controllers/HrOffersController.cs
+    Index (GET)
+    Create (GET+POST)
+    Details (GET)
+    AddVersion (GET+POST)
+    SubmitForApproval (POST)
+    AddApprover (POST)
+    ApproveOffer (GET+POST)
+    Send (POST)
+    RecordResponse (GET+POST)
+    UploadDocument (POST)
+    DeleteDocument (POST)
+    DownloadDocument (GET)
+    Cancel (POST)
+    HiringDecision (GET+POST)
+
+Views:
+  Views/HrOffers/
+    Index.cshtml          — paginated offer list with status badges, version count,
+                            search by offer number or candidate name
+    Create.cshtml         — salary / joining date / expiry / initial remarks
+    Details.cshtml        — full offer card with:
+                              status-aware action buttons (Revise / Submit / Send / Record Response /
+                              Hiring Decision / Cancel)
+                              approval table + inline add-approver form
+                              salary revision history table
+                              candidate response history table
+                              document upload + download + delete
+                              hiring decision banner (colored by outcome)
+    AddVersion.cshtml     — revised salary + joining date + reason textarea
+    ApproveOffer.cshtml   — Approve/Reject select + comments
+    RecordResponse.cshtml — response type select + date + comments
+    HiringDecision.cshtml — decision select (Selected/Hired/Hold/Rejected) + remarks
+                            info banner explaining Hired downstream effect
+
+DI (Program.cs):
+  IHrOfferRepository / HrOfferRepository
+  IHrOfferService    / HrOfferService
+
+Sidebar (_Sidebar.cshtml):
+  — "HrOffers" added to recruitmentOpen detection
+  — "Offers" link added at bottom of Recruitment sub-menu (permission-gated via Can("HrOffers"))
+
+Migration:
+  Migrations/20260605050000_AddHrRecruitmentSprint6.cs
+  — Raw SQL with IF NOT EXISTS guards (idempotent)
+  — Creates all 6 Sprint 6 tables with NUMERIC(18,0) PKs + FK constraints + unique indexes
+
+Business rules enforced:
+  - One offer per application (service guard + unique index)
+  - Salary revisions blocked once Accepted or Hired
+  - Only Draft offers can be submitted for approval
+  - Only Approved offers can be sent to candidate
+  - Requisition stays open until Hired (not on offer creation or sending)
+  - OfferNumber auto-generated as OFF-YYYY-NNNN; collision-safe loop
+  - Hiring Decision = Hired automatically advances application stage to "Selected"
+  - Offer documents stored as file paths only — no PDF binary in SQL Server
+  - Approval levels are runtime-configurable (recruiter adds approvers at any level)
+
+Build result: 0 errors.
+
+================================================================
+Remaining by design — not in Sprint 6 scope:
+================================================================
+- No onboarding module.
+- No automated email / notification on offer sent.
+- No candidate portal (candidate self-service to view/accept offer).
+- No PDF generation for offer letter (UploadDocument covers manual upload of generated PDF).
+- Status Master refactor (magic strings across all modules) still recommended.
+
+Next required runtime step:
+- dotnet ef database update  (run to create all 6 new Sprint 6 tables in DB)
+- Ensure wwwroot/uploads/offers/ directory is writable by the app process.
+- Assign HrOffers/* permissions to Recruiter role in Admin → Functions → Function Roles.
+
+================================================================
+SPRINT 7 — ONBOARDING & EMPLOYEE CONVERSION (2026-06-05)
+================================================================
+
+Sprint 7 goal: After a candidate is Hired, start pre-onboarding, collect documents,
+run IT/Admin/HR task checklists, confirm the candidate has physically joined, and
+then automatically create an Employee record and User account.
+
+Key architecture rule (from spec):
+  DO NOT create an Employee record when the offer is accepted.
+  Create it ONLY when candidate status = Joined (joining physically confirmed).
+  Prevents ghost employees, no-shows, and accepted-but-never-joined cases.
+
+Business flow added:
+  Hired → Start Onboarding → Tasks Assigned → Documents Collected
+        → Confirm Joining → Employee Created → User Account Created → Role Assigned
+
+Tables created (all NUMERIC(18,0) PKs, via migration 20260605060000):
+  HR_OnboardingTaskTemplate — reusable task definitions per department
+                              seeded with 8 defaults: Create Email Account, Allocate Laptop,
+                              Issue Access Card, Assign Buddy, Prepare Workstation,
+                              Payroll Registration, Add to Leave System, Safety Induction
+  HR_Onboarding             — main onboarding record per offer; unique index on OfferId
+                              Status lifecycle: Initiated → DocumentsPending → TasksInProgress
+                                               → ReadyToJoin → Joined → Completed / Cancelled
+  HR_OnboardingTask         — actual task instances (seeded from all active templates on start)
+                              Status: Pending / InProgress / Completed / Cancelled
+  HR_OnboardingDocument     — documents submitted by candidate (CNIC, Passport, Degree, etc.)
+                              stores file path only — no binary in SQL
+  HR_JoiningConfirmation    — trigger for employee creation; unique index on OnboardingId
+                              (one confirmation per onboarding)
+
+Total HR tables: 31 (5 new added in Sprint 7)
+
+EF Models:
+  Models/HrOnboarding.cs
+  Models/HrOnboardingTaskTemplate.cs
+  Models/HrOnboardingTask.cs
+  Models/HrOnboardingDocument.cs
+  Models/HrJoiningConfirmation.cs
+
+Fluent config in ApplicationDbContext:
+  Table names, FK relationships (all Restrict),
+  unique index on Onboarding.OfferId (one onboarding per offer),
+  unique index on JoiningConfirmation.OnboardingId (one confirmation per onboarding),
+  HasOne/WithOne for JoiningConfirmation ↔ Onboarding
+
+ViewModels (Models/HrOnboardingViewModels.cs):
+  HrOnboardingListItemViewModel      — list row with task progress counter + status badge
+  HrOnboardingDetailsViewModel       — full detail: tasks, documents, joining confirmation banner
+  HrOnboardingTaskItemViewModel      — task row with inline update form
+  HrTaskUpdateViewModel              — inline task status + remarks update
+  HrOnboardingDocumentItemViewModel  — document row
+  HrOnboardingDocumentUploadViewModel — upload form (type + file)
+  HrJoiningConfirmationFormViewModel — confirm joining + Employee creation fields
+                                       (JoinedDate, DepartmentFk, LocationFk, NTN, IsFiler)
+  HrJoiningConfirmationItemViewModel — confirmation display in details view
+  HrTaskTemplateFormViewModel        — create/edit template
+  HrTaskTemplateListItemViewModel    — template list row
+
+Repository layer:
+  Repositories/IHrOnboardingRepository.cs + HrOnboardingRepository.cs
+    Query, GetByIdAsync, GetWithDetailsAsync (deep includes: Candidate, Offer.JobApplication.JobPosting,
+    Tasks.TaskTemplate, Documents, JoiningConfirmation),
+    GetByOfferAsync, AddOnboardingAsync, UpdateOnboarding,
+    GetActiveTemplatesAsync, GetTemplateByIdAsync, AddTemplateAsync, UpdateTemplate,
+    GetTaskByIdAsync, AddTaskAsync, UpdateTask,
+    AddDocumentAsync, GetDocumentByIdAsync, RemoveDocument,
+    AddJoiningConfirmationAsync, JoiningConfirmationExistsAsync,
+    SaveChangesAsync
+
+Service layer:
+  Services/IHrOnboardingService.cs + HrOnboardingService.cs
+    GetPagedAsync              — list with candidate name, job title, task progress
+    GetDetailsAsync            — resolves employee names for tasks + confirmation;
+                                 looks up created Employee by name+date match
+    GetForJoiningAsync         — pre-fills planned joining date from offer
+    StartOnboardingAsync       — validates offer is Accepted + not already started;
+                                 creates Onboarding; seeds HrOnboardingTask rows from all
+                                 active templates; sets status to TasksInProgress
+    UpdateTaskStatusAsync      — updates task; auto-promotes onboarding to ReadyToJoin
+                                 when all tasks are Completed or Cancelled
+    UploadDocumentAsync        — saves file via IFileStorageService under onboarding/{id}/;
+                                 advances status from Initiated → DocumentsPending
+    DeleteDocumentAsync        — deletes physical file + DB record
+    ConfirmJoiningAsync        — guards duplicate; creates JoiningConfirmation;
+                                 calls IEmployeeCreationService.CreateEmployeeFromCandidateAsync;
+                                 sets status Joined → Completed after employee created
+
+  Services/IEmployeeCreationService.cs + HrEmployeeCreationService.cs
+    CreateEmployeeFromCandidateAsync(candidateId, onboardingId, form)
+      1. Loads HrCandidate (FirstName, LastName, Email)
+      2. Auto-generates Employee Code: EMP{maxId+1:D5} (collision-safe loop)
+      3. Creates Employee record (Code, FirstName, LastName, DepartmentFk, LocationFk,
+         Dateofjoin, NTN, IsFiler from form)
+      4. Creates User account (Email from candidate, Password = SHA256(EmployeeCode),
+         EmployeeId linked, UsrIsActive="Y")
+      5. Saves User first to get UserId, then assigns default "Employee" or "Staff" role
+         via UserRole table (looks up Role.Name)
+      6. Returns new Employee.Id
+
+Controllers:
+  Controllers/HrOnboardingController.cs
+    Index (GET) — paged list
+    Details (GET) — full onboarding card with tasks, documents, joining banner
+    Start (POST) — triggered from Offer Details when HiringDecision = Hired
+    UpdateTask (POST) — inline task status update
+    UploadDocument (POST) — document upload
+    DeleteDocument (POST) — document delete
+    DownloadDocument (GET) — physical file download
+    ConfirmJoining (GET+POST) — joining confirmation + employee creation form
+
+  Controllers/HrOnboardingTaskTemplatesController.cs
+    Index (GET) — all templates list
+    Create (GET+POST)
+    Edit (GET+POST)
+    Deactivate (POST) — soft-deactivates template
+
+Views:
+  Views/HrOnboarding/
+    Index.cshtml         — paginated list: candidate, position, planned/actual joining,
+                           task progress badge (x/y), status badge
+    Details.cshtml       — full onboarding card:
+                             status-aware "Confirm Joining" button
+                             inline task checklist with collapse-to-update row
+                             document upload section (type dropdown + file input)
+                             document table with download/delete
+                             joining confirmation success banner with employee code
+    ConfirmJoining.cshtml — two sections:
+                             1) Joining Details (date + remarks)
+                             2) Employee Record Required Fields (Department, Location, NTN, IsFiler)
+                             Info banner warning this action creates an employee + user account
+
+  Views/HrOnboardingTaskTemplates/
+    Index.cshtml  — template list with mandatory/active badges + deactivate action
+    Create.cshtml — task name, responsible department, mandatory + active checkboxes
+    Edit.cshtml   — same fields for edit
+
+DI (Program.cs):
+  IHrOnboardingRepository       / HrOnboardingRepository
+  IHrOnboardingService          / HrOnboardingService
+  IEmployeeCreationService      / HrEmployeeCreationService
+
+Sidebar (_Sidebar.cshtml):
+  — "HrOnboarding" + "HrOnboardingTaskTemplates" added to recruitmentOpen detection
+  — "Onboarding" link added to Recruitment sub-menu (permission-gated)
+  — "Task Templates" link added to Recruitment sub-menu (permission-gated)
+
+Offer Details view (Views/HrOffers/Details.cshtml):
+  — "Start Onboarding" button appears when HiringDecision.Decision == "Hired"
+  — Posts to HrOnboarding/Start with offerId
+
+Migration:
+  Migrations/20260605060000_AddHrRecruitmentSprint7.cs
+  — Raw SQL with IF NOT EXISTS guards (idempotent)
+  — Creates all 5 Sprint 7 tables with NUMERIC(18,0) PKs + FK constraints + unique indexes
+  — Seeds 8 default task templates
+
+Business rules enforced:
+  - Onboarding can only start when Offer.Status = "Accepted" (business guard in service)
+  - One onboarding per offer (unique index + service guard)
+  - One joining confirmation per onboarding (unique index + service guard)
+  - Employee record created ONLY after physical joining is confirmed (not on offer acceptance)
+  - Task checklist auto-seeded from all active templates on onboarding start
+  - Onboarding auto-advances to ReadyToJoin when all tasks are Completed or Cancelled
+  - Employee Code auto-generated as EMP{seq:D5}, collision-safe
+  - User account created with email from candidate; default password = SHA256(employee code)
+  - Default "Employee" or "Staff" role assigned if it exists in [roles] table
+
+================================================================
+Complete end-to-end flow after Sprint 7
+================================================================
+
+  Resignation
+       ↓
+  Requisition Created (Line Manager)
+       ↓
+  Workflow Approval (HRBP → HOD → Recruiter)
+       ↓
+  Recruiter Assigned
+       ↓
+  Job Posting Created & Published
+       ↓
+  Candidate Applies
+       ↓
+  Stage Pipeline (Screening → Shortlisted → Interview)
+       ↓
+  Interview Rounds Scheduled & Feedback Submitted
+       ↓
+  Hiring Decision: Selected
+       ↓
+  Offer Created, Approved, Sent
+       ↓
+  Candidate Accepts Offer
+       ↓
+  Hiring Decision: Hired
+       ↓
+  Onboarding Started (tasks + documents)
+       ↓
+  All Tasks Completed → Ready To Join
+       ↓
+  Joining Confirmed (actual date)
+       ↓
+  Employee Record Created
+  User Account Created
+  Default Role Assigned
+       ↓
+  COMPLETE — Candidate is now an Employee in the system
+
+================================================================
+Remaining by design — not in Sprint 7 scope:
+================================================================
+- No email notifications (to IT, Admin, Manager when onboarding starts; to candidate on joining).
+- No payroll auto-registration (recruiter manually registers in Payroll after employee creation).
+- No leave policy auto-assignment on employee creation.
+- Status Master refactor (magic strings across all modules) still recommended.
+- Employee creation form only fills mandatory fields; remaining fields (NTN details,
+  EOBI, Social Security, bank details) must be completed by HR in the Employee module.
+
+Next required runtime step:
+- dotnet ef database update  (run to create all 5 new Sprint 7 tables + seed 8 task templates)
+- Ensure wwwroot/uploads/onboarding/ directory is writable by the app process.
+- Assign HrOnboarding/* permissions to Recruiter/HR role in Admin → Functions → Function Roles.
+- Verify that a Role named "Employee" or "Staff" exists in [roles] table for auto-assignment.

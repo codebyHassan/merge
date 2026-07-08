@@ -1,0 +1,112 @@
+@model IPagedList<AlignHR.Models.IncomeTaxDetuction>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Income Tax Deduction";
+    ViewBag.ActivePage = "IncomeTaxDetuction";
+}
+
+<section class="filter-bar mb-2" aria-label="Income tax deduction filters">
+    <div class="input-group input-group-sm me-auto" style="width: auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="search"
+               value="@Context.Request.Query["search"]"
+               placeholder="Search employee or period"
+               aria-label="Search records"
+               hx-get="@Url.Action("Index")"
+               hx-target="#incometax-index-page"
+               hx-select="#incometax-index-page"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-include="[name='search']"
+               hx-push-url="true"
+               form="none" />
+    </div>
+    <div class="filter-group">
+        <div class="dropdown">
+            <button class="btn btn-export-custom btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
+                Columns
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Employee Code" checked />Employee Code</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Salary Period" checked />Salary Period</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Amount" checked />Amount</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Created At" checked />Created At</label></li>
+            </ul>
+        </div>
+        <a class="btn btn-export-custom btn-sm" id="exportBtn" href="#"><i class="fa-solid fa-download me-1"></i>Export</a>
+        <a class="btn btn-export-custom btn-sm" asp-action="BulkUpload"><i class="fa-solid fa-upload me-1"></i>Bulk Upload</a>
+        <a class="btn btn-export-custom btn-sm" asp-action="BulkAdd"><i class="fa-solid fa-calculator me-1"></i>Generate</a>
+        <a class="btn btn-primary btn-sm" asp-action="Create"><i class="fa-solid fa-plus me-1"></i>Create</a>
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table id="incometax-index-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="0">Employee Code</button></th>
+                    <th scope="col">Salary Period</th>
+                    <th scope="col">Amount</th>
+                    <th scope="col">Created At</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model)
+                {
+                    <tr>
+                        <td data-label="Employee Code"><span class="fw-semibold">@(l.Employee != null ? l.Employee.Code : "N/A")</span></td>
+                        <td data-label="Salary Period">@(l.SalaryPeriod != null ? l.SalaryPeriod.PeriodName : "N/A")</td>
+                        <td data-label="Amount">@l.incometaxdetection.ToString("N2")</td>
+                        <td data-label="Created At">@l.createat.ToString("dd MMM yyyy")</td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a class="btn btn-icon btn-sm btn-icon-info" asp-action="Details" asp-route-id="@l.id" title="Details"><i class="fa-solid fa-eye"></i></a>
+                                @if (l.SalaryPeriod != null && l.SalaryPeriod.IsPostedToGL)
+                                {
+                                    <span class="btn btn-icon btn-sm btn-icon-primary" title="Locked - Posted to GL" style="opacity:0.5; cursor:default;"><i class="fa-solid fa-lock"></i></span>
+                                }
+                                else
+                                {
+                                    <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Edit" asp-route-id="@l.id" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                    <form asp-action="Delete" asp-route-id="@l.id" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this record?');">
+                                        <button class="btn btn-icon btn-sm btn-icon-danger" type="submit" title="Delete"><i class="fa-solid fa-trash-can"></i></button>
+                                    </form>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="empty-state" data-table-empty style="display: @(Model.Any() ? "none" : "block");">
+            <i class="fa-solid fa-inbox"></i>
+            <h3 class="h6 mt-2 mb-1">No records match the current filters</h3>
+            <p class="text-muted mb-0">Adjust search or column criteria.</p>
+        </div>
+    </div>
+
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage-@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav aria-label="Income tax deduction pagination">
+            @Html.PagedListPager(Model, page => Url.Action("Index", new {
+                page,
+                search = Context.Request.Query["search"]
+            }), new PagedListRenderOptions
+            {
+                UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" }
+            })
+        </nav>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

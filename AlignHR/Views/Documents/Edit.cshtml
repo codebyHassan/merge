@@ -1,0 +1,229 @@
+@model AlignHR.Models.Document
+
+@{
+    ViewData["Title"] = "Edit Document";
+    ViewBag.ActivePage = "Documents";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="DocumentID" />
+            <input type="hidden" asp-for="UploadDate" />
+            <input type="hidden" asp-for="UploadedBy" />
+            <input type="hidden" asp-for="FileName" />
+            <input type="hidden" asp-for="FilePath" />
+            <input type="hidden" asp-for="FileExtension" />
+            <input type="hidden" asp-for="FileSize" />
+            <input type="hidden" asp-for="MimeType" />
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-4">
+                <!-- Left Side: Form Fields -->
+                <div class="col-12 col-lg-8">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label asp-for="DocumentNo" class="form-label small fw-semibold">Document No <span class="text-danger">*</span></label>
+                            <input asp-for="DocumentNo" class="form-control form-control-sm" required />
+                            <span asp-validation-for="DocumentNo" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-6" style="position: relative; z-index: 1001;">
+                            <label class="form-label small fw-semibold">Search Employee <span class="text-danger">*</span></label>
+                            <div class="search-with-icon" style="position: relative;">
+                                <i class="fas fa-search" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                                <input type="text" id="employeeSearch" name="term" class="form-control form-control-sm" style="padding-left: 2rem;" 
+                                       placeholder="Type name or code..." autocomplete="off"
+                                       value="@(Model.Employee != null ? $"{Model.Employee.FullName} ({Model.Employee.Code})" : "")"
+                                       hx-get="/Ajax/SearchEmployees"
+                                       hx-trigger="keyup delay:300ms, search"
+                                       hx-target="#employeeResults" />
+                            </div>
+                            <div id="employeeResults" class="search-results-container"></div>
+                            <input type="hidden" asp-for="EmployeeID" id="EmployeeID" required />
+                            <span asp-validation-for="EmployeeID" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="CategoryID" class="form-label small fw-semibold">Category <span class="text-danger">*</span></label>
+                            <select asp-for="CategoryID" class="form-select form-select-sm" asp-items="ViewBag.CategoryID" required
+                                    id="CategoryID" onchange="loadDocumentTypes()">
+                                <option value="">-- Select Category --</option>
+                            </select>
+                            <span asp-validation-for="CategoryID" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label asp-for="DocumentTypeID" class="form-label small fw-semibold">Document Type <span class="text-danger">*</span></label>
+                            <select asp-for="DocumentTypeID" class="form-select form-select-sm" asp-items="ViewBag.DocumentTypeID" required
+                                    id="DocumentTypeID">
+                                <option value="">-- Select Type --</option>
+                            </select>
+                            <span asp-validation-for="DocumentTypeID" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-8">
+                            <label asp-for="Title" class="form-label small fw-semibold">Title <span class="text-danger">*</span></label>
+                            <input asp-for="Title" class="form-control form-control-sm" required />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="Status" class="form-label small fw-semibold">Status</label>
+                            <select asp-for="Status" class="form-select form-select-sm" asp-items="ViewBag.StatusList">
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-12">
+                            <label for="file" class="form-label small fw-semibold">Replace File</label>
+                            <input type="file" name="file" class="form-control form-control-sm" />
+                            <div class="form-text small">Leave empty to keep current file.</div>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Description" class="form-label small fw-semibold">Description</label>
+                            <textarea asp-for="Description" class="form-control form-control-sm" rows="2"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="EffectiveDate" class="form-label small fw-semibold">Effective Date</label>
+                            <input asp-for="EffectiveDate" class="form-control form-control-sm" type="date" />
+                            <span asp-validation-for="EffectiveDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label asp-for="ExpiryDate" class="form-label small fw-semibold">Expiry Date</label>
+                            <input asp-for="ExpiryDate" class="form-control form-control-sm" type="date" />
+                            <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <div class="d-flex align-items-center justify-content-between p-3" style="background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); min-height: 70px;">
+                                <div class="toggle-content">
+                                    <div class="toggle-title" style="font-size: 14px; font-weight: 700; color: var(--text);">Confidential</div>
+                                    <div class="toggle-desc" style="font-size: 12px; color: var(--text-muted);">Restrict access to authorized users only.</div>
+                                </div>
+                                <label class="premium-switch m-0">
+                                    <input type="checkbox" name="IsConfidential" value="true" @(Model.IsConfidential ? "checked" : "") />
+                                    <span class="premium-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Remarks" class="form-label small fw-semibold">Remarks</label>
+                            <textarea asp-for="Remarks" class="form-control form-control-sm" rows="2"></textarea>
+                            <span asp-validation-for="Remarks" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Side: Employee Profile Card -->
+                <div class="col-12 col-lg-4">
+                    <div class="profile-loader htmx-indicator mb-2" style="display: none;">
+                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                        <span class="ms-2 small text-muted">Syncing Profile...</span>
+                    </div>
+                    <div id="side-profile-container" class="employee-profile-slot"
+                         hx-get="/Ajax/GetEmployeeCard?id=@Model.EmployeeID"
+                         hx-trigger="load">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <span class="text-muted small me-auto align-self-center">
+                        @if (!string.IsNullOrEmpty(Model.FileName))
+                        {
+                            <span>Current file: @Model.FileName</span>
+                        }
+                    </span>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function loadDocumentTypes() {
+            var categoryId = document.getElementById('CategoryID').value;
+            var typeDropdown = document.getElementById('DocumentTypeID');
+
+            typeDropdown.innerHTML = '<option value="">-- Select Type --</option>';
+
+            if (categoryId) {
+                fetch('/Documents/GetDocumentTypesByCategory?categoryId=' + categoryId)
+                    .then(function (response) { return response.json(); })
+                    .then(function (data) {
+                        data.forEach(function (item) {
+                            var opt = document.createElement('option');
+                            opt.value = item.documentTypeId || item.documentTypeID || item.DocumentTypeID;
+                            opt.textContent = item.typeName || item.TypeName;
+                            typeDropdown.appendChild(opt);
+                        });
+                    });
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Clear hidden ID when user types
+            const searchInput = document.getElementById('employeeSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const hiddenInput = document.getElementById('EmployeeID');
+                    if (hiddenInput && hiddenInput.value) {
+                        hiddenInput.value = '';
+                        const sideProfile = document.getElementById('side-profile-container');
+                        if (sideProfile) {
+                            sideProfile.innerHTML = `
+                                <div class="placeholder-card">
+                                    <div class="placeholder-icon">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <h4>Employee Profile</h4>
+                                    <p>Details will appear here once an employee is selected from the dropdown.</p>
+                                </div>
+                            `;
+                        }
+                    }
+                });
+            }
+
+            // Handle Employee Selection
+            document.body.addEventListener('click', function(e) {
+                const row = e.target.closest('.search-result-item');
+                if (row) {
+                    const id = row.dataset.id;
+                    const name = row.dataset.name;
+                    const code = row.dataset.code;
+                    
+                    const hiddenInput = document.getElementById('EmployeeID');
+                    if (hiddenInput) {
+                        hiddenInput.value = id;
+                        document.getElementById('employeeResults').innerHTML = '';
+                        document.getElementById('employeeSearch').value = name + ' (' + code + ')';
+
+                        // Trigger HTMX to load employee card
+                        htmx.ajax('GET', '/Ajax/GetEmployeeCard', {
+                            values: { id: id },
+                            target: '#side-profile-container',
+                            indicator: '.profile-loader'
+                        });
+                    }
+                }
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                    const results = document.getElementById('employeeResults');
+                    if (results) results.innerHTML = '';
+                }
+            });
+        });
+    </script>
+}

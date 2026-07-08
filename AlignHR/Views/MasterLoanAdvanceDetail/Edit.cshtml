@@ -1,0 +1,45 @@
+@model AlignHR.Models.MasterLoanAdvanceDetail
+
+@{
+    ViewData["Title"] = "Update Installment";
+    ViewBag.ActivePage = "MasterLoanAdvanceDetail";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <div class="form-header">
+            <h2 class="card-subtitle">Update Installment Record</h2>
+            <p class="text-muted small">Modify repayment details for Loan/Advance Master ID: <strong>@Model.MasterId</strong></p>
+        </div>
+        
+        <form asp-action="Edit" method="post" id="installmentForm">
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+            <input type="hidden" asp-for="id" />
+            <input type="hidden" asp-for="createat" />
+            <input type="hidden" asp-for="createdby" />
+
+            <div class="form-grid">
+                <!-- Loan Reference Section (Read Only in Edit for data integrity) -->
+                <div class="form-item full-width">
+                    <label asp-for="MasterId" class="form-label">Loan/Advance Request <span class="required">*</span></label>
+                    <select asp-for="MasterId" class="form-control select-premium" asp-items="ViewBag.MasterId" required readonly style="background-color: #f8fafc; cursor: not-allowed;">
+                    </select>
+                    <span asp-validation-for="MasterId" class="text-danger small"></span>
+                </div>
+
+                <!-- Container for fields -->
+                <div id="installmentFieldsContainer" class="form-item full-width">
+                    @await Html.PartialAsync("_InstallmentFields", Model)
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

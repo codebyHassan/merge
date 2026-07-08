@@ -1,0 +1,166 @@
+@model X.PagedList.IPagedList<AlignHR.Models.LeavePolicyRule>
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Leave Policy Rules";
+    ViewBag.ActivePage = "LeavePolicyRules";
+    var currentFilter = ViewData["CurrentFilter"]?.ToString();
+    var currentPolicy = ViewData["CurrentPolicy"];
+    var currentPolicyName = ViewBag.CurrentPolicyName as string ?? "Leave Policy";
+    ViewData["BreadcrumbPath"] = new[] { "Leave Policy", currentPolicyName };
+    ViewData["BreadcrumbUrls"] = currentPolicy != null
+        ? new[] { Url.Action("Index", "LeavePolicies"), Url.Action("Index", "LeavePolicyRules", new { leavePolicyId = currentPolicy }) }
+        : new[] { Url.Action("Index", "LeavePolicies"), null };
+}
+
+<section class="filter-bar mb-2" aria-label="Leave policy rules filters">
+    
+
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap mt-2">
+        <div class="input-group input-group-sm" style="width: auto; min-width: 260px;">
+            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+            <input class="form-control"
+                   type="search"
+                   name="searchQuery"
+                   value="@currentFilter"
+                   placeholder="Search rule"
+                   aria-label="Search records"
+                   hx-get="@Url.Action("Index")"
+                   hx-target="#leave-policy-rules-index-page"
+                   hx-select="#leave-policy-rules-index-page"
+                   hx-trigger="keyup[key=='Enter'], search"
+                   hx-include="[name='searchQuery'], [name='leavePolicyId']"
+                   hx-push-url="true"
+                   form="none" />
+        </div>
+
+        
+    </div>
+    <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+        <div class="filter-group">
+            <div class="dropdown">
+                <button class="btn btn-export-custom btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
+                    Columns
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Policy" checked />Policy</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Leave Type" checked />Leave Type</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Quota" checked />Quota</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Accrual" checked />Accrual</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Carry Forward" checked />Carry Forward</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Rules" checked />Rules</label></li>
+                    <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Status" checked />Status</label></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <a class="btn btn-export-custom btn-sm" asp-controller="LeavePolicies" asp-action="Index">
+                Back to Policies
+            </a>
+            @if (currentPolicy != null)
+            {
+                <a class="btn btn-primary btn-sm" asp-action="Create" asp-route-leavePolicyId="@currentPolicy">
+                    <i class="fa-solid fa-plus me-1"></i>Rule
+                </a>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table id="leave-policy-rules-index-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="1">Policy</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="2">Leave Type</button></th>
+                    <th scope="col">Quota</th>
+                    <th scope="col">Accrual</th>
+                    <th scope="col">Carry Forward</th>
+                    <th scope="col">Rules</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td data-label="Policy">@(item.LeavePolicy?.PolicyName ?? "-")</td>
+                        <td data-label="Leave Type"><span class="fw-semibold">@(item.LeaveType?.Name ?? "-")</span></td>
+                        <td data-label="Quota">@item.AnnualQuota.ToString("0.##") days</td>
+                        <td data-label="Accrual">@item.MonthlyAccrual.ToString("0.##") / month</td>
+                        <td data-label="Carry Forward">@item.CarryForwardLimit.ToString("0.##")</td>
+                        <td data-label="Rules">
+                            <div class="d-flex flex-wrap gap-1">
+                                @if (item.IsEncashable)
+                                {
+                                    <span class="status-badge badge-success">Encashable</span>
+                                }
+                                @if (item.AllowHalfDay)
+                                {
+                                    <span class="status-badge badge-info">Half Day</span>
+                                }
+                                @if (item.AllowNegativeBalance)
+                                {
+                                    <span class="status-badge badge-warning">Negative</span>
+                                }
+                                @if (item.ApplySandwichRule)
+                                {
+                                    <span class="status-badge badge-secondary">Sandwich</span>
+                                }
+                                @if (!item.IsEncashable && !item.AllowHalfDay && !item.AllowNegativeBalance && !item.ApplySandwichRule)
+                                {
+                                    <span class="text-muted small">-</span>
+                                }
+                            </div>
+                        </td>
+                        <td data-label="Status"><span class="status-badge @(item.IsActive ? "status-active" : "status-risk")">@(item.IsActive ? "Active" : "Inactive")</span></td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Edit" asp-route-id="@item.Id" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline"
+                                      onsubmit="return confirm('Are you sure you want to delete this leave policy rule?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-icon btn-sm btn-icon-danger" title="Delete">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-inbox"></i>
+                @if (currentPolicy == null)
+                {
+                    <h3 class="h6 mt-2 mb-1">Select a leave policy first</h3>
+                    <p class="text-muted mb-0">Open Rules from a specific Leave Policy to view or create records.</p>
+                }
+                else
+                {
+                    <h3 class="h6 mt-2 mb-1">No records match the current filters</h3>
+                    <p class="text-muted mb-0">This policy has no rules yet.</p>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage-@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav aria-label="Leave policy rules pagination">
+            @Html.PagedListPager(Model, page => Url.Action("Index", new { page, searchQuery = currentFilter, leavePolicyId = currentPolicy }), new PagedListRenderOptions
+            {
+                UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" }
+            })
+        </nav>
+    </div>
+</section>

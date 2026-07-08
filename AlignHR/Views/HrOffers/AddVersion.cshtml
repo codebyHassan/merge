@@ -1,0 +1,58 @@
+@model AlignHR.Models.HrOfferVersionFormViewModel
+
+@{
+    ViewData["Title"] = "Revise Offer";
+    ViewBag.ActivePage = "HrOffers";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <div class="mb-3 small text-muted">
+            Offer: <strong>@Model.OfferNumber</strong>
+            @if (!string.IsNullOrEmpty(Model.CandidateName)) { <span>· @Model.CandidateName</span> }
+        </div>
+
+        <form asp-action="AddVersion" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="OfferId" />
+            <input type="hidden" asp-for="OfferNumber" />
+            <input type="hidden" asp-for="CandidateName" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label asp-for="Salary" class="form-label small fw-semibold">Revised Salary <span class="text-danger">*</span></label>
+                    <input asp-for="Salary" type="number" step="500" min="1" class="form-control form-control-sm" required />
+                    <span asp-validation-for="Salary" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="JoiningDate" class="form-label small fw-semibold">Revised Joining Date</label>
+                    <input asp-for="JoiningDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-12">
+                    <label asp-for="Remarks" class="form-label small fw-semibold">Reason for Revision <span class="text-danger">*</span></label>
+                    <textarea asp-for="Remarks" class="form-control form-control-sm" rows="2"
+                              placeholder="e.g. Candidate negotiated salary."></textarea>
+                    <span asp-validation-for="Remarks" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Details" asp-route-id="@Model.OfferId" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-check me-1"></i>Save Revision
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

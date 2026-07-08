@@ -1,0 +1,69 @@
+@model AlignHR.Models.DocApprovalAssignment
+@{
+    ViewData["Title"] = "Create Approval Assignment";
+    ViewBag.ActivePage = "DocApprovalAssignment";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <h5 class="mb-4">Create Document Approval Assignment</h5>
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger small py-2 px-3 mb-4">
+                @TempData["ErrorMessage"]
+            </div>
+        }
+
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6">
+                    <label asp-for="UserId" class="form-label small fw-semibold">Target Employee (User) <span class="text-danger">*</span></label>
+                    <select asp-for="UserId" class="form-select form-select-sm" asp-items="ViewBag.Users" required>
+                        <option value="">Select Employee...</option>
+                    </select>
+                    <span asp-validation-for="UserId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label asp-for="DmsDefinitionName" class="form-label small fw-semibold">DMS Definition Checklist <span class="text-danger">*</span></label>
+                    <select asp-for="DmsDefinitionName" class="form-select form-select-sm" asp-items="ViewBag.DmsDefinitions" required>
+                        <option value="">Select DMS Definition...</option>
+                    </select>
+                    <span asp-validation-for="DmsDefinitionName" class="text-danger small"></span>
+                    <div class="form-text text-muted small">Select the DMS checklist this approval assignment applies to.</div>
+                </div>
+
+                <div class="col-12 col-md-6">
+                    <label asp-for="ApprovalTemplateId" class="form-label small fw-semibold">Approval Template <span class="text-danger">*</span></label>
+                    <select asp-for="ApprovalTemplateId" class="form-select form-select-sm" asp-items="ViewBag.Templates" required>
+                        <option value="">Select Approval Template...</option>
+                    </select>
+                    <span asp-validation-for="ApprovalTemplateId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-6 d-flex align-items-end">
+                    <div class="form-check mb-2">
+                        <input asp-for="IsActive" type="checkbox" class="form-check-input" checked />
+                        <label asp-for="IsActive" class="form-check-label small fw-semibold">Is Active</label>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Notes" class="form-label small fw-semibold">Notes / Remarks</label>
+                    <textarea asp-for="Notes" class="form-control form-control-sm" rows="3" placeholder="Enter any extra details or instructions..."></textarea>
+                    <span asp-validation-for="Notes" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                <button type="submit" class="btn btn-primary btn-sm">Save Assignment</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,79 @@
+@model AlignHR.Models.EmployeeLeavePolicy
+
+@{
+    ViewData["Title"] = "Edit Policy Assignment";
+    ViewBag.ActivePage = "EmployeeLeavePolicies";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="EmployeeId" />
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+
+                <!-- Employee (readonly) -->
+                <div class="col-12 col-md-5">
+                    <label class="form-label small fw-semibold">Employee</label>
+                    <input type="text"
+                           class="form-control form-control-sm bg-body-secondary"
+                           value="@(Model.Employee?.FullName ?? "-") (@(Model.Employee?.Code ?? "-"))"
+                           readonly disabled />
+                    <div class="form-text">Employee cannot be changed. Delete and re-assign if needed.</div>
+                </div>
+
+                <!-- Leave Policy -->
+                <div class="col-12 col-md-4">
+                    <label asp-for="LeavePolicyId" class="form-label small fw-semibold">Leave Policy <span class="text-danger">*</span></label>
+                    <select asp-for="LeavePolicyId" class="form-select form-select-sm" asp-items="ViewBag.LeavePolicyId"></select>
+                    <span asp-validation-for="LeavePolicyId" class="text-danger small"></span>
+                </div>
+
+                <!-- Assignment Date -->
+                <div class="col-12 col-md-3">
+                    <label asp-for="AssignedAt" class="form-label small fw-semibold">Assigned Date</label>
+                    <input asp-for="AssignedAt" type="date" class="form-control form-control-sm"
+                           value="@Model.AssignedAt.ToString("yyyy-MM-dd")" />
+                    <span asp-validation-for="AssignedAt" class="text-danger small"></span>
+                </div>
+
+                <!-- Active toggle -->
+                <div class="col-12 col-md-4">
+                    <label class="custom-toggle">
+                        <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                        <div class="toggle-switch"></div>
+                        <div class="toggle-content">
+                            <div class="toggle-title">Active Assignment</div>
+                            <div class="toggle-desc">Employee currently follows this policy.</div>
+                        </div>
+                    </label>
+                </div>
+
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <span class="text-muted small me-auto align-self-center">
+                        Assigned @Model.AssignedAt.ToString("MMM dd, yyyy")
+                    </span>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

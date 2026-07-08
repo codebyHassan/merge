@@ -1,0 +1,55 @@
+@model AlignHR.Models.HrMoveStageViewModel
+
+@{
+    ViewData["Title"] = "Move Stage";
+    ViewBag.ActivePage = "HrJobPostings";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <div class="mb-3">
+            <div class="small text-muted">Candidate</div>
+            <div class="fw-semibold">@Model.CandidateName</div>
+            <div class="small text-muted mt-1">Current Stage: <span class="status-badge badge-secondary">@Model.CurrentStage</span></div>
+        </div>
+
+        <form asp-action="MoveStage" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ApplicationId" />
+            <input type="hidden" asp-for="CandidateName" />
+            <input type="hidden" asp-for="CurrentStage" />
+            <input type="hidden" asp-for="CurrentStageFK" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small"><div asp-validation-summary="ModelOnly"></div></div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label asp-for="ToStageFK" class="form-label small fw-semibold">Move To Stage <span class="text-danger">*</span></label>
+                    <select asp-for="ToStageFK" asp-items="ViewBag.Stages" class="form-select form-select-sm" required>
+                        <option value="">— Select Stage —</option>
+                    </select>
+                    <span asp-validation-for="ToStageFK" class="text-danger small"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Comments" class="form-label small fw-semibold">Comments</label>
+                    <textarea asp-for="Comments" class="form-control form-control-sm" rows="3"
+                              placeholder="Reason for stage change…"></textarea>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Details" asp-route-id="@Model.ApplicationId" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-arrows-up-down me-1"></i>Move Stage
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

@@ -1,0 +1,63 @@
+@model IPagedList<AlignHR.Models.OverTimeHours>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@{
+    ViewData["Title"] = "OverTime Hours";
+    ViewBag.ActivePage = "OverTimeHours";
+}
+<div class="page-header">
+    <div class="breadcrumb">
+        <a href="#">Home</a>
+        <span>/</span>
+        <span>OverTime Hours</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">OverTime Hours Management</h1>
+            <p class="page-subtitle">Manage all OverTime Hours records</p>
+        </div>
+
+        <div class="flex gap-8">
+            <a class="btn btn-secondary btn-sm" asp-action="BulkUpload">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                Bulk Upload
+            </a>
+            <a class="btn btn-primary btn-sm" asp-action="Create">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                Add OverTime Hours
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="table-shell">
+    <div class="table-toolbar">
+        <div class="table-card-title">All OverTime Hours (@Model.TotalItemCount)</div>
+
+        <div class="table-filters">
+            <form method="get" asp-action="Index" onsubmit="return false;" style="display: flex; align-items: center; gap: 8px;">
+                <div style="position: relative; width: 100%;">
+                    <input type="text" name="search" class="filter-input form-control" placeholder="Search Here..." value="@Context.Request.Query["search"]" 
+                           hx-get="@Url.Action("Index")" 
+                           hx-target="#table-container"
+                           hx-indicator="#search-loader"
+                           hx-trigger="keyup changed delay:500ms, search" />
+                    <span id="search-loader" class="htmx-indicator" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%);">
+                        <div class="search-loader"></div>
+                    </span>
+                </div>
+            </form></div>
+    </div>
+
+    <div class="erp-table-wrap" id="table-container">
+        <partial name="_OverTimeHoursTable" model="Model" />
+    </div>
+</div>

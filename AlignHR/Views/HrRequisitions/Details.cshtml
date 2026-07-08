@@ -1,0 +1,182 @@
+@model AlignHR.Models.HrRequisitionFormViewModel
+@using AlignHR.Security
+
+@{
+    ViewData["Title"] = "Requisition — " + Model.RequisitionNo;
+    ViewBag.ActivePage = "HrRequisitions";
+
+    var statusClass = Model.Status switch
+    {
+        "Approved"  => "badge-success",
+        "Submitted" => "badge-warning",
+        "Rejected"  => "badge-danger",
+        "Cancelled" => "badge-danger",
+        _           => "badge-secondary"
+    };
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="form-shell w-100 animate-fade-in" style="padding:0 !important;">
+
+    @*── Hero Header ──*@
+    <div style="padding:20px 22px 18px;border-bottom:1px solid var(--ahr-border)">
+        <div class="d-flex align-items-start justify-content-between gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap" style="margin-bottom:4px">
+                    <span style="font-size:17px;font-weight:700;letter-spacing:-0.025em;color:var(--ahr-text);font-family:var(--ahr-font-display)">@(Model.RequisitionNo ?? "—")</span>
+                    <span class="status-badge @statusClass">@(Model.Status ?? "—")</span>
+                </div>
+                <div style="font-size:13px;color:var(--ahr-text-tertiary);font-weight:400">@(Model.PositionTitle ?? "—")</div>
+            </div>
+            <div class="d-flex gap-2" style="flex-shrink:0">
+                <a href="javascript:history.back()" class="btn btn-secondary btn-sm">Back</a>
+            </div>
+        </div>
+    </div>
+
+    @*── Key-Value Specs Row 1 ──*@
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--ahr-border)">
+
+        <div style="padding:14px 18px;border-right:1px solid var(--ahr-border)">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:5px">Department</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ahr-text)">@(ViewBag.DepartmentName ?? "—")</div>
+        </div>
+
+        <div style="padding:14px 18px;border-right:1px solid var(--ahr-border)">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:5px">Type</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ahr-text)">@(Model.RequisitionType ?? "—")</div>
+        </div>
+
+        <div style="padding:14px 18px;border-right:1px solid var(--ahr-border)">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:5px">Nature</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ahr-text)">@(Model.Nature ?? "—")</div>
+        </div>
+
+        <div style="padding:14px 18px">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:5px">Budget / Month</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ahr-text);font-family:var(--ahr-font-mono)">
+                @(Model.BudgetAmountPerMonth.HasValue ? Model.BudgetAmountPerMonth.Value.ToString("N0") : "—")
+            </div>
+        </div>
+
+    </div>
+
+    @*── Key-Value Specs Row 2 ──*@
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--ahr-border)">
+
+        <div style="padding:14px 18px;border-right:1px solid var(--ahr-border)">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:5px">Initial Date</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ahr-text)">@(Model.InitialDate?.ToString("dd MMM yyyy") ?? "—")</div>
+        </div>
+
+        <div style="padding:14px 18px;border-right:1px solid var(--ahr-border)">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:5px">Promised Date</div>
+            <div style="font-size:13px;font-weight:500;color:var(--ahr-text)">@(Model.PromisedDate?.ToString("dd MMM yyyy") ?? "—")</div>
+        </div>
+
+        @if (Model.RequisitionType == "Replacement" && Model.ReplacementEmployeeId.HasValue)
+        {
+            <div style="padding:14px 18px;border-right:1px solid var(--ahr-border)">
+                <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:5px">Replaced Employee</div>
+                <div style="font-size:13px;font-weight:500;color:var(--ahr-text)">@(ViewBag.ReplacementEmployeeName ?? "—")</div>
+            </div>
+            <div></div>
+        }
+        else if (Model.RequisitionType == "Transfer" && Model.TransferFromDepartmentId.HasValue)
+        {
+            <div style="padding:14px 18px;border-right:1px solid var(--ahr-border)">
+                <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:5px">Transfer From</div>
+                <div style="font-size:13px;font-weight:500;color:var(--ahr-text)">@(ViewBag.TransferFromDepartmentName ?? "—")</div>
+            </div>
+            <div></div>
+        }
+        else
+        {
+            <div></div>
+            <div></div>
+        }
+
+    </div>
+
+    @*── Reason ──*@
+    @if (!string.IsNullOrWhiteSpace(Model.Reason))
+    {
+        <div style="padding:16px 22px;border-bottom:1px solid var(--ahr-border)">
+            <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:8px">Reason / Justification</div>
+            <div style="font-size:13px;color:var(--ahr-text);line-height:1.65;white-space:pre-wrap">@Model.Reason</div>
+        </div>
+    }
+
+    @*── Required Skills + Company Offerings side by side ──*@
+    @if (Model.Skills.Any() || Model.Offerings.Any())
+    {
+        <div style="display:grid;grid-template-columns:1fr 1fr">
+
+            <div style="padding:18px 22px;border-right:1px solid var(--ahr-border)">
+                <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:12px">Required Skills</div>
+                @if (Model.Skills.Any())
+                {
+                    <ol style="margin:0;padding-left:18px">
+                        @foreach (var skill in Model.Skills)
+                        {
+                            <li style="font-size:13px;color:var(--ahr-text);padding:3px 0;line-height:1.5">
+                                @skill.SkillName
+                                @if (skill.YearsExperience.HasValue)
+                                {
+                                    <span style="color:var(--ahr-text-tertiary);font-size:12px"> — @(skill.YearsExperience.Value.ToString("0.#")) yr@(skill.YearsExperience.Value != 1 ? "s" : "")</span>
+                                }
+                                @if (!skill.IsMandatory)
+                                {
+                                    <span style="color:var(--ahr-text-muted);font-size:11px"> (optional)</span>
+                                }
+                            </li>
+                        }
+                    </ol>
+                }
+                else
+                {
+                    <div style="font-size:13px;color:var(--ahr-text-muted)">—</div>
+                }
+            </div>
+
+            <div style="padding:18px 22px">
+                <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--ahr-text-tertiary);margin-bottom:12px">Company Offerings</div>
+                @if (Model.Offerings.Any())
+                {
+                    <ol style="margin:0;padding-left:18px">
+                        @foreach (var offering in Model.Offerings)
+                        {
+                            <li style="font-size:13px;color:var(--ahr-text);padding:3px 0;line-height:1.5">
+                                @offering.OfferingName
+                                @if (!string.IsNullOrWhiteSpace(offering.Description))
+                                {
+                                    <span style="color:var(--ahr-text-tertiary);font-size:12px"> — @offering.Description</span>
+                                }
+                            </li>
+                        }
+                    </ol>
+                }
+                else
+                {
+                    <div style="font-size:13px;color:var(--ahr-text-muted)">—</div>
+                }
+            </div>
+
+        </div>
+    }
+
+</div>

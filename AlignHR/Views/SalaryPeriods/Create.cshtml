@@ -1,0 +1,111 @@
+@model AlignHR.Models.SalaryPeriod
+@{
+    ViewData["Title"] = "Create Salary Period";
+    ViewBag.ActivePage = "SalaryPeriods";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold" asp-for="PeriodName">Period Name <span class="text-danger">*</span></label>
+                    <input asp-for="PeriodName" type="text" class="form-control form-control-sm" placeholder="YYYY-MM (e.g. 2025-04)" required maxlength="7" id="periodNameInput" />
+                    <span asp-validation-for="PeriodName" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold" asp-for="StartDate">Start Date <span class="text-danger">*</span></label>
+                    <input asp-for="StartDate" class="form-control form-control-sm" type="date" required />
+                    <span asp-validation-for="StartDate" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold" asp-for="EndDate">End Date <span class="text-danger">*</span></label>
+                    <input asp-for="EndDate" class="form-control form-control-sm" type="date" required />
+                    <span asp-validation-for="EndDate" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold" asp-for="EOBIAmount">EOBI Amount</label>
+                    <input asp-for="EOBIAmount" class="form-control form-control-sm" placeholder="Ex: 250.00" type="number" step="0.01" />
+                    <span asp-validation-for="EOBIAmount" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label small fw-semibold" asp-for="PFPercentage">Provident Fund Percentage (%)</label>
+                    <input asp-for="PFPercentage" class="form-control form-control-sm" placeholder="Ex: 8.33" type="number" step="0.01" />
+                    <span asp-validation-for="PFPercentage" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label small fw-semibold">Period Controls</label>
+                    <div class="d-flex flex-wrap gap-4 p-3 border rounded-2 bg-light bg-opacity-10">
+                        <div class="form-check form-switch">
+                            <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                            <label class="form-check-label small" asp-for="IsActive">Is Active</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input asp-for="IsProcessed" class="form-check-input" type="checkbox" disabled />
+                            <label class="form-check-label small" asp-for="IsProcessed">Is Processed</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input asp-for="IsPostedToGL" class="form-check-input" type="checkbox" disabled />
+                            <label class="form-check-label small" asp-for="IsPostedToGL">Is Posted To GL</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const periodInput = document.getElementById('periodNameInput');
+        if (periodInput) {
+            periodInput.addEventListener('input', function (e) {
+                let cursorPosition = e.target.selectionStart;
+                let value = e.target.value.replace(/\D/g, ''); // Remove all non-digits
+                
+                let formatted = "";
+                if (value.length > 0) {
+                    // Year part
+                    formatted = value.substring(0, 4);
+                    
+                    if (value.length > 4) {
+                        // Month part
+                        let month = value.substring(4, 6);
+                        let m = parseInt(month);
+                        
+                        if (month.length === 1 && m > 1) {
+                            // If first digit of month is > 1, auto-prefix with 0
+                            month = "0" + month;
+                        } else if (month.length === 2) {
+                            if (m > 12) month = "12";
+                            if (m === 0) month = "01";
+                        }
+                        
+                        formatted += '-' + month;
+                    }
+                }
+                
+                e.target.value = formatted;
+                
+                // Adjust cursor position if hyphen was added
+                if (formatted.length === 6 && cursorPosition === 5) {
+                    e.target.setSelectionRange(7, 7);
+                }
+            });
+        }
+    });
+</script>

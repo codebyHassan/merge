@@ -1,0 +1,62 @@
+@model AlignHR.Models.HrOfferResponseFormViewModel
+
+@{
+    ViewData["Title"] = "Record Candidate Response";
+    ViewBag.ActivePage = "HrOffers";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <div class="mb-3 small text-muted">
+            Offer: <strong>@Model.OfferNumber</strong>
+            @if (!string.IsNullOrEmpty(Model.CandidateName)) { <span>· @Model.CandidateName</span> }
+        </div>
+
+        <form asp-action="RecordResponse" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="OfferId" />
+            <input type="hidden" asp-for="OfferNumber" />
+            <input type="hidden" asp-for="CandidateName" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label asp-for="ResponseType" class="form-label small fw-semibold">Candidate Response <span class="text-danger">*</span></label>
+                    <select asp-for="ResponseType" class="form-select form-select-sm" required>
+                        <option value="">— Select —</option>
+                        <option value="Accepted">Accepted</option>
+                        <option value="NegotiationRequested">Negotiation Requested</option>
+                        <option value="Expired">Expired</option>
+                    </select>
+                    <span asp-validation-for="ResponseType" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="ResponseDate" class="form-label small fw-semibold">Response Date</label>
+                    <input asp-for="ResponseDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-12">
+                    <label asp-for="Comments" class="form-label small fw-semibold">Comments</label>
+                    <textarea asp-for="Comments" class="form-control form-control-sm" rows="2"
+                              placeholder="Any notes from the candidate…"></textarea>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Details" asp-route-id="@Model.OfferId" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-check me-1"></i>Save Response
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

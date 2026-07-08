@@ -1,0 +1,397 @@
+@model AlignHR.Models.HrRequisitionFormViewModel
+
+@{
+    ViewData["Title"] = "Edit - " + Model.RequisitionNo;
+    ViewBag.ActivePage = "HrRequisitions";
+    var hasErrors = !ViewData.ModelState.IsValid;
+}
+
+<style>
+    .rq-wrap {
+        display: grid;
+        grid-template-columns: 148px 1fr;
+    }
+
+    .rq-rail {
+        padding: 0.125rem 1.25rem 0 0;
+        border-right: 1px solid var(--erp-border);
+    }
+
+    .rq-step {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.3rem 0.4rem;
+        border-radius: var(--erp-radius-sm);
+    }
+
+    .rq-step.s-active { background: var(--erp-surface-soft); }
+
+    .rq-dot {
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        font-size: 0.68rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        border: 1.5px solid var(--erp-border);
+        color: var(--erp-muted);
+        background: var(--erp-surface);
+    }
+
+    .s-active .rq-dot {
+        background: var(--erp-primary);
+        color: #fff;
+        border-color: var(--erp-primary);
+    }
+
+    .s-done .rq-dot {
+        background: var(--erp-success);
+        color: #fff;
+        border-color: var(--erp-success);
+    }
+
+    .rq-step-lbl {
+        font-size: 0.71rem;
+        color: var(--erp-muted);
+        font-weight: 500;
+        line-height: 1.2;
+    }
+
+    .s-active .rq-step-lbl { color: var(--erp-text); font-weight: 600; }
+
+    .rq-line {
+        width: 1px;
+        height: 14px;
+        background: var(--erp-border);
+        margin: 1px 0 1px calc(0.4rem + 10px);
+    }
+
+    .rq-line.done { background: var(--erp-success); }
+
+    .rq-body { padding: 0 0 0 1.75rem; }
+
+    .rq-step-head {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--erp-muted-strong);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid var(--erp-border);
+    }
+
+    .rq-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        margin-top: 1.5rem;
+        border-top: 1px solid var(--erp-border);
+    }
+
+    .skill-row, .offering-row {
+        background: var(--erp-surface-soft);
+        border: 1px solid var(--erp-border);
+        border-radius: var(--erp-radius-sm);
+        padding: 0.4rem 0.5rem;
+        margin-bottom: 0.4rem;
+    }
+
+    @@media (max-width: 767px) {
+        .rq-wrap { grid-template-columns: 1fr; }
+        .rq-rail {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            border-right: none;
+            border-bottom: 1px solid var(--erp-border);
+            padding: 0 0 0.75rem 0;
+            margin-bottom: 1rem;
+            gap: 0.25rem;
+        }
+        .rq-step-lbl { display: none; }
+        .rq-line { height: 1px; width: 20px; margin: 0; margin-top: 10px; align-self: flex-start; }
+        .rq-step { padding: 0.2rem; }
+        .rq-body { padding: 0; }
+    }
+</style>
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="RequisitionNo" />
+            <input type="hidden" asp-for="Status" />
+
+            @if (hasErrors)
+            {
+                <div class="alert alert-danger py-2 px-3 small mb-3" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="rq-wrap">
+
+                <div class="rq-rail">
+                    <div class="rq-step s-active" id="rs1">
+                        <div class="rq-dot" id="rd1">1</div>
+                        <span class="rq-step-lbl">Position</span>
+                    </div>
+                    <div class="rq-line" id="rc1"></div>
+                    <div class="rq-step" id="rs2">
+                        <div class="rq-dot" id="rd2">2</div>
+                        <span class="rq-step-lbl">Skills</span>
+                    </div>
+                    <div class="rq-line" id="rc2"></div>
+                    <div class="rq-step" id="rs3">
+                        <div class="rq-dot" id="rd3">3</div>
+                        <span class="rq-step-lbl">Offers</span>
+                    </div>
+                </div>
+
+                <div class="rq-body">
+
+                    <div id="wp1">
+                        <div class="rq-step-head">Position</div>
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-6 col-md-3">
+                                <label asp-for="PositionTitle" class="form-label">Position Title <span class="text-danger">*</span></label>
+                                <input asp-for="PositionTitle" id="fTitle" class="form-control form-control-sm"
+                                       placeholder="e.g. Senior Accountant" autocomplete="off" />
+                                <span asp-validation-for="PositionTitle" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-3">
+                                <label asp-for="DepartmentFK" class="form-label">Department <span class="text-danger">*</span></label>
+                                <select asp-for="DepartmentFK" asp-items="ViewBag.Departments"
+                                        id="fDept" class="form-select form-select-sm">
+                                    <option value="">Select</option>
+                                </select>
+                                <span asp-validation-for="DepartmentFK" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-3">
+                                <label asp-for="RequisitionType" class="form-label">Type</label>
+                                <select asp-for="RequisitionType" asp-items="ViewBag.RequisitionTypes"
+                                        id="reqType" class="form-select form-select-sm" onchange="toggleConds()">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-3">
+                                <label asp-for="Nature" class="form-label">Nature</label>
+                                <select asp-for="Nature" asp-items="ViewBag.RequisitionNatures"
+                                        class="form-select form-select-sm">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-3">
+                                <label asp-for="InitialDate" class="form-label">Initial Date</label>
+                                <input asp-for="InitialDate" type="date" class="form-control form-control-sm flatpickr-input" />
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-3">
+                                <label asp-for="PromisedDate" class="form-label">Promised Date</label>
+                                <input asp-for="PromisedDate" type="date" class="form-control form-control-sm flatpickr-input" />
+                            </div>
+                            <div class="col-12 col-sm-6 col-md-3">
+                                <label asp-for="BudgetAmountPerMonth" class="form-label">Budget / Month</label>
+                                <input asp-for="BudgetAmountPerMonth" type="number" step="0.01"
+                                       class="form-control form-control-sm" placeholder="0.00" />
+                            </div>
+                            <div id="condReplacement" class="col-12 col-sm-6 col-md-3" style="display:none">
+                                <label asp-for="ReplacementEmployeeId" class="form-label">Replaced Employee</label>
+                                <select asp-for="ReplacementEmployeeId" asp-items="ViewBag.ReplacementEmployees"
+                                        class="form-select form-select-sm">
+                                    <option value="">Select</option>
+                                </select>
+                            </div>
+                            <div id="condTransfer" class="col-12 col-sm-6 col-md-3" style="display:none">
+                                <label asp-for="TransferFromDepartmentId" class="form-label">Transfer From Department</label>
+                                <select asp-for="TransferFromDepartmentId" asp-items="ViewBag.TransferFromDepts"
+                                        class="form-select form-select-sm">
+                                    <option value="">Select Department</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="Reason" class="form-label">Reason / Justification</label>
+                                <textarea asp-for="Reason" class="form-control form-control-sm" rows="3"
+                                          placeholder="Why is this position needed?"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="wp2" style="display:none">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2" style="border-bottom:1px solid var(--erp-border)">
+                            <span class="rq-step-head mb-0 pb-0 border-0">Required Skills</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addSkill()">
+                                <i class="fa-solid fa-plus me-1"></i>Add Skill
+                            </button>
+                        </div>
+                        <div id="skillsWrap">
+                            @for (int i = 0; i < Model.Skills.Count; i++)
+                            {
+                                <div class="skill-row d-flex align-items-center flex-wrap flex-sm-nowrap gap-2">
+                                    <input type="hidden" name="Skills[@i].Id" value="@Model.Skills[i].Id" />
+                                    <input name="Skills[@i].SkillName" value="@Model.Skills[i].SkillName"
+                                           class="form-control form-control-sm flex-fill" placeholder="Skill name" style="min-width:140px" />
+                                    <input name="Skills[@i].YearsExperience" value="@Model.Skills[i].YearsExperience"
+                                           type="number" step="0.5" min="0" class="form-control form-control-sm"
+                                           style="width:80px;flex-shrink:0" placeholder="Yrs" />
+                                    <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                                        <input name="Skills[@i].IsMandatory" type="checkbox" class="form-check-input m-0"
+                                               @(Model.Skills[i].IsMandatory ? "checked" : "") value="true" />
+                                        <span class="small" style="color:var(--erp-muted)">Must</span>
+                                    </div>
+                                    <button type="button" class="btn btn-icon btn-sm btn-icon-danger flex-shrink-0" onclick="removeRow(this)">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        <div id="skillsEmpty" class="text-center py-4" style="color:var(--erp-muted);font-size:0.78rem;display:@(Model.Skills.Count == 0 ? "" : "none")">
+                            No skills added yet. Click <strong>Add Skill</strong> to begin.
+                        </div>
+                    </div>
+
+                    <div id="wp3" style="display:none">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2" style="border-bottom:1px solid var(--erp-border)">
+                            <span class="rq-step-head mb-0 pb-0 border-0">Company Offerings</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addOffering()">
+                                <i class="fa-solid fa-plus me-1"></i>Add Offering
+                            </button>
+                        </div>
+                        <div id="offeringsWrap">
+                            @for (int i = 0; i < Model.Offerings.Count; i++)
+                            {
+                                <div class="offering-row d-flex align-items-center flex-wrap flex-sm-nowrap gap-2">
+                                    <input type="hidden" name="Offerings[@i].Id" value="@Model.Offerings[i].Id" />
+                                    <input name="Offerings[@i].OfferingName" value="@Model.Offerings[i].OfferingName"
+                                           class="form-control form-control-sm" style="min-width:160px;flex:1 1 160px" placeholder="e.g. Health Insurance" />
+                                    <input name="Offerings[@i].Description" value="@Model.Offerings[i].Description"
+                                           class="form-control form-control-sm flex-fill" style="min-width:160px" placeholder="Details (optional)" />
+                                    <button type="button" class="btn btn-icon btn-sm btn-icon-danger flex-shrink-0" onclick="removeRow(this)">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        <div id="offersEmpty" class="text-center py-4" style="color:var(--erp-muted);font-size:0.78rem;display:@(Model.Offerings.Count == 0 ? "" : "none")">
+                            No offerings added yet. Click <strong>Add Offering</strong> to begin.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="rq-footer">
+                <div class="d-flex gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="button" id="btnBack" class="btn btn-outline-secondary btn-sm"
+                            onclick="wizBack()" style="display:none">
+                         Back
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" id="btnNext" class="btn btn-primary btn-sm" onclick="wizNext()">
+                        Next 
+                    </button>
+                    <button type="submit" id="btnDraft" name="command" value="Draft"
+                            class="btn btn-outline-secondary btn-sm" style="display:none">
+                        Save Draft
+                    </button>
+                    <button type="submit" id="btnSubmit" name="command" value="Submit"
+                            class="btn btn-primary btn-sm" style="display:none">
+                        <i class="fa-solid fa-paper-plane me-1"></i>Submit
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        var s = 1;
+        var si = @Model.Skills.Count;
+        var oi = @Model.Offerings.Count;
+
+        function setStep(n) {
+            [1, 2, 3].forEach(function (i) {
+                var el   = document.getElementById('wp' + i);
+                var dot  = document.getElementById('rd' + i);
+                var step = document.getElementById('rs' + i);
+                if (el) el.style.display = i === n ? '' : 'none';
+                if (i < n) {
+                    step.className = 'rq-step s-done';
+                    dot.innerHTML  = '<i class="fa-solid fa-check" style="font-size:0.6rem"></i>';
+                } else if (i === n) {
+                    step.className = 'rq-step s-active';
+                    dot.textContent = String(i);
+                } else {
+                    step.className = 'rq-step';
+                    dot.textContent = String(i);
+                }
+            });
+            [1, 2].forEach(function (j) {
+                var ln = document.getElementById('rc' + j);
+                if (ln) ln.className = 'rq-line' + (n > j ? ' done' : '');
+            });
+            document.getElementById('btnBack').style.display   = n > 1 ? '' : 'none';
+            document.getElementById('btnNext').style.display   = n < 3 ? '' : 'none';
+            document.getElementById('btnDraft').style.display  = n === 3 ? '' : 'none';
+            document.getElementById('btnSubmit').style.display = n === 3 ? '' : 'none';
+            s = n;
+        }
+
+        function ok1() {
+            var t    = document.getElementById('fTitle');
+            var d    = document.getElementById('fDept');
+            var pass = true;
+            if (!t.value.trim()) { t.classList.add('is-invalid'); pass = false; }
+            else t.classList.remove('is-invalid');
+            if (!d.value) { d.classList.add('is-invalid'); pass = false; }
+            else d.classList.remove('is-invalid');
+            return pass;
+        }
+
+        function wizNext() { if (s === 1 && !ok1()) return; if (s < 3) setStep(s + 1); }
+        function wizBack() { if (s > 1) setStep(s - 1); }
+
+        function toggleConds() {
+            var t = document.getElementById('reqType').value;
+            document.getElementById('condReplacement').style.display = t === 'Replacement' ? '' : 'none';
+            document.getElementById('condTransfer').style.display    = t === 'Transfer'    ? '' : 'none';
+        }
+
+        function addSkill() {
+            var i = si++;
+            document.getElementById('skillsEmpty').style.display = 'none';
+            document.getElementById('skillsWrap').insertAdjacentHTML('beforeend',
+                '<div class="skill-row d-flex align-items-center flex-wrap flex-sm-nowrap gap-2">' +
+                '<input type="hidden" name="Skills[' + i + '].Id" value="0" />' +
+                '<input name="Skills[' + i + '].SkillName" class="form-control form-control-sm flex-fill" placeholder="Skill name" style="min-width:140px" />' +
+                '<input name="Skills[' + i + '].YearsExperience" type="number" step="0.5" min="0" class="form-control form-control-sm" style="width:80px;flex-shrink:0" placeholder="Yrs" />' +
+                '<div class="d-flex align-items-center gap-1 flex-shrink-0"><input name="Skills[' + i + '].IsMandatory" type="checkbox" class="form-check-input m-0" checked value="true" /><span class="small" style="color:var(--erp-muted)">Must</span></div>' +
+                '<button type="button" class="btn btn-icon btn-sm btn-icon-danger flex-shrink-0" onclick="removeRow(this)"><i class="fa-solid fa-xmark"></i></button>' +
+                '</div>');
+        }
+
+        function addOffering() {
+            var i = oi++;
+            document.getElementById('offersEmpty').style.display = 'none';
+            document.getElementById('offeringsWrap').insertAdjacentHTML('beforeend',
+                '<div class="offering-row d-flex align-items-center flex-wrap flex-sm-nowrap gap-2">' +
+                '<input type="hidden" name="Offerings[' + i + '].Id" value="0" />' +
+                '<input name="Offerings[' + i + '].OfferingName" class="form-control form-control-sm" style="min-width:160px;flex:1 1 160px" placeholder="e.g. Health Insurance" />' +
+                '<input name="Offerings[' + i + '].Description" class="form-control form-control-sm flex-fill" style="min-width:160px" placeholder="Details (optional)" />' +
+                '<button type="button" class="btn btn-icon btn-sm btn-icon-danger flex-shrink-0" onclick="removeRow(this)"><i class="fa-solid fa-xmark"></i></button>' +
+                '</div>');
+        }
+
+        function removeRow(btn) { btn.closest('.skill-row, .offering-row').remove(); }
+
+        setStep(1);
+        toggleConds();
+    </script>
+}

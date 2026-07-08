@@ -1,0 +1,30 @@
+@model IEnumerable<AlignHR.Models.Employee>
+
+@if (Model != null && Model.Any())
+{
+    foreach (var emp in Model)
+    {
+        <div class="search-result-item" 
+             data-id="@emp.Id" 
+             data-name="@emp.FullName" 
+             data-code="@emp.Code">
+            <div class="item-info">
+                <div class="item-name">@emp.FullName</div>
+                <div class="item-meta">
+                    <span class="badge-code">@emp.Code</span>
+                    <span class="text-muted">@(emp.Department?.Name ?? "No Dept")</span>
+                </div>
+            </div>
+            <div class="item-action">
+                <i class="fas fa-plus-circle"></i>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="search-empty">
+        <i class="fas fa-user-slash mb-2 d-block" style="font-size: 24px; opacity: 0.5;"></i>
+        No employees found matching your search.
+    </div>
+}

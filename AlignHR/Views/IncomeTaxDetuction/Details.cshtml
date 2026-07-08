@@ -1,0 +1,93 @@
+@model AlignHR.Models.IncomeTaxDetuction
+@using AlignHR.Services
+@inject IPayrollLockService LockService
+
+@{
+    ViewData["Title"] = "Income Tax Deduction Details";
+    bool isLocked = await LockService.IsRecordLocked(Model.EmployeeId, Model.PeriodSalery);
+}
+
+
+<div class="page-header animate-fade-in">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a href="/IncomeTaxDetuction">Income Tax</a>
+        <span>/</span>
+        <span>Details</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">Tax Deduction Details</h1>
+            <p class="page-subtitle">Monthly income tax record for @Model.Employee?.FirstName</p>
+        </div>
+
+        <div class="flex gap-12">
+            @if (isLocked)
+            {
+                <div class="status-badge locked"><i class="fas fa-lock"></i><span>FINALIZED</span></div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="details-grid animate-slide-up">
+    <div class="erp-card">
+        <div class="card-header-premium">
+            <i class="fas fa-user-shield"></i>
+            <span>Taxpayer Information</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-group">
+                <label>Employee</label>
+                <div class="value-highlight">@Model.Employee?.FirstName @Model.Employee?.LastName</div>
+            </div>
+            <div class="info-row">
+                <div class="info-item">
+                    <label>NTN</label>
+                    <div class="value">@(Model.Employee?.NTN ?? "N/A")</div>
+                </div>
+                <div class="info-item">
+                    <label>Filer Status</label>
+                    <div class="value">
+                        <span class="status-pill @(Model.Employee?.IsFiler == true ? "active" : "locked")">
+                            @(Model.Employee?.IsFiler == true ? "Filer" : "Non-Filer")
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <hr class="divider" />
+            <div class="info-group">
+                <label>Tax Period</label>
+                <div class="value">@Model.SalaryPeriod?.PeriodName</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="erp-card">
+        <div class="card-header-premium financial">
+            <i class="fas fa-calculator"></i>
+            <span>Deduction Amount</span>
+        </div>
+        <div class="card-body-premium centered">
+            <div class="stat-box-container">
+                <div class="stat-box">
+                    <label>Monthly Tax</label>
+                    <div class="stat-value secondary">PKR @Model.incometaxdetection.ToString("N2")</div>
+                </div>
+            </div>
+            <div class="meta-info">
+                <div class="meta-item"><i class="fas fa-info-circle"></i><span>Source: Auto-Calculated</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-actions-footer">
+        <a href="/IncomeTaxDetuction" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left"></i>Back</a>
+        @if (!isLocked)
+        {
+            <a href="/IncomeTaxDetuction/Edit/@Model.id" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i>Edit Tax</a>
+        }
+    </div>
+</div>

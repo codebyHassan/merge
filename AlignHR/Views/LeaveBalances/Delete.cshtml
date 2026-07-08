@@ -1,0 +1,54 @@
+@model AlignHR.Models.LeaveBalance
+
+@{
+    ViewData["Title"] = "Delete Leave Balance";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="page-header animate-fade">
+    <div>
+        <h1 class="page-title text-danger">Delete Leave Balance</h1>
+        <p class="page-subtitle">Are you sure you want to remove this leave record?</p>
+    </div>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</div>
+
+<div class="animate-fade" style="animation-delay: 0.1s">
+    <div class="hr-card border-danger" style="max-width: 600px; margin: 0 auto;">
+        <div class="card-header bg-danger-light">
+            <div class="card-title text-danger"><i class="fas fa-exclamation-triangle"></i> Confirmation Required</div>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-warning mb-4">
+                This action will permanently delete the leave balance record for <strong>@Model.Employee?.FullName</strong>. This may affect leave request validations.
+            </div>
+
+            <div class="flex flex-column gap-12 mb-4">
+                <div class="flex justify-between py-2 border-bottom">
+                    <span class="text-muted">Employee</span>
+                    <span class="font-medium">@Model.Employee?.FullName</span>
+                </div>
+                <div class="flex justify-between py-2 border-bottom">
+                    <span class="text-muted">Leave Type</span>
+                    <span class="font-medium">@Model.LeaveType?.Code</span>
+                </div>
+                <div class="flex justify-between py-2 border-bottom">
+                    <span class="text-muted">Fiscal Year</span>
+                    <span class="font-medium">@Model.Year</span>
+                </div>
+                <div class="flex justify-between py-2 border-bottom">
+                    <span class="text-muted">Available Balance</span>
+                    <span class="font-medium text-danger">@Model.Available</span>
+                </div>
+            </div>
+
+            <form asp-action="Delete">
+                <input type="hidden" asp-for="Id" />
+                <div class="flex gap-12 justify-center mt-4">
+                    <button type="submit" class="btn btn-danger">Yes, Delete Record</button>
+                    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

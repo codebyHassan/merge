@@ -1,0 +1,154 @@
+@model AlignHR.Models.IncomeTaxDetuction
+@{
+    ViewData["Title"] = "Edit Income Tax Deduction";
+    ViewBag.ActivePage = "IncomeTaxDetuction";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="id" />
+            <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6" style="position: relative; z-index: 1001;">
+                    <label class="form-label small fw-semibold">Search Employee <span class="text-danger">*</span></label>
+                    <div class="search-with-icon">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="employeeSearch" name="term" class="form-control form-control-sm"
+                               value="@(Model.Employee != null ? $"{Model.Employee.FirstName} {Model.Employee.LastName} ({Model.Employee.Code})" : "")"
+                               placeholder="Type name or code..." autocomplete="off"
+                               hx-get="/Ajax/SearchEmployees"
+                               hx-trigger="keyup delay:300ms, search"
+                               hx-target="#employeeResults" />
+                    </div>
+                    <div id="employeeResults" class="search-results-container"></div>
+                    <input type="hidden" asp-for="EmployeeId" id="hfEmployeeId"
+                           hx-get="/IncomeTaxDetuction/CalculateTaxDetails"
+                           hx-include="#hfEmployeeId, #PeriodSalery, #GrossSalary"
+                           hx-target="#taxCalculationContainer"
+                           hx-trigger="change" />
+                    <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold" asp-for="PeriodSalery">Salary Period <span class="text-danger">*</span></label>
+                    <select asp-for="PeriodSalery" class="form-select form-select-sm" asp-items="ViewBag.PeriodSalery" id="PeriodSalery"
+                            hx-get="/IncomeTaxDetuction/CalculateTaxDetails"
+                            hx-include="#hfEmployeeId, #PeriodSalery, #GrossSalary"
+                            hx-target="#taxCalculationContainer"
+                            hx-trigger="change">
+                        <option value="">Select Period</option>
+                    </select>
+                    <span asp-validation-for="PeriodSalery" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold">Monthly Gross Salary <span class="text-danger">*</span></label>
+                    <input type="number" id="GrossSalary" name="grossSalary" class="form-control form-control-sm payroll-locked-field" step="0.01" placeholder="Auto-filled on employee select"
+                           readonly />
+                </div>
+
+                <div class="col-12">
+                    <div id="employeeProfileCard" class="employee-profile-slot"
+                         hx-get="/Employees/GetEmployeeByCode?id=@Model.EmployeeId"
+                         hx-trigger="load">
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <div id="taxCalculationContainer" class="payroll-calculation-slot" style="min-height: 20px;">
+                        <div class="payroll-calculation-card payroll-calculation-card--placeholder">
+                            <div class="payroll-calculation-header">
+                                <div class="payroll-calculation-heading">
+                                    <span class="payroll-calculation-icon">
+                                        <i class="fas fa-calculator"></i>
+                                    </span>
+                                    <div>
+                                        <h4>Tax Calculation Breakdown</h4>
+                                        <p>Loading the latest tax breakdown for this employee and period.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 d-flex justify-content-start">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="generateBtn"
+                            hx-get="/IncomeTaxDetuction/CalculateTaxDetails"
+                            hx-target="#taxCalculationContainer"
+                            hx-include="#hfEmployeeId, #PeriodSalery, #GrossSalary">
+                        <i class="fas fa-calculator me-1"></i>Calculate Tax Deduction
+                    </button>
+                </div>
+
+                <div class="col-12" style="display: none;">
+                    <label class="form-label small fw-semibold" asp-for="incometaxdetection">Deduction Amount <span class="text-danger">*</span></label>
+                    <input asp-for="incometaxdetection" id="incometaxdetection" class="form-control form-control-sm" type="number" step="0.01" required readonly />
+                    <span asp-validation-for="incometaxdetection" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Clear hidden ID when user types
+        const searchInput = document.getElementById('employeeSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const hiddenInput = document.getElementById('hfEmployeeId');
+                if (hiddenInput) hiddenInput.value = '';
+            });
+        }
+
+        const initialEmployee = document.getElementById('hfEmployeeId');
+        const initialPeriod = document.getElementById('PeriodSalery');
+        if (initialEmployee && initialEmployee.value && initialPeriod && initialPeriod.value) {
+            htmx.trigger(initialEmployee, 'change');
+        }
+
+        // Handle Employee Selection
+        document.body.addEventListener('click', function(e) {
+            const row = e.target.closest('.search-result-item');
+            if (row) {
+                const id = row.dataset.id;
+                const name = row.dataset.name;
+                const code = row.dataset.code;
+                
+                const hiddenInput = document.getElementById('hfEmployeeId');
+                hiddenInput.value = id;
+                document.getElementById('employeeResults').innerHTML = '';
+                document.getElementById('employeeSearch').value = name + ' (' + code + ')';
+                
+                // Trigger profile card load
+                htmx.ajax('GET', '/Employees/GetEmployeeByCode?id=' + id, {
+                    target: '#employeeProfileCard'
+                });
+
+                // Trigger tax calculation
+                htmx.trigger(hiddenInput, 'change');
+            }
+        });
+
+        // Close search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                const results = document.getElementById('employeeResults');
+                if (results) results.innerHTML = '';
+            }
+        });
+    });
+
+</script>

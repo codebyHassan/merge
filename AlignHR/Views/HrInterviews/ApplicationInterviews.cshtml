@@ -1,0 +1,81 @@
+@model AlignHR.Models.HrApplicationInterviewsViewModel
+
+@{
+    ViewData["Title"] = "Interviews — " + Model.CandidateName;
+    ViewBag.ActivePage = "HrJobPostings";
+}
+
+<section class="filter-bar mb-3">
+    <div class="fw-semibold">@Model.CandidateName — @Model.JobCode @Model.JobTitle</div>
+    <div class="filter-group ms-auto">
+        <a asp-action="Schedule" asp-route-applicationId="@Model.ApplicationId"
+           class="btn btn-primary btn-sm">
+            <i class="fa-solid fa-calendar-plus me-1"></i>Schedule Interview
+        </a>
+        <a asp-controller="HrApplications" asp-action="Details" asp-route-id="@Model.ApplicationId"
+           class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i>Back to Application
+        </a>
+    </div>
+</section>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card-inner">
+    @if (Model.Interviews.Any())
+    {
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Round</th>
+                    <th>Scheduled</th>
+                    <th>Status</th>
+                    <th>Panel</th>
+                    <th>Feedback</th>
+                    <th>Avg Score</th>
+                    <th class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var i in Model.Interviews.OrderBy(x => x.RoundOrder))
+                {
+                    var statusClass = i.Status switch
+                    {
+                        "Completed"   => "badge-success",
+                        "Cancelled"   => "badge-danger",
+                        "NoShow"      => "badge-danger",
+                        "Rescheduled" => "badge-warning",
+                        _             => "badge-secondary"
+                    };
+                    <tr>
+                        <td>@i.RoundOrder</td>
+                        <td class="fw-semibold">@i.RoundName</td>
+                        <td>@i.ScheduledDateTime.ToString("dd MMM yyyy HH:mm")</td>
+                        <td><span class="status-badge @statusClass">@i.Status</span></td>
+                        <td><span class="badge bg-secondary">@i.PanelCount</span></td>
+                        <td><span class="badge bg-secondary">@i.FeedbackCount</span></td>
+                        <td>@(i.AverageScore.HasValue ? $"{i.AverageScore:0.#}" : "—")</td>
+                        <td class="text-end sticky-actions">
+                            <a asp-action="Details" asp-route-id="@i.Id"
+                               class="btn btn-icon btn-sm btn-icon-primary"><i class="fa-solid fa-eye"></i></a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fa-solid fa-calendar-xmark"></i>
+            <h3 class="h6 mt-2 mb-1">No interviews scheduled</h3>
+            <p class="text-muted mb-0">Schedule the first interview round for this candidate.</p>
+        </div>
+    }
+</div>
