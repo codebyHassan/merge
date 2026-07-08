@@ -1,0 +1,100 @@
+@model IPagedList<AlignHR.Models.HrApplicationListItemViewModel>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Applications";
+    ViewBag.ActivePage = "HrJobPostings";
+    var currentFilter = ViewData["CurrentFilter"]?.ToString();
+    var jobPostingId = (decimal)ViewData["JobPostingId"]!;
+
+    string StageClass(string? s) => s switch
+    {
+        "Applied"      => "badge-secondary",
+        "Screening"    => "badge-primary",
+        "Shortlisted"  => "badge-primary",
+        "Interview"    => "badge-warning",
+        "Final Review" => "badge-warning",
+        "Selected"     => "badge-success",
+        "Hired"        => "badge-success",
+        "Rejected"     => "badge-danger",
+        "Withdrawn"    => "badge-secondary",
+        _              => "badge-secondary"
+    };
+}
+
+<section class="filter-bar mb-2">
+    <div class="input-group input-group-sm me-auto" style="width:auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control" type="search" name="search" value="@currentFilter" placeholder="Search candidate"
+               hx-get="@Url.Action("Index")" hx-target="#apps-page" hx-select="#apps-page"
+               hx-trigger="keyup[key=='Enter'], search" hx-include="[name='search']" hx-push-url="true" form="none" />
+    </div>
+    <div class="filter-group">
+        <a asp-controller="HrApplications" asp-action="Pipeline" asp-route-jobPostingId="@jobPostingId"
+           class="btn btn-outline-secondary btn-sm">Pipeline</a>
+        <a asp-action="Create" asp-route-jobPostingId="@jobPostingId" class="btn btn-primary btn-sm">
+            Add Application
+        </a>
+    </div>
+</section>
+
+<div class="mb-2 small text-muted">
+    <strong>@ViewBag.JobCode</strong> — @ViewBag.JobTitle
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="table-shell" data-erp-table id="apps-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Candidate</th>
+                    <th>Email</th>
+                    <th>Experience</th>
+                    <th>Stage</th>
+                    <th>Applied</th>
+                    <th>Status</th>
+                    <th class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in Model)
+                {
+                    <tr>
+                        <td><span class="fw-semibold">@a.CandidateName</span></td>
+                        <td>@a.CandidateEmail</td>
+                        <td>@(a.TotalExperienceYears.HasValue ? $"{a.TotalExperienceYears:0.#} yr" : "—")</td>
+                        <td><span class="status-badge @StageClass(a.CurrentStage)">@(a.CurrentStage ?? "—")</span></td>
+                        <td>@(a.AppliedDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                        <td><span class="status-badge @(a.IsActive ? "badge-success" : "badge-secondary")">@(a.IsActive ? "Active" : "Inactive")</span></td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a asp-action="Details" asp-route-id="@a.Id" class="btn btn-icon btn-sm btn-icon-primary" title="View"><i class="fa-solid fa-eye"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-inbox"></i>
+                <h3 class="h6 mt-2 mb-1">No applications yet</h3>
+                <p class="text-muted mb-0">Add the first candidate to this posting.</p>
+            </div>
+        }
+    </div>
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage–@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav>@Html.PagedListPager(Model, page => Url.Action("Index", new { page, jobPostingId, search = currentFilter }), new PagedListRenderOptions { UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" }, LiElementClasses = new[] { "page-item" }, PageClasses = new[] { "page-link" } })</nav>
+    </div>
+</section>

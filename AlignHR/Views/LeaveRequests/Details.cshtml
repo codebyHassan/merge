@@ -1,0 +1,904 @@
+@model AlignHR.Models.LeaveRequest
+@using AlignHR.Models.Enums
+
+@{
+    ViewData["Title"] = "Leave Request Details";
+    ViewBag.ActivePage = "LeaveRequests";
+    var approvalHistory = ViewData["ApprovalHistory"] as List<AlignHR.Models.LeaveApproval> ?? new List<AlignHR.Models.LeaveApproval>();
+
+    var statusColor = Model.Status switch {
+        "Approved"  => ("var(--erp-success)",      "var(--erp-success-soft)",  "fa-circle-check"),
+        "Rejected"  => ("var(--erp-danger)",        "var(--erp-danger-soft)",   "fa-circle-xmark"),
+        "Cancelled" => ("var(--erp-muted-strong)",  "#f1f3f7",                  "fa-ban"),
+        _           => ("var(--erp-warning)",        "var(--erp-warning-soft)",  "fa-clock")
+    };
+
+    var stageLabel = Model.CurrentStage switch {
+        WorkflowStage.LineManager      => "Line Manager",
+        WorkflowStage.HigherManagement => "Higher Management",
+        WorkflowStage.HR               => "HR / Final",
+        WorkflowStage.FinalApproved    => "Final Approved",
+        WorkflowStage.Rejected         => "Rejected",
+        _                              => Model.CurrentStage.ToString()
+    };
+
+    var emp = Model.Employee;
+    var empInitials = (emp != null) ? string.Concat(emp.FirstName?[0], emp.LastName?[0]).ToUpper() : "??";
+}
+
+@section Styles {
+<style>
+/* ════════════════════════════════════════════════════════════
+   LEAVE REQUEST · DETAILS — Premium Layout
+   ════════════════════════════════════════════════════════════ */
+
+.lrd-page {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) 310px;
+    gap: 0.85rem;
+    align-items: start;
+}
+
+/* ── Status Hero ────────────────────────────────────────── */
+.lrd-hero {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 0.85rem;
+    border-radius: var(--erp-radius-md);
+    background: var(--erp-surface);
+    border: 1px solid var(--erp-border);
+    box-shadow: var(--erp-shadow-sm);
+    display: flex;
+    align-items: stretch;
+}
+.lrd-hero-stripe {
+    width: 5px;
+    flex-shrink: 0;
+    background: var(--lrd-status-color);
+}
+.lrd-hero-body {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1.1rem;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+.lrd-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 0;
+}
+.lrd-hero-icon {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--lrd-status-bg);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--lrd-status-color);
+    font-size: 1.15rem;
+    flex-shrink: 0;
+}
+.lrd-hero-text { min-width: 0; }
+.lrd-hero-text h1 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--erp-text);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.lrd-hero-text p {
+    margin: 0.18rem 0 0;
+    font-size: 0.72rem;
+    color: var(--erp-muted);
+    font-weight: 500;
+}
+.lrd-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.22rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--lrd-status-bg);
+    color: var(--lrd-status-color);
+    border: 1px solid var(--lrd-status-color);
+    margin-top: 0.3rem;
+    display: inline-flex;
+}
+.lrd-status-badge i { font-size: 0.6rem; }
+
+/* Quick stats row */
+.lrd-stats {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+.lrd-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.45rem 0.75rem;
+    background: var(--erp-surface-subtle);
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-sm);
+    min-width: 80px;
+    text-align: center;
+}
+.lrd-stat .s-lbl {
+    font-size: 0.58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--erp-muted);
+}
+.lrd-stat .s-val {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--erp-text);
+    line-height: 1.1;
+}
+.lrd-stat .s-val.highlight { color: var(--erp-primary-600); font-size: 1rem; }
+
+/* Actions */
+.lrd-hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    flex-shrink: 0;
+}
+
+/* ── Section Cards ──────────────────────────────────────── */
+.lrd-card {
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-md);
+    background: var(--erp-surface);
+    box-shadow: var(--erp-shadow-sm);
+    overflow: hidden;
+    margin-bottom: 0.85rem;
+}
+.lrd-card:last-child { margin-bottom: 0; }
+.lrd-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.55rem 0.85rem;
+    border-bottom: 1px solid var(--erp-border);
+    background: var(--erp-surface-subtle);
+}
+.lrd-card-head .htitle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--erp-muted-strong);
+}
+.lrd-card-head .htitle i { color: var(--erp-primary); font-size: 0.72rem; }
+.lrd-card-body { padding: 0.85rem; }
+
+/* ── Info Grid (request details) ───────────────────────── */
+.lrd-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--erp-border);
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-sm);
+    overflow: hidden;
+    margin-bottom: 0.85rem;
+}
+.lrd-info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.6rem 0.75rem;
+    background: var(--erp-surface);
+    transition: background 0.12s;
+}
+.lrd-info-item:hover { background: var(--erp-surface-soft); }
+.lrd-info-item .lbl {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--erp-muted);
+}
+.lrd-info-item .val {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--erp-text);
+}
+.lrd-info-item .val.accent { color: var(--erp-primary-600); font-size: 0.92rem; }
+
+/* Half-day pill */
+.lrd-halfday-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.1rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    background: #F9FAFB;
+    color: #1F2937;
+    border: 1px solid #E7E5E4;
+    margin-left: 0.35rem;
+}
+
+/* Reason block */
+.lrd-reason {
+    padding: 0.75rem;
+    background: var(--erp-surface-subtle);
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-sm);
+    font-size: 0.78rem;
+    color: var(--erp-text);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    font-weight: 500;
+}
+.lrd-reason.empty { color: var(--erp-muted); font-style: italic; font-weight: 400; }
+
+/* Attachment button */
+.lrd-attachment {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: var(--erp-radius-sm);
+    border: 1px solid var(--erp-border);
+    background: var(--erp-surface);
+    color: var(--erp-muted-strong);
+    font-size: 0.74rem;
+    font-weight: 700;
+    transition: all 0.15s;
+    text-decoration: none;
+    margin-top: 0.5rem;
+}
+.lrd-attachment:hover {
+    border-color: var(--erp-primary);
+    background: var(--erp-primary-soft);
+    color: var(--erp-primary-600);
+}
+.lrd-attachment i { font-size: 0.7rem; color: var(--erp-primary); }
+
+/* ── Timeline ───────────────────────────────────────────── */
+.lrd-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+.lrd-tl-item {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 0 0.75rem;
+    position: relative;
+}
+.lrd-tl-item:not(:last-child) .lrd-tl-line {
+    display: block;
+}
+.lrd-tl-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+}
+.lrd-tl-dot {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.68rem;
+    color: #fff;
+    flex-shrink: 0;
+    z-index: 1;
+    border: 2px solid #fff;
+    box-shadow: var(--erp-shadow-sm);
+}
+.lrd-tl-dot.d-approved  { background: var(--erp-success); }
+.lrd-tl-dot.d-rejected  { background: var(--erp-danger); }
+.lrd-tl-dot.d-submitted { background: var(--erp-primary); }
+.lrd-tl-dot.d-pending   { background: var(--erp-warning); }
+.lrd-tl-line {
+    width: 2px;
+    flex: 1;
+    background: var(--erp-border);
+    min-height: 18px;
+    display: none;
+}
+.lrd-tl-content {
+    padding: 0 0 1rem 0;
+}
+.lrd-tl-item:last-child .lrd-tl-content { padding-bottom: 0; }
+.lrd-tl-action {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.2rem;
+    flex-wrap: wrap;
+}
+.lrd-tl-action strong {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: var(--erp-text);
+}
+.lrd-tl-level {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.08rem 0.4rem;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    background: var(--erp-primary-soft);
+    color: var(--erp-primary-600);
+    border: 1px solid #E5E7EB;
+}
+.lrd-tl-by {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--erp-muted-strong);
+    margin-bottom: 0.15rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.lrd-tl-by i { font-size: 0.62rem; color: var(--erp-muted); }
+.lrd-tl-time {
+    font-size: 0.66rem;
+    font-weight: 600;
+    color: var(--erp-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.lrd-tl-time i { font-size: 0.58rem; }
+.lrd-tl-remarks {
+    margin-top: 0.35rem;
+    padding: 0.45rem 0.6rem;
+    background: var(--erp-surface-subtle);
+    border-left: 3px solid var(--erp-border);
+    border-radius: 0 var(--erp-radius-xs) var(--erp-radius-xs) 0;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--erp-muted-strong);
+    line-height: 1.5;
+    font-style: italic;
+}
+.lrd-tl-pending .lrd-tl-remarks {
+    border-left-color: var(--erp-warning);
+    background: var(--erp-warning-soft);
+    color: var(--erp-warning);
+    font-style: normal;
+    font-weight: 700;
+}
+
+/* ── Right Sidebar ──────────────────────────────────────── */
+.lrd-profile-col {
+    position: sticky;
+    top: calc(var(--erp-topbar-height) + 0.75rem);
+}
+
+/* Employee card */
+.lrd-emp-panel {
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-md);
+    background: var(--erp-surface);
+    box-shadow: 0 6px 20px rgba(16,24,40,0.06);
+    overflow: hidden;
+    margin-bottom: 0.85rem;
+}
+.lrd-emp-cover {
+    position: relative;
+    height: 52px;
+    background:
+        radial-gradient(at 15% 20%, rgba(255,255,255,0.2), transparent 50%),
+        linear-gradient(125deg, #1F2937 0%, #111827 50%, #9CA3AF 100%);
+    overflow: hidden;
+}
+.lrd-emp-cover::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 14px);
+}
+.lrd-emp-av-row {
+    display: flex;
+    align-items: flex-end;
+    padding: 0 0.85rem;
+    margin-top: -26px;
+    position: relative;
+    z-index: 2;
+}
+.lrd-emp-av {
+    width: 58px; height: 58px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--erp-primary-soft), #E5E7EB);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; font-weight: 800;
+    color: var(--erp-primary-600);
+    border: 3px solid #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.14);
+    overflow: hidden;
+}
+.lrd-emp-av img { width: 100%; height: 100%; object-fit: cover; }
+.lrd-emp-id {
+    padding: 0.5rem 0.85rem 0.55rem;
+}
+.lrd-emp-name {
+    font-size: 0.92rem; font-weight: 800;
+    color: var(--erp-text); margin: 0; line-height: 1.2;
+}
+.lrd-emp-sub {
+    display: flex; align-items: center; gap: 0.35rem; margin-top: 0.2rem; flex-wrap: wrap;
+}
+.lrd-emp-code {
+    font-size: 0.66rem; font-weight: 700;
+    color: var(--erp-muted);
+    background: var(--erp-surface-subtle);
+    border: 1px solid var(--erp-border);
+    padding: 0.1rem 0.35rem;
+    border-radius: var(--erp-radius-xs);
+}
+
+/* Emp chip grid */
+.lrd-emp-chips {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    padding: 0 0.85rem 0.65rem;
+}
+.lrd-chip {
+    display: flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 0.5rem;
+    background: var(--erp-surface-subtle);
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-sm);
+    min-width: 0;
+}
+.lrd-chip-ico {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    background: var(--erp-surface);
+    border: 1px solid var(--erp-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--erp-primary);
+    font-size: 0.64rem;
+    flex-shrink: 0;
+}
+.lrd-chip-txt .lbl {
+    display: block;
+    font-size: 0.55rem; font-weight: 800;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--erp-muted);
+}
+.lrd-chip-txt .val {
+    display: block; font-size: 0.7rem; font-weight: 700;
+    color: var(--erp-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Workflow State card */
+.lrd-wf-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--erp-border);
+    font-size: 0.75rem;
+}
+.lrd-wf-row:last-child { border-bottom: none; padding-bottom: 0; }
+.lrd-wf-row:first-child { padding-top: 0; }
+.lrd-wf-lbl {
+    display: flex; align-items: center; gap: 0.35rem;
+    color: var(--erp-muted-strong); font-weight: 600;
+}
+.lrd-wf-lbl i { width: 13px; text-align: center; font-size: 0.65rem; color: var(--erp-muted); }
+.lrd-wf-val { font-weight: 700; color: var(--erp-text); text-align: right; }
+.lrd-wf-val.success { color: var(--erp-success); }
+.lrd-wf-val.danger  { color: var(--erp-danger); }
+.lrd-wf-val.warn    { color: var(--erp-warning); }
+
+.lrd-level-pill {
+    display: inline-flex; align-items: center;
+    padding: 0.12rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.64rem; font-weight: 800;
+    background: var(--erp-primary-soft);
+    color: var(--erp-primary-600);
+    border: 1px solid #E5E7EB;
+}
+
+/* Rejection block */
+.lrd-rejection-block {
+    margin-top: 0.5rem;
+    padding: 0.65rem;
+    background: var(--erp-danger-soft);
+    border: 1px solid #fca5a5;
+    border-radius: var(--erp-radius-sm);
+    font-size: 0.74rem;
+    color: var(--erp-danger);
+    font-weight: 600;
+    line-height: 1.5;
+}
+.lrd-rejection-block strong {
+    display: block;
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.25rem;
+    opacity: 0.75;
+}
+
+/* Section label inside card-body */
+.lrd-field-label {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--erp-muted);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+.lrd-field-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--erp-border);
+}
+
+/* Empty timeline */
+.lrd-empty-tl {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: var(--erp-muted);
+    font-size: 0.74rem;
+}
+.lrd-empty-tl i { font-size: 1.4rem; color: var(--erp-border-strong); }
+
+@@media (max-width: 992px) {
+    .lrd-page { grid-template-columns: 1fr; }
+    .lrd-profile-col { position: static; }
+    .lrd-hero-body { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+}
+</style>
+}
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item"><i class="fas fa-home"></i><a href="/">Home</a></div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item"><a asp-action="Index">Leave Requests</a></div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Details</div>
+</div>
+
+<!-- ─── Status Hero ─────────────────────────────────────────── -->
+<div class="lrd-hero animate-fade-in" style="--lrd-status-color:@statusColor.Item1;--lrd-status-bg:@statusColor.Item2;">
+    <div class="lrd-hero-stripe"></div>
+    <div class="lrd-hero-body">
+        <div class="lrd-hero-left">
+            <div class="lrd-hero-icon"><i class="fas @statusColor.Item3"></i></div>
+            <div class="lrd-hero-text">
+                <h1>Leave Request &nbsp;<span style="font-size:0.78rem;font-weight:600;color:var(--erp-muted);">#@Model.Id</span></h1>
+                <p>@(emp?.FullName ?? "—") &nbsp;·&nbsp; @(Model.LeaveType?.Name ?? "—") &nbsp;·&nbsp; @Model.FromDate.ToString("MMM d") – @Model.ToDate.ToString("MMM d, yyyy")</p>
+                <span class="lrd-status-badge"><i class="fas @statusColor.Item3"></i> @Model.Status</span>
+            </div>
+        </div>
+
+        <div class="lrd-stats">
+            <div class="lrd-stat">
+                <span class="s-lbl">Duration</span>
+                <span class="s-val highlight">@Model.DaysCount.ToString("0.##")</span>
+                <span class="s-lbl">@(Model.DaysCount == 1 ? "day" : "days")</span>
+            </div>
+            <div class="lrd-stat">
+                <span class="s-lbl">From</span>
+                <span class="s-val">@Model.FromDate.ToString("dd MMM")</span>
+                <span class="s-lbl">@Model.FromDate.ToString("yyyy")</span>
+            </div>
+            <div class="lrd-stat">
+                <span class="s-lbl">To</span>
+                <span class="s-val">@Model.ToDate.ToString("dd MMM")</span>
+                <span class="s-lbl">@Model.ToDate.ToString("yyyy")</span>
+            </div>
+            <div class="lrd-stat">
+                <span class="s-lbl">Stage</span>
+                <span class="s-val" style="font-size:0.72rem;">@stageLabel</span>
+            </div>
+        </div>
+
+        <div class="lrd-hero-actions">
+            <a class="btn btn-primary btn-sm" asp-action="Index">
+                <i class="fas fa-arrow-left me-1"></i> Back
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="lrd-page">
+
+    <!-- ═══════════════════════════════════════════════════════
+         LEFT · Request Details + Timeline
+         ═══════════════════════════════════════════════════════ -->
+    <div>
+        <!-- Request Details -->
+        <div class="lrd-card animate-fade-in">
+            <div class="lrd-card-head">
+                <span class="htitle"><i class="fas fa-clipboard-list"></i> Request Details</span>
+                @if (Model.IsHalfDay)
+                {
+                    <span class="lrd-halfday-pill"><i class="fas fa-clock"></i> Half Day — @(Model.HalfDaySession == "FirstHalf" ? "First Half" : "Second Half")</span>
+                }
+            </div>
+            <div class="lrd-card-body">
+                <div class="lrd-info-grid">
+                    <div class="lrd-info-item">
+                        <span class="lbl">Leave Type</span>
+                        <span class="val">@(Model.LeaveType?.Name ?? "—")</span>
+                    </div>
+                    <div class="lrd-info-item">
+                        <span class="lbl">Duration</span>
+                        <span class="val accent">@Model.DaysCount.ToString("0.##") @(Model.DaysCount == 1 ? "day" : "days")</span>
+                    </div>
+                    <div class="lrd-info-item">
+                        <span class="lbl">From Date</span>
+                        <span class="val">@Model.FromDate.ToString("MMMM d, yyyy")</span>
+                    </div>
+                    <div class="lrd-info-item">
+                        <span class="lbl">To Date</span>
+                        <span class="val">@Model.ToDate.ToString("MMMM d, yyyy")</span>
+                    </div>
+                    <div class="lrd-info-item">
+                        <span class="lbl">Applied On</span>
+                        <span class="val">@(Model.AppliedAt.HasValue ? Model.AppliedAt.Value.ToString("MMM d, yyyy  hh:mm tt") : "—")</span>
+                    </div>
+                    <div class="lrd-info-item">
+                        <span class="lbl">Created By</span>
+                        <span class="val">@(string.IsNullOrEmpty(Model.CreatedBy) ? "Self" : Model.CreatedBy)</span>
+                    </div>
+                </div>
+
+                <div class="lrd-field-label"><i class="fas fa-comment-lines"></i> Reason / Remarks</div>
+                <div class="lrd-reason @(string.IsNullOrEmpty(Model.Reason) ? "empty" : "")">
+                    @(string.IsNullOrEmpty(Model.Reason) ? "No reason provided." : Model.Reason)
+                </div>
+
+                @if (!string.IsNullOrEmpty(Model.AttachmentUrl))
+                {
+                    <div style="margin-top:0.75rem;">
+                        <div class="lrd-field-label" style="margin-bottom:0.4rem;"><i class="fas fa-paperclip"></i> Attachment</div>
+                        <a href="@Model.AttachmentUrl" target="_blank" class="lrd-attachment">
+                            <i class="fas fa-arrow-up-right-from-square"></i> View Document
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Approval Timeline -->
+        <div class="lrd-card animate-fade-in">
+            <div class="lrd-card-head">
+                <span class="htitle"><i class="fas fa-timeline"></i> Approval Timeline</span>
+                <span style="font-size:0.66rem;font-weight:700;color:var(--erp-muted);">@(approvalHistory.Count) @(approvalHistory.Count == 1 ? "entry" : "entries")</span>
+            </div>
+            <div class="lrd-card-body">
+                @if (approvalHistory.Any() || (Model.Status == "Pending" && Model.CurrentApprover != null))
+                {
+                    <div class="lrd-timeline">
+                        @foreach (var entry in approvalHistory)
+                        {
+                            var dotClass = entry.Action switch {
+                                "Approved"  => "d-approved",
+                                "Rejected"  => "d-rejected",
+                                "Submitted" => "d-submitted",
+                                _           => "d-pending"
+                            };
+                            var dotIcon = entry.Action switch {
+                                "Approved"  => "fa-check",
+                                "Rejected"  => "fa-xmark",
+                                "Submitted" => "fa-paper-plane",
+                                _           => "fa-clock"
+                            };
+                            <div class="lrd-tl-item">
+                                <div class="lrd-tl-col">
+                                    <div class="lrd-tl-dot @dotClass"><i class="fas @dotIcon"></i></div>
+                                    <div class="lrd-tl-line"></div>
+                                </div>
+                                <div class="lrd-tl-content">
+                                    <div class="lrd-tl-action">
+                                        <strong>@entry.Action</strong>
+                                        @if (entry.ApprovalLevel > 0)
+                                        {
+                                            <span class="lrd-tl-level">L@(entry.ApprovalLevel)</span>
+                                        }
+                                    </div>
+                                    <div class="lrd-tl-by">
+                                        <i class="fas fa-user"></i>
+                                        @(entry.ApproverEmployee?.FullName ?? "—")
+                                        @if (!string.IsNullOrEmpty(entry.ApproverEmployee?.Code))
+                                        {
+                                            <span style="font-weight:600;color:var(--erp-muted);">(#@entry.ApproverEmployee.Code)</span>
+                                        }
+                                    </div>
+                                    <div class="lrd-tl-time">
+                                        <i class="fas fa-clock"></i>
+                                        @entry.ActionAt.ToString("MMM d, yyyy  hh:mm tt")
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(entry.Remarks))
+                                    {
+                                        <div class="lrd-tl-remarks">"@entry.Remarks"</div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        @if (Model.Status == "Pending" && Model.CurrentApprover != null)
+                        {
+                            <div class="lrd-tl-item lrd-tl-pending">
+                                <div class="lrd-tl-col">
+                                    <div class="lrd-tl-dot d-pending" style="animation: lrdPulse 1.6s ease-in-out infinite;">
+                                        <i class="fas fa-hourglass-half"></i>
+                                    </div>
+                                </div>
+                                <div class="lrd-tl-content">
+                                    <div class="lrd-tl-action">
+                                        <strong>Awaiting Approval</strong>
+                                        <span class="lrd-tl-level">L@(Model.ApprovalLevel)</span>
+                                    </div>
+                                    <div class="lrd-tl-by">
+                                        <i class="fas fa-user"></i>
+                                        @Model.CurrentApprover.FullName
+                                        <span style="font-weight:600;color:var(--erp-muted);">(#@Model.CurrentApprover.Code)</span>
+                                    </div>
+                                    <div class="lrd-tl-remarks">Pending action from this approver.</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="lrd-empty-tl">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        No workflow history available yet.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         RIGHT · Employee Profile + Workflow State
+         ═══════════════════════════════════════════════════════ -->
+    <aside class="lrd-profile-col">
+
+        <!-- Employee Profile -->
+        <div class="lrd-emp-panel">
+            <div class="lrd-card-head">
+                <span class="htitle"><i class="fas fa-address-card"></i> Employee</span>
+            </div>
+            <div class="lrd-emp-cover"></div>
+            <div class="lrd-emp-av-row">
+                <div class="lrd-emp-av">
+                    @if (!string.IsNullOrEmpty(emp?.ProfileImage))
+                    {
+                        <img src="/uploads/employees/@emp.ProfileImage" alt="@emp?.FirstName"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                        <span style="display:none;">@empInitials</span>
+                    }
+                    else
+                    {
+                        @empInitials
+                    }
+                </div>
+            </div>
+            <div class="lrd-emp-id">
+                <h4 class="lrd-emp-name">@(emp?.FullName ?? "—")</h4>
+                <div class="lrd-emp-sub">
+                    <span class="lrd-emp-code">#@(emp?.Code ?? "—")</span>
+                </div>
+            </div>
+            <div class="lrd-emp-chips">
+                <div class="lrd-chip">
+                    <div class="lrd-chip-ico"><i class="fas fa-building"></i></div>
+                    <div class="lrd-chip-txt"><span class="lbl">Department</span><span class="val">@(emp?.Department?.Name ?? "—")</span></div>
+                </div>
+                <div class="lrd-chip">
+                    <div class="lrd-chip-ico"><i class="fas fa-id-badge"></i></div>
+                    <div class="lrd-chip-txt"><span class="lbl">Designation</span><span class="val">@(emp?.Designation?.Name ?? "—")</span></div>
+                </div>
+                <div class="lrd-chip">
+                    <div class="lrd-chip-ico"><i class="fas fa-map-marker-alt"></i></div>
+                    <div class="lrd-chip-txt"><span class="lbl">Location</span><span class="val">@(emp?.Location?.Name ?? "—")</span></div>
+                </div>
+                <div class="lrd-chip">
+                    <div class="lrd-chip-ico"><i class="fas fa-layer-group"></i></div>
+                    <div class="lrd-chip-txt"><span class="lbl">Grade</span><span class="val">@(emp?.Grade?.Name ?? "—")</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workflow State -->
+        <div class="lrd-card">
+            <div class="lrd-card-head">
+                <span class="htitle"><i class="fas fa-diagram-project"></i> Workflow State</span>
+            </div>
+            <div class="lrd-card-body" style="padding:0.75rem 0.85rem;">
+                <div class="lrd-wf-row">
+                    <span class="lrd-wf-lbl"><i class="fas fa-circle-dot"></i> Status</span>
+                    <span class="lrd-wf-val" style="color:@statusColor.Item1;">@Model.Status</span>
+                </div>
+                <div class="lrd-wf-row">
+                    <span class="lrd-wf-lbl"><i class="fas fa-route"></i> Stage</span>
+                    <span class="lrd-wf-val">@stageLabel</span>
+                </div>
+                <div class="lrd-wf-row">
+                    <span class="lrd-wf-lbl"><i class="fas fa-layer-group"></i> Level</span>
+                    <span class="lrd-level-pill">L@(Model.ApprovalLevel)</span>
+                </div>
+                @if (Model.CurrentApprover != null)
+                {
+                    <div class="lrd-wf-row">
+                        <span class="lrd-wf-lbl"><i class="fas fa-user-check"></i> Approver</span>
+                        <span class="lrd-wf-val">@Model.CurrentApprover.FullName</span>
+                    </div>
+                }
+                @if (Model.ApprovedAt.HasValue)
+                {
+                    <div class="lrd-wf-row">
+                        <span class="lrd-wf-lbl"><i class="fas fa-circle-check"></i> Approved At</span>
+                        <span class="lrd-wf-val success">@Model.ApprovedAt.Value.ToString("MMM d, yyyy")</span>
+                    </div>
+                    <div class="lrd-wf-row">
+                        <span class="lrd-wf-lbl"><i class="fas fa-user-tie"></i> Approved By</span>
+                        <span class="lrd-wf-val">@(Model.ApprovedByEmpNo ?? "—")</span>
+                    </div>
+                }
+                @if (Model.RejectedAt.HasValue)
+                {
+                    <div class="lrd-wf-row">
+                        <span class="lrd-wf-lbl"><i class="fas fa-circle-xmark"></i> Rejected At</span>
+                        <span class="lrd-wf-val danger">@Model.RejectedAt.Value.ToString("MMM d, yyyy")</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.RejectionReason))
+                    {
+                        <div class="lrd-rejection-block" style="margin-top:0.5rem;">
+                            <strong>Rejection Reason</strong>
+                            @Model.RejectionReason
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+    </aside>
+</div>
+
+@section Scripts {
+<style>
+@@keyframes lrdPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(87, 83, 78,0.45); }
+    70%       { box-shadow: 0 0 0 7px rgba(87, 83, 78,0); }
+}
+</style>
+}

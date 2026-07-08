@@ -1,0 +1,645 @@
+@model AlignHR.Models.HrApplicationDetailsViewModel
+
+@{
+    ViewBag.ActivePage = "HrJobPostings";
+
+    var stageName  = (Model.CurrentStage ?? "").Trim().ToLowerInvariant();
+    var isActive   = Model.IsActive;
+    var isApplied  = stageName == "applied";
+    var isRejected = stageName == "rejected" || !isActive;
+
+    var stageClass = stageName switch
+    {
+        "applied"     => "badge-secondary",
+        "shortlisted" => "badge-primary",
+        "rejected"    => "badge-danger",
+        "hired"       => "badge-success",
+        _             => "badge-warning"
+    };
+
+    string InterviewStatusClass(string? s) => s?.ToLower() switch
+    {
+        "completed"   => "badge-success",
+        "cancelled"   => "badge-danger",
+        "noshow"      => "badge-danger",
+        "rescheduled" => "badge-secondary",
+        _             => "badge-warning"
+    };
+
+    string OfferStatusClass(string? s) => s?.ToLower() switch
+    {
+        "approved"        => "badge-success",
+        "accepted"        => "badge-success",
+        "sent"            => "badge-primary",
+        "pendingapproval" => "badge-warning",
+        "rejected"        => "badge-danger",
+        "cancelled"       => "badge-danger",
+        "expired"         => "badge-danger",
+        _                 => "badge-secondary"
+    };
+
+    string OnboardingStatusClass(string? s) => s?.ToLower() switch
+    {
+        "completed"       => "badge-success",
+        "joined"          => "badge-success",
+        "readytojoin"     => "badge-primary",
+        "tasksinprogress" => "badge-warning",
+        "documentspending"=> "badge-warning",
+        "cancelled"       => "badge-danger",
+        _                 => "badge-secondary"
+    };
+
+    string TaskStatusClass(string? s) => s?.ToLower() switch
+    {
+        "completed" => "badge-success",
+        "inprogress"=> "badge-warning",
+        "cancelled" => "badge-danger",
+        _           => "badge-secondary"
+    };
+
+    var activeOffer   = Model.Offers.FirstOrDefault(o => o.Status != "Withdrawn");
+    var canMakeOffer  = isActive && !isRejected && (!Model.Offers.Any() || Model.Offers.First().Status == "Withdrawn");
+}
+
+<style>
+    /* Local helpers — micro-labels and timeline marker used across this page */
+    .rec-label {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        color: var(--ahr-text-tertiary);
+    }
+    .rec-dot {
+        position: absolute;
+        left: -5px;
+        top: 5px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--ahr-accent, #4f46e5);
+    }
+</style>
+
+<div class="animate-fade-in">
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show py-2 small">
+            @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show py-2 small">
+            @TempData["Error"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* ── Hero + candidate summary ── *@
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex flex-wrap align-items-start justify-content-between gap-3">
+                <div>
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                        <h1 class="h5 fw-bold mb-0">@Model.CandidateName</h1>
+                        <span class="status-badge @stageClass">@(Model.CurrentStage ?? "—")</span>
+                        @if (activeOffer != null)
+                        {
+                            <span class="status-badge @OfferStatusClass(activeOffer.Status)">
+                                <i class="fa-solid fa-file-contract me-1"></i>Offer: @activeOffer.Status
+                            </span>
+                        }
+                        @if (!isActive)
+                        {
+                            <span class="status-badge badge-danger">Inactive</span>
+                        }
+                    </div>
+                    <div class="text-muted small">@Model.JobCode — @Model.JobTitle</div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-action="Index" asp-route-jobPostingId="@Model.JobPostingFK"
+                       class="btn btn-outline-secondary btn-sm">Back</a>
+                    <a asp-controller="HrCandidates" asp-action="Details" asp-route-id="@Model.CandidateFK"
+                       class="btn btn-outline-secondary btn-sm">View Profile</a>
+                </div>
+            </div>
+
+            <hr class="my-3" />
+
+            <div class="row g-3">
+                <div class="col-6 col-md-3">
+                    <div class="rec-label mb-1">Email</div>
+                    <div class="small text-break">@(Model.CandidateEmail ?? "—")</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rec-label mb-1">Phone</div>
+                    <div class="small">@(Model.CandidatePhone ?? "—")</div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rec-label mb-1">Experience</div>
+                    <div class="small">
+                        @(Model.TotalExperienceYears.HasValue ? $"{Model.TotalExperienceYears:0.#} yrs" : "—")
+                        @if (!string.IsNullOrWhiteSpace(Model.CurrentEmployer))
+                        {
+                            <span class="text-muted"> · @Model.CurrentEmployer</span>
+                        }
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="rec-label mb-1">Applied</div>
+                    <div class="small">@(Model.AppliedDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* ── Action Panel ── *@
+    @if (isActive && !isRejected)
+    {
+        <div class="card mb-3">
+            <div class="card-body d-flex flex-wrap gap-2 align-items-center">
+                @if (stageName == "applied" || stageName == "screening")
+                {
+                    <form asp-action="Shortlist" asp-route-id="@Model.Id" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-primary btn-sm">Shortlist</button>
+                    </form>
+                }
+                else if (stageName == "shortlisted" || stageName == "interview")
+                {
+                    <a asp-controller="HrInterviews" asp-action="Schedule"
+                       asp-route-applicationId="@Model.Id"
+                       class="btn btn-primary btn-sm">Schedule Interview</a>
+                }
+                else if ((stageName == "final review" || stageName == "selected") && canMakeOffer && Model.AllFeedbackSubmitted)
+                {
+                    <a asp-controller="HrOffers" asp-action="Create"
+                       asp-route-applicationId="@Model.Id"
+                       class="btn btn-primary btn-sm">Make Offer</a>
+                }
+
+                <form asp-action="Withdraw" asp-route-id="@Model.Id" method="post" class="d-inline ms-auto"
+                      onsubmit="return confirm('Mark this application as withdrawn?');">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Withdraw</button>
+                </form>
+
+                <button type="button" class="btn btn-outline-danger btn-sm"
+                        data-bs-toggle="modal" data-bs-target="#rejectModal">
+                    Reject
+                </button>
+            </div>
+        </div>
+    }
+
+    @* ── Interviews ── *@
+    @if (stageName != "applied" && stageName != "screening" || Model.Interviews.Any())
+    {
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center gap-2">
+                Interviews
+                @if (Model.Interviews.Any())
+                {
+                    <span class="status-badge badge-secondary">@Model.Interviews.Count</span>
+                }
+            </div>
+            <div class="card-body">
+                @if (Model.Interviews.Any())
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var iv in Model.Interviews)
+                        {
+                            <div class="border rounded p-3">
+                                <div class="d-flex flex-wrap align-items-start justify-content-between gap-2">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="fw-semibold">@iv.RoundName</span>
+                                            <span class="status-badge @InterviewStatusClass(iv.Status)">@iv.Status</span>
+                                        </div>
+                                        <div class="text-muted small">
+                                            @iv.ScheduledDateTime.ToString("dd MMM yyyy · hh:mm tt")
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-3 mt-2 small">
+                                            <span class="text-muted">Panel: @iv.PanelCount</span>
+                                            <span class="text-muted">
+                                                Feedback:
+                                                @if (iv.HasSubmittedFeedback)
+                                                {
+                                                    <span class="text-success fw-semibold">Submitted</span>
+                                                }
+                                                else if (iv.FeedbackCount > 0)
+                                                {
+                                                    <span class="fw-semibold" style="color:#6366f1;">Draft</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-warning fw-semibold">Pending</span>
+                                                }
+                                            </span>
+                                            @if (iv.AverageScore.HasValue)
+                                            {
+                                                <span class="fw-semibold">Score: @iv.AverageScore.Value.ToString("0.#")%</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2 flex-shrink-0">
+                                        <a asp-controller="HrInterviews" asp-action="SubmitFeedback"
+                                           asp-route-scheduleId="@iv.Id"
+                                           class="btn btn-primary btn-sm">
+                                            @(iv.HasSubmittedFeedback ? "View Feedback" : "Feedback")
+                                        </a>
+                                        @if (iv.FeedbackCount == 0)
+                                        {
+                                            <a asp-controller="HrInterviews" asp-action="Edit"
+                                               asp-route-id="@iv.Id"
+                                               class="btn btn-outline-secondary btn-sm">Edit</a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center text-muted small py-3">
+                        No interviews scheduled yet.
+                        @if (!Model.HasInterviewRounds)
+                        {
+                            <span class="d-block mt-1 opacity-75" style="font-size:11px;">
+                                No interview rounds configured on this job posting.
+                            </span>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* ── Documents ── *@
+    @if (Model.CandidateDocuments.Any())
+    {
+        <div class="card mb-3">
+            <div class="card-header">Documents</div>
+            <div class="card-body d-flex flex-wrap gap-2">
+                @foreach (var doc in Model.CandidateDocuments)
+                {
+                    <a asp-controller="HrCandidates" asp-action="Download" asp-route-path="@doc.FilePath"
+                       class="btn btn-outline-secondary btn-sm">
+                        <i class="fa-solid fa-paperclip me-1"></i>@doc.DocumentType — @doc.FileName
+                    </a>
+                }
+            </div>
+        </div>
+    }
+
+    @* ── Offers ── *@
+    @if (Model.Offers.Any() || ((stageName == "final review" || stageName == "selected" || stageName == "hired") && Model.AllFeedbackSubmitted))
+    {
+        <div class="card mb-3">
+            <div class="card-header d-flex align-items-center gap-2">
+                Offers
+                @if (Model.Offers.Any())
+                {
+                    <span class="status-badge badge-secondary">@Model.Offers.Count</span>
+                }
+            </div>
+            <div class="card-body">
+                @if (Model.Offers.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr class="text-uppercase text-muted" style="font-size:10px;letter-spacing:.06em;">
+                                    <th scope="col">Offer</th>
+                                    <th scope="col">Salary</th>
+                                    <th scope="col">Joining</th>
+                                    <th scope="col">Expiry</th>
+                                    <th scope="col">Approvals</th>
+                                    <th scope="col" class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var offer in Model.Offers)
+                                {
+                                    var isWithdrawn = offer.Status == "Withdrawn";
+                                    var isDraft     = offer.Status == "Draft";
+                                    <tr class="@(isWithdrawn ? "opacity-50" : "")">
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                <span class="fw-semibold font-monospace @(isWithdrawn ? "text-decoration-line-through" : "")">
+                                                    @(offer.OfferNumber ?? "—")
+                                                </span>
+                                                <span class="status-badge @OfferStatusClass(offer.Status)">@(offer.Status ?? "Draft")</span>
+                                                @if (!string.IsNullOrWhiteSpace(offer.LastResponseType))
+                                                {
+                                                    var rClass = offer.LastResponseType?.ToLower() switch
+                                                    {
+                                                        "accepted" => "text-success",
+                                                        "rejected" => "text-danger",
+                                                        _ => "text-muted"
+                                                    };
+                                                    <span class="small fw-semibold @rClass">· @offer.LastResponseType</span>
+                                                }
+                                                @if (!string.IsNullOrWhiteSpace(offer.Decision))
+                                                {
+                                                    <span class="small text-muted">· @offer.Decision</span>
+                                                }
+                                            </div>
+                                        </td>
+                                        <td class="fw-semibold">@offer.ProposedSalary.ToString("N0")</td>
+                                        <td class="text-muted">@(offer.CandidateJoiningDate?.ToString("dd MMM yy") ?? "—")</td>
+                                        <td class="text-muted">@(offer.ExpiryDate?.ToString("dd MMM yy") ?? "—")</td>
+                                        <td>
+                                            @if (offer.TotalApprovals > 0)
+                                            {
+                                                <div class="d-flex align-items-center gap-1">
+                                                    @for (int di = 0; di < offer.TotalApprovals; di++)
+                                                    {
+                                                        var filled = di < offer.ApprovedCount;
+                                                        <span style="width:8px;height:8px;border-radius:50%;flex-shrink:0;background:@(filled ? "#16a34a" : "var(--ahr-border)");border:1px solid @(filled ? "#16a34a" : "var(--ahr-text-tertiary)");"></span>
+                                                    }
+                                                    <span class="small text-muted ms-1">@offer.ApprovedCount/@offer.TotalApprovals</span>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="d-flex gap-1 justify-content-end">
+                                                @if (isDraft)
+                                                {
+                                                    <a asp-controller="HrOffers" asp-action="Edit" asp-route-id="@offer.Id"
+                                                       class="btn btn-outline-secondary btn-sm">Edit</a>
+                                                }
+                                                <a asp-controller="HrOffers" asp-action="Details" asp-route-id="@offer.Id"
+                                                   class="btn btn-outline-secondary btn-sm">Details</a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else if (!canMakeOffer)
+                {
+                    <div class="text-muted small">No offer on this application.</div>
+                }
+                else
+                {
+                    <div class="text-muted small">No offer has been created yet.</div>
+                }
+            </div>
+        </div>
+    }
+
+    @* ── Onboarding ── *@
+    @if (activeOffer != null)
+    {
+        <div class="card mb-3">
+            <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+                <span class="d-flex align-items-center gap-2">
+                    Onboarding
+                    @if (Model.Onboarding != null)
+                    {
+                        <span class="status-badge @OnboardingStatusClass(Model.Onboarding.Status)">@Model.Onboarding.Status</span>
+                    }
+                </span>
+                <span class="d-flex gap-2">
+                    @if (Model.Onboarding == null && activeOffer.Status == "Accepted")
+                    {
+                        <form asp-controller="HrOnboarding" asp-action="Start" method="post" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="offerId" value="@activeOffer.Id" />
+                            <button type="submit" class="btn btn-primary btn-sm">Start Onboarding</button>
+                        </form>
+                    }
+                    @if (Model.Onboarding != null)
+                    {
+                        <a asp-controller="HrOnboarding" asp-action="Details" asp-route-id="@Model.Onboarding.Id"
+                           class="btn btn-outline-secondary btn-sm">Full Details</a>
+                    }
+                </span>
+            </div>
+            <div class="card-body">
+                @if (Model.Onboarding != null)
+                {
+                    var ob = Model.Onboarding;
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-12 col-sm-4">
+                            <div class="rec-label mb-1">Planned Joining</div>
+                            <div class="small">@ob.PlannedJoiningDate.ToString("dd MMM yyyy")</div>
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <div class="rec-label mb-1">Actual Joining</div>
+                            <div class="small">@(ob.ActualJoiningDate?.ToString("dd MMM yyyy") ?? "—")</div>
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <div class="rec-label mb-1">Task Progress</div>
+                            <div class="small fw-semibold">@ob.CompletedTasks / @ob.TotalTasks</div>
+                            @if (ob.TotalTasks > 0)
+                            {
+                                var pct = (int)Math.Round(ob.CompletedTasks * 100.0 / ob.TotalTasks);
+                                <div class="progress mt-2" style="height:5px;">
+                                    <div class="progress-bar bg-success" role="progressbar" style="width:@pct%;"
+                                         aria-valuenow="@pct" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (ob.Tasks.Any())
+                    {
+                        <div class="rec-label mb-2">Tasks</div>
+                        <div class="d-flex flex-column gap-1">
+                            @foreach (var t in ob.Tasks)
+                            {
+                                var isDone = t.Status?.ToLower() == "completed";
+                                <div class="d-flex align-items-center justify-content-between gap-2 border rounded px-3 py-2">
+                                    <div>
+                                        <span class="small @(isDone ? "text-muted text-decoration-line-through" : "")">
+                                            @t.TaskName
+                                            @if (t.IsMandatory)
+                                            {
+                                                <span class="text-danger">*</span>
+                                            }
+                                        </span>
+                                        @if (!string.IsNullOrWhiteSpace(t.ResponsibleDepartment))
+                                        {
+                                            <span class="text-muted small ms-2">@t.ResponsibleDepartment</span>
+                                        }
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                        @if (t.DueDate.HasValue)
+                                        {
+                                            <span class="text-muted small text-nowrap">@t.DueDate.Value.ToString("dd MMM")</span>
+                                        }
+                                        <span class="status-badge @TaskStatusClass(t.Status)">@(t.Status ?? "Pending")</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+                else if (activeOffer.Status != "Accepted")
+                {
+                    <div class="text-muted small">
+                        Onboarding begins once the offer is accepted by the candidate.
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted small">
+                        Offer accepted. <span class="opacity-75">Click "Start Onboarding" to begin the process.</span>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    @* ── Recruiter Notes + History ── *@
+    <div class="row g-3">
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">Recruiter Notes</div>
+                <div class="card-body">
+                    <form asp-action="UpdateNotes" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+                        <textarea name="notes" class="form-control form-control-sm mb-2" rows="6"
+                                  style="resize:vertical;" @(!isActive ? "readonly" : "")>@Model.RecruiterNotes</textarea>
+                        @if (isActive)
+                        {
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary btn-sm">Save Notes</button>
+                            </div>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-6">
+            <div class="card h-100">
+                <div class="card-header">History</div>
+                <div class="card-body">
+                    @if (Model.History.Any())
+                    {
+                        <div class="d-flex flex-column">
+                            @foreach (var h in Model.History.OrderByDescending(x => x.ChangedDate))
+                            {
+                                <div class="d-flex gap-3">
+                                    <div class="text-muted small text-end text-nowrap pt-1" style="width:78px;flex-shrink:0;">
+                                        @(h.ChangedDate?.ToString("dd MMM yy") ?? "—")<br />
+                                        <span class="opacity-75" style="font-size:10px;">@(h.ChangedDate?.ToString("HH:mm") ?? "")</span>
+                                    </div>
+                                    <div class="border-start ps-3 pb-3 flex-grow-1 position-relative">
+                                        <span class="rec-dot"></span>
+                                        @if (h.FromStage != null || h.ToStage != null)
+                                        {
+                                            <div class="small fw-semibold">
+                                                @(h.FromStage != null ? $"{h.FromStage} → {h.ToStage}" : h.ToStage)
+                                            </div>
+                                            @if (!string.IsNullOrWhiteSpace(h.Comments))
+                                            {
+                                                <div class="small text-muted mt-1">@h.Comments</div>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            var parts = h.Comments?.Split(" | ", 2) ?? Array.Empty<string>();
+                                            <div class="small fw-semibold">@parts[0]</div>
+                                            if (parts.Length > 1)
+                                            {
+                                                <div class="small text-muted mt-1">@parts[1]</div>
+                                            }
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(h.ChangedByName))
+                                        {
+                                            <div class="text-muted mt-1" style="font-size:11px;">@h.ChangedByName</div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted small">No history yet.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@* ── Reject Modal ── *@
+@if (isActive && !isRejected)
+{
+    <div class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title fw-semibold">Reject Application</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form asp-action="Reject" asp-route-id="@Model.Id" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="modal-body">
+                        <p class="small text-muted mb-3">
+                            Select a reason for rejecting <strong class="text-body">@Model.CandidateName</strong>.
+                        </p>
+                        <div class="d-flex flex-column gap-2 mb-3">
+                            @foreach (var reason in new[] { "Not Qualified", "Failed Assessment", "Salary Mismatch", "Position Filled", "No Show", "Candidate Withdrew" })
+                            {
+                                <label class="d-flex align-items-center gap-2 small" style="cursor:pointer;">
+                                    <input type="radio" name="rejectionReason" value="@reason" class="form-check-input m-0" />
+                                    @reason
+                                </label>
+                            }
+                            <label class="d-flex align-items-center gap-2 small" style="cursor:pointer;">
+                                <input type="radio" name="rejectionReason" value="__custom__" id="rejectOther" class="form-check-input m-0" />
+                                Other
+                            </label>
+                        </div>
+                        <textarea id="rejectCustomText" name="rejectionReasonCustom" class="form-control form-control-sm"
+                                  rows="2" placeholder="Specify reason…" style="display:none;"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger btn-sm" id="rejectSubmitBtn">Confirm Reject</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    // Show/hide custom reason textarea
+    document.querySelectorAll('input[name="rejectionReason"]').forEach(function(r) {
+        r.addEventListener('change', function() {
+            var custom = document.getElementById('rejectCustomText');
+            if (custom) custom.style.display = this.value === '__custom__' ? '' : 'none';
+        });
+    });
+
+    // Before submit: if "Other" is selected, swap the hidden field value with textarea
+    var rejectForm = document.querySelector('#rejectModal form');
+    if (rejectForm) {
+        rejectForm.addEventListener('submit', function() {
+            var selected = document.querySelector('input[name="rejectionReason"]:checked');
+            if (selected && selected.value === '__custom__') {
+                var custom = document.getElementById('rejectCustomText');
+                selected.value = custom ? custom.value.trim() || 'Other' : 'Other';
+            }
+        });
+    }
+</script>
+}

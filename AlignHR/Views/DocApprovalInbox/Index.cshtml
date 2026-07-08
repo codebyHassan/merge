@@ -1,0 +1,203 @@
+@model List<AlignHR.Models.DocApprovalInstanceStep>
+@{
+    ViewData["Title"] = "Approval Inbox";
+    ViewBag.ActivePage = "DocApprovalInbox";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="mb-1 fw-bold text-dark">Approval Inbox</h4>
+            <p class="text-muted small mb-0">Manage and route documents that require your verification.</p>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-primary px-3 py-2 fs-6">@Model.Count Pending</span>
+            <a asp-action="History" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-clock-rotate-left me-1"></i>History
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5 border rounded bg-white shadow-sm mt-3">
+            <div class="text-muted display-4 mb-3">
+                <i class="fa-regular fa-folder-open text-secondary"></i>
+            </div>
+            <h5 class="fw-semibold text-dark">Your inbox is clear!</h5>
+            <p class="text-muted small">No documents are currently awaiting your approval.</p>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var step in Model)
+            {
+                var doc       = step.Instance?.Document;
+                var submitter = step.Instance?.CreatedBy;
+                var role      = step.TemplateStep?.Role;
+                var approvalTypeBadge = step.TemplateStep?.ApprovalType switch {
+                    AlignHR.Models.ApprovalType.Parallel => "bg-info bg-opacity-10 text-info",
+                    AlignHR.Models.ApprovalType.Any      => "bg-warning bg-opacity-10 text-warning",
+                    _                                    => "bg-secondary bg-opacity-10 text-secondary"
+                };
+                var approvalTypeLabel = step.TemplateStep?.ApprovalType switch {
+                    AlignHR.Models.ApprovalType.Parallel => "Parallel (All)",
+                    AlignHR.Models.ApprovalType.Any      => "Parallel (Any)",
+                    _                                    => "Single"
+                };
+
+                <div class="col-12 col-lg-6">
+                    <div class="card border-0 shadow-sm h-100" style="border-radius: 12px;">
+                        <div class="card-header bg-light border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-warning bg-opacity-10 text-warning px-2 py-1 fw-bold small">
+                                    Step @step.StepNo
+                                </span>
+                                <span class="badge @approvalTypeBadge small">@approvalTypeLabel</span>
+                                @if (step.TemplateStep?.IsOptional == true)
+                                {
+                                    <span class="badge bg-light text-muted small border">Optional</span>
+                                }
+                                @if (role != null)
+                                {
+                                    <span class="text-muted small">@role.Name</span>
+                                }
+                            </div>
+                            <span class="text-muted small">
+                                <i class="fa-regular fa-clock me-1"></i>@doc?.UploadDate.ToString("MMM dd, yyyy HH:mm")
+                            </span>
+                        </div>
+
+                        <div class="card-body p-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex align-items-start gap-3 mb-3">
+                                    <div class="bg-primary bg-opacity-10 text-primary p-3 rounded" style="font-size: 1.5rem;">
+                                        @if (doc?.FileExtension?.ToLower() == ".pdf")
+                                        {
+                                            <i class="fa-regular fa-file-pdf"></i>
+                                        }
+                                        else if (new[] { ".jpg", ".jpeg", ".png", ".gif" }.Contains(doc?.FileExtension?.ToLower()))
+                                        {
+                                            <i class="fa-regular fa-file-image"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-regular fa-file-lines"></i>
+                                        }
+                                    </div>
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-1">@doc?.Title</h5>
+                                        <p class="text-muted small mb-0">
+                                            @doc?.FileName
+                                            @if (doc?.FileSize > 0)
+                                            {
+                                                <span>(@(Math.Round((double)doc.FileSize / 1024 / 1024, 2)) MB)</span>
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="row g-2 mb-4 border-top pt-3">
+                                    <div class="col-6">
+                                        <span class="text-muted d-block small">Submitted By</span>
+                                        <span class="fw-semibold text-dark">
+                                            @(submitter != null ? submitter.FirstName + " " + submitter.LastName : "—")
+                                        </span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="text-muted d-block small">Document Type</span>
+                                        <span class="fw-semibold text-dark">@(doc?.DocumentType?.TypeName ?? "—")</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="text-muted d-block small">Workflow Step</span>
+                                        <span class="fw-semibold text-dark">@(step.TemplateStep?.StepLabel ?? $"Step {step.StepNo}")</span>
+                                    </div>
+                                    <div class="col-6">
+                                        <span class="text-muted d-block small">Document No</span>
+                                        <span class="fw-semibold text-dark">@(doc?.DocumentNo ?? "—")</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border-top pt-3">
+                                <form asp-action="Approve" method="post" id="actionForm-@step.Id">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="stepId" value="@step.Id" />
+
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-muted">Comments <span class="text-danger">(required for rejection)</span></label>
+                                        <input type="text" name="comments" class="form-control form-control-sm comments-input" placeholder="Add comments here..." />
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        @if (!string.IsNullOrEmpty(doc?.FilePath))
+                                        {
+                                            <a href="@doc.FilePath" target="_blank" class="btn btn-outline-secondary btn-sm flex-grow-1 d-inline-flex align-items-center justify-content-center gap-1">
+                                                <i class="fa-regular fa-eye"></i> View
+                                            </a>
+                                        }
+                                        <button type="submit" class="btn btn-success btn-sm px-4">
+                                            <i class="fa-solid fa-check me-1"></i>Approve
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-sm px-4 reject-btn" data-step-id="@step.Id">
+                                            <i class="fa-solid fa-xmark me-1"></i>Reject
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<form id="rejectForm" method="post" asp-action="Reject" style="display: none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="stepId" id="rejectStepId" />
+    <input type="hidden" name="comments" id="rejectComments" />
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.reject-btn').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const stepId  = this.getAttribute('data-step-id');
+                    const form    = this.closest('form');
+                    const comments = form.querySelector('.comments-input')?.value.trim();
+
+                    if (!comments) {
+                        alert('Rejection comments are required. Please type your reason in the comments box.');
+                        form.querySelector('.comments-input')?.focus();
+                        return;
+                    }
+
+                    if (confirm('Are you sure you want to reject this document? This will terminate the approval flow.')) {
+                        document.getElementById('rejectStepId').value   = stepId;
+                        document.getElementById('rejectComments').value = comments;
+                        document.getElementById('rejectForm').submit();
+                    }
+                });
+            });
+        });
+    </script>
+}

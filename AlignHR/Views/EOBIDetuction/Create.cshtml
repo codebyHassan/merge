@@ -1,0 +1,146 @@
+@model AlignHR.Models.EOBIDetuction
+@{
+    ViewData["Title"] = "Create EOBI Deduction";
+    ViewBag.ActivePage = "EOBIDetuction";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6" style="position: relative; z-index: 1001;">
+                    <label class="form-label small fw-semibold">Search Employee <span class="text-danger">*</span></label>
+                    <div class="position-relative">
+                        <i class="fas fa-search position-absolute text-muted" style="left: 1rem; top: 50%; transform: translateY(-50%); z-index: 2;"></i>
+                        <input type="text" id="employeeSearch" name="term" class="form-control form-control-sm" style="padding-left: 2.5rem;" placeholder="Type name or code..." autocomplete="off"
+                               hx-get="/Ajax/SearchEmployees"
+                               hx-trigger="keyup delay:300ms, search"
+                               hx-target="#employeeResults"
+                               hx-indicator=".profile-loader" />
+                    </div>
+                    <div id="employeeResults" class="search-results-container position-absolute bg-white shadow-sm border rounded mt-1" style="z-index: 1000; width: 100%;"></div>
+                    <input type="hidden" asp-for="EmployeeId" id="selectedEmployeeId" required />
+                    <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold" asp-for="PeriodSalery">Salary Period <span class="text-danger">*</span></label>
+                    <select asp-for="PeriodSalery" id="PeriodSalery" class="form-select form-select-sm" asp-items="ViewBag.PeriodSalery">
+                        <option value="">-- Select Period --</option>
+                    </select>
+                    <span asp-validation-for="PeriodSalery" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold" asp-for="Amount">Deduction Amount <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">PKR</span>
+                        <input asp-for="Amount" class="form-control amount-field" placeholder="0.00" type="number" step="0.01" />
+                    </div>
+                    <span asp-validation-for="Amount" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <div id="side-profile-container" class="employee-profile-slot">
+                        <div class="policy-note">
+                            <strong>Employee Profile</strong>
+                            <span>Details will appear here once an employee is selected.</span>
+                        </div>
+                    </div>
+                    <div class="profile-loader htmx-indicator mt-2" style="display:none;">
+                        <span class="spinner-border spinner-border-sm text-primary" role="status"></span>
+                        <span class="ms-2 small text-muted">Syncing Profile...</span>
+                    </div>
+                </div>
+
+                <div id="eobiCalculationContainer" class="col-12 payroll-calculation-slot">
+                    <div class="payroll-calculation-card payroll-calculation-card--placeholder">
+                        <div class="payroll-calculation-header">
+                            <div class="payroll-calculation-heading">
+                                <span class="payroll-calculation-icon">
+                                    <i class="fas fa-shield-alt"></i>
+                                </span>
+                                <div>
+                                    <h4>EOBI Deduction Details</h4>
+                                    <p>Select an employee and salary period to preview the EOBI deduction card.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script>
+        function updateEOBICalculation() {
+            const employeeId = document.getElementById('selectedEmployeeId').value;
+            const periodId = document.getElementById('PeriodSalery').value;
+            if (employeeId && periodId) {
+                htmx.ajax('GET', `@Url.Action("CalculateEOBIDetails", "EOBIDetuction")?EmployeeId=${employeeId}&PeriodSalery=${periodId}`, {
+                    target: '#eobiCalculationContainer'
+                });
+            }
+        }
+
+        document.getElementById('PeriodSalery').addEventListener('change', function() {
+            updateEOBICalculation();
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Clear hidden ID when user types
+            const searchInput = document.getElementById('employeeSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const hiddenInput = document.getElementById('selectedEmployeeId');
+                    if (hiddenInput) hiddenInput.value = '';
+                });
+            }
+
+            // Handle Employee Selection
+            document.body.addEventListener('click', function(e) {
+                const row = e.target.closest('.search-result-item');
+                if (row) {
+                    const id = row.dataset.id;
+                    const name = row.dataset.name;
+                    const code = row.dataset.code;
+                    
+                    const hiddenInput = document.getElementById('selectedEmployeeId');
+                    hiddenInput.value = id;
+                    document.getElementById('employeeResults').innerHTML = '';
+                    document.getElementById('employeeSearch').value = name + ' (' + code + ')';
+                    
+                    // Trigger HTMX to load employee card
+                    htmx.ajax('GET', '/Ajax/GetEmployeeCard', {
+                        values: { id: id },
+                        target: '#side-profile-container',
+                        indicator: '.profile-loader'
+                    });
+
+                    updateEOBICalculation();
+                }
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                    document.getElementById('employeeResults').innerHTML = '';
+                }
+            });
+        });
+    </script>
+}

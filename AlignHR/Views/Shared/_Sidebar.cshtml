@@ -1,0 +1,348 @@
+@using AlignHR.Security
+@inject AlignHR.Data.ApplicationDbContext _sidebarDb
+@{
+    var activePage = ViewBag.ActivePage as string ?? ViewContext.RouteData.Values["controller"]?.ToString() ?? "Dashboard";
+    bool Can(string controller) => PermissionHelper.HasControllerAccess(Context, controller);
+    bool IsActive(params string[] pages) => pages.Contains(activePage, StringComparer.OrdinalIgnoreCase);
+
+    var workforceOpen = IsActive("Employees", "Shift", "EmployeeShifts", "Departments", "Location");
+    var attendanceOpen = IsActive("Attendance", "DailyAttendence", "AttendenceLogs", "AttendencePolicies", "AttendenceException", "Overtime", "OverTimeHours");
+    var leaveOpen      = IsActive("Leaves", "LeaveRequests", "ApprovalInbox", "LeaveConfigurations", "LeaveTypes", "LeavePolicies", "LeavePolicyRules", "LeaveBalances", "EmployeeLeavePolicies", "LeaveAccounting", "Adjust", "IndividualTransfer", "CompanySummary", "Compensate");
+    var recruitmentOpen = IsActive("HrRequisitions", "HrRequisitionsInbox", "HrRecruitmentHead", "HrJobPostings", "HrAssignments", "HrAtsDashboard", "HrCandidates", "HrOffers", "HrOfferApprovals", "HrOnboarding", "HrOnboardingTaskTemplates", "HrDepartmentApprovers", "HrRecruitmentSettings", "HrMyInterviews");
+    var documentOpen  = IsActive("Documents", "DocumentCategories", "DocumentTypes", "DmsDefinationFile");
+    var approvalsOpen = IsActive("DocApprovalInbox", "DocApprovalHistory", "ApprovalTemplate");
+
+    // Pending offer approvals for the logged-in employee
+    var _sidebarSession  = PermissionHelper.GetUserSession(Context);
+    var _sidebarEmpId    = _sidebarSession?.EmployeeId;
+    var pendingOfferApprovalCount = 0;
+    if (_sidebarEmpId.HasValue)
+    {
+        try {
+            pendingOfferApprovalCount = _sidebarDb.HrOfferApprovals
+                .Count(a => a.ApproverEmployeeFk.HasValue
+                         && (int)a.ApproverEmployeeFk.Value == _sidebarEmpId.Value
+                         && a.Status == "Pending"
+                         && _sidebarDb.HrOffers.Any(o => o.Id == a.OfferFk && o.Status == "PendingApproval"));
+        } catch { }
+    }
+    var payrollOpen    = IsActive("Payroll", "PayRollDefinationFile", "PayRollGenrate", "FiscalYear", "TaxSlabMaster", "TaxSurcharge", "SalaryPeriods", "IncomeTaxDetuction", "WithoutPayDays", "EOBIDetuction", "MasterLoanAdvance", "MasterLoanAdvanceDetail", "Execution", "PFMembers", "Bonus", "SalarySlips", "SalaryAdjustment");
+    var adminOpen      = IsActive("User", "Roles", "Function", "valueset", "UserRole", "FunctionRole", "Settings", "Reports");
+
+    var sessionName = Context.Session.GetString("UserName") ?? "Admin";
+    var sessionRole = Context.Session.GetString("UserRoles") ?? "ERP Admin";
+    var initials    = string.Concat(sessionName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0].ToString().ToUpperInvariant()));
+    if (string.IsNullOrWhiteSpace(initials)) initials = "AD";
+
+    // Dynamic section showing flags
+    var showWorkforce = Can("Employees") || Can("Shift") || Can("EmployeeShifts") || Can("Departments") || Can("Location");
+    var showWorkspace = Can("Dashboard") || showWorkforce;
+
+    var showAttendance = Can("AttendenceLogs") || Can("AttendencePolicies") || Can("AttendenceException") || Can("DailyAttendence") || Can("Overtime") || Can("OverTimeHours");
+    var showLeave = Can("Leaves") || Can("LeaveRequests") || Can("LeaveConfigurations") || Can("LeaveTypes") || Can("LeavePolicies") || Can("LeavePolicyRules") || Can("LeaveBalances") || Can("EmployeeLeavePolicies") || Can("LeaveAccounting");
+    var showOperations = showAttendance || showLeave;
+
+    var showDocuments = Can("Documents") || Can("DocumentCategories") || Can("DocumentTypes") || Can("DmsDefinationFile") || Can("ApprovalTemplate");
+    var showRecruitment = Can("HrRequisitions") || Can("HrJobPostings") || Can("HrAtsDashboard") || Can("HrCandidates") || Can("HrOffers") || Can("HrOnboarding") || Can("HrOnboardingTaskTemplates") || Can("HrDepartmentApprovers");
+    var showPayroll = Can("Payroll") || Can("PayRollDefinationFile") || Can("PayRollGenrate") || Can("FiscalYear") || Can("SalaryPeriods") || Can("TaxSlabMaster") || Can("TaxSurcharge") || Can("Execution") || Can("SalarySlips") || Can("IncomeTaxDetuction") || Can("WithoutPayDays") || Can("EOBIDetuction") || Can("MasterLoanAdvance") || Can("MasterLoanAdvanceDetail") || Can("PFMembers") || Can("Bonus") || Can("SalaryAdjustment");
+
+    var showAdministration = Can("User") || Can("Roles") || Can("UserRole") || Can("Function") || Can("FunctionRole") || Can("valueset") || Can("Settings");
+    var showAdmin = Can("Reports") || showAdministration;
+}
+
+<aside class="erp-sidebar" id="erpSidebar" aria-label="Main navigation">
+    <div class="sidebar-backdrop"></div>
+    <div class="sidebar-panel">
+
+        <div class="sidebar-brand">
+            <a class="brand-mark" asp-controller="Dashboard" asp-action="Index" aria-label="Align HR — Go to dashboard">
+                <span class="brand-icon"><img src="~/images/alignhr-icon.png" alt="" /></span>
+                <span class="brand-copy">
+                    <strong>Align HR</strong>
+                    <small>Enterprise Suite</small>
+                </span>
+            </a>
+            <button class="btn btn-icon d-lg-none" type="button" data-erp-sidebar-close aria-label="Close navigation">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        @* ── WORKSPACE ── *@
+        @if (showWorkspace)
+        {
+            <div class="sidebar-section">
+                <div class="sidebar-label">Workspace</div>
+
+                @if (Can("Dashboard"))
+                {
+                    <a class="sidebar-link @(IsActive("Dashboard") ? "active" : "")"
+                       asp-controller="Dashboard" asp-action="Index">
+                        <i class="bi bi-bar-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                }
+
+                @if (showWorkforce)
+                {
+                    <button class="sidebar-link sidebar-parent" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#workforceMenu"
+                            aria-expanded="@workforceOpen.ToString().ToLowerInvariant()"
+                            aria-controls="workforceMenu">
+                        <i class="bi bi-people"></i>
+                        <span>Workforce</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="collapse @(workforceOpen ? "show" : "") sidebar-submenu" id="workforceMenu">
+                        @if (Can("Employees"))        { <a class="sidebar-sublink @(IsActive("Employees") ? "active" : "")"        asp-controller="Employees"        asp-action="Index">Employees</a> }
+                        @if (Can("Shift"))            { <a class="sidebar-sublink @(IsActive("Shift") ? "active" : "")"            asp-controller="Shift"            asp-action="Index">Shifts</a> }
+                        @if (Can("EmployeeShifts"))   { <a class="sidebar-sublink @(IsActive("EmployeeShifts") ? "active" : "")"   asp-controller="EmployeeShifts"   asp-action="Index">Employee Shifts</a> }
+                        @if (Can("Departments"))      { <a class="sidebar-sublink @(IsActive("Departments") ? "active" : "")"      asp-controller="Departments"      asp-action="Index">Departments</a> }
+                        @if (Can("Location"))         { <a class="sidebar-sublink @(IsActive("Location") ? "active" : "")"         asp-controller="Location"         asp-action="Index">Locations</a> }
+                    </div>
+                }
+            </div>
+        }
+
+        @* ── OPERATIONS ── *@
+        @if (showOperations)
+        {
+            <div class="sidebar-section">
+                <div class="sidebar-label">Operations</div>
+
+                @if (showAttendance)
+                {
+                    <button class="sidebar-link sidebar-parent" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#attendanceMenu"
+                            aria-expanded="@attendanceOpen.ToString().ToLowerInvariant()"
+                            aria-controls="attendanceMenu">
+                        <i class="bi bi-clock-history"></i>
+                        <span>Attendance</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="collapse @(attendanceOpen ? "show" : "") sidebar-submenu" id="attendanceMenu">
+                        @if (Can("AttendenceLogs"))       { <a class="sidebar-sublink @(IsActive("AttendenceLogs") ? "active" : "")"       asp-controller="AttendenceLogs"       asp-action="Index">Logs</a> }
+                        @if (Can("AttendencePolicies"))   { <a class="sidebar-sublink @(IsActive("AttendencePolicies") ? "active" : "")"   asp-controller="AttendencePolicies"   asp-action="Index">Policies</a> }
+                        @if (Can("AttendenceException"))  { <a class="sidebar-sublink @(IsActive("AttendenceException") ? "active" : "")"  asp-controller="AttendenceException"  asp-action="Index">Exceptions</a> }
+                        @if (Can("DailyAttendence"))      { <a class="sidebar-sublink @(IsActive("DailyAttendence") ? "active" : "")"      asp-controller="DailyAttendence"      asp-action="Index">Daily Attendance</a> }
+                        @if (Can("Overtime"))             { <a class="sidebar-sublink @(IsActive("Overtime") ? "active" : "")"             asp-controller="Overtime"             asp-action="Index">Overtime Policies</a> }
+                        @if (Can("OverTimeHours"))        { <a class="sidebar-sublink @(IsActive("OverTimeHours") ? "active" : "")"        asp-controller="OverTimeHours"        asp-action="Index">Overtime Hours</a> }
+                    </div>
+                }
+
+                @if (showLeave)
+                {
+                    <button class="sidebar-link sidebar-parent" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#leaveMenu"
+                            aria-expanded="@leaveOpen.ToString().ToLowerInvariant()"
+                            aria-controls="leaveMenu">
+                        <i class="bi bi-calendar-check"></i>
+                        <span>Leave Management</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="collapse @(leaveOpen ? "show" : "") sidebar-submenu" id="leaveMenu">
+                        @if (Can("Leaves"))                { <a class="sidebar-sublink @(IsActive("Leaves") ? "active" : "")"                  asp-controller="Leaves"           asp-action="Index">Dashboard</a> }
+                        @if (Can("LeaveRequests"))         { <a class="sidebar-sublink @(IsActive("LeaveRequests") ? "active" : "")"          asp-controller="LeaveRequests"    asp-action="Index">Leave Requests</a> }
+                        @if (Can("LeaveRequests"))         { <a class="sidebar-sublink @(IsActive("ApprovalInbox") ? "active" : "")"          asp-controller="LeaveRequests"    asp-action="ApprovalInbox">Approval Inbox</a> }
+                        @if (Can("LeaveConfigurations"))   { <a class="sidebar-sublink @(IsActive("LeaveConfigurations") ? "active" : "")"    asp-controller="LeaveConfigurations" asp-action="Index">Configuration</a> }
+                        @if (Can("LeaveTypes"))            { <a class="sidebar-sublink @(IsActive("LeaveTypes") ? "active" : "")"             asp-controller="LeaveTypes"       asp-action="Index">Leave Types</a> }
+                        @if (Can("LeavePolicies"))         { <a class="sidebar-sublink @(IsActive("LeavePolicies") ? "active" : "")"          asp-controller="LeavePolicies"    asp-action="Index">Leave Policies</a> }
+                        @if (Can("LeavePolicyRules"))      { <a class="sidebar-sublink @(IsActive("LeavePolicyRules") ? "active" : "")"       asp-controller="LeavePolicyRules" asp-action="Index">Policy Rules</a> }
+                        @if (Can("LeaveBalances"))         { <a class="sidebar-sublink @(IsActive("LeaveBalances") ? "active" : "")"          asp-controller="LeaveBalances"    asp-action="Index">Balances</a> }
+                        @if (Can("EmployeeLeavePolicies")) { <a class="sidebar-sublink @(IsActive("EmployeeLeavePolicies") ? "active" : "")"  asp-controller="EmployeeLeavePolicies" asp-action="Index">Employee Policies</a> }
+                        @if (Can("LeaveAccounting"))       { <a class="sidebar-sublink @(IsActive("Adjust") ? "active" : "")"                asp-controller="LeaveAccounting"  asp-action="Adjust">Year-End / Adjust</a> }
+                        @if (Can("LeaveAccounting"))       { <a class="sidebar-sublink @(IsActive("IndividualTransfer") ? "active" : "")"    asp-controller="LeaveAccounting"  asp-action="IndividualTransfer">Individual Transfer</a> }
+                        @if (Can("LeaveAccounting"))       { <a class="sidebar-sublink @(IsActive("CompanySummary") ? "active" : "")"        asp-controller="LeaveAccounting"  asp-action="CompanySummary">Company Summary</a> }
+                        @if (Can("LeaveAccounting"))       { <a class="sidebar-sublink @(IsActive("Compensate") ? "active" : "")"              asp-controller="LeaveAccounting"  asp-action="Compensate">Leave Compensation</a> }
+                    </div>
+                }
+            </div>
+        }
+
+        @* ── DOCUMENTS ── *@
+        @if (showDocuments)
+        {
+            <div class="sidebar-section">
+                <div class="sidebar-label">Documents</div>
+
+                <button class="sidebar-link sidebar-parent" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#documentMenu"
+                        aria-expanded="@documentOpen.ToString().ToLowerInvariant()"
+                        aria-controls="documentMenu">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Documents</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="collapse @(documentOpen ? "show" : "") sidebar-submenu" id="documentMenu">
+                    @if (Can("Documents"))           { <a class="sidebar-sublink @(IsActive("Documents") ? "active" : "")"           asp-controller="Documents"           asp-action="Index">All Documents</a> }
+                    @if (Can("DocumentCategories"))  { <a class="sidebar-sublink @(IsActive("DocumentCategories") ? "active" : "")"  asp-controller="DocumentCategories"  asp-action="Index">Categories</a> }
+                    @if (Can("DocumentTypes"))       { <a class="sidebar-sublink @(IsActive("DocumentTypes") ? "active" : "")"       asp-controller="DocumentTypes"       asp-action="Index">Document Types</a> }
+                    @if (Can("DmsDefinationFile"))   { <a class="sidebar-sublink @(IsActive("DmsDefinationFile") ? "active" : "")"   asp-controller="DmsDefinationFile"  asp-action="Index">DMS Definitions</a> }
+                </div>
+
+                <button class="sidebar-link sidebar-parent" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#approvalsMenu"
+                        aria-expanded="@approvalsOpen.ToString().ToLowerInvariant()"
+                        aria-controls="approvalsMenu">
+                    <i class="bi bi-check2-square"></i>
+                    <span>Approvals</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="collapse @(approvalsOpen ? "show" : "") sidebar-submenu" id="approvalsMenu">
+                    <a class="sidebar-sublink @(IsActive("DocApprovalInbox") ? "active" : "")" asp-controller="DocApprovalInbox" asp-action="Index">Approval Inbox</a>
+                    <a class="sidebar-sublink @(IsActive("DocApprovalHistory") ? "active" : "")" asp-controller="DocApprovalInbox" asp-action="History">Approval History</a>
+                    @if (Can("ApprovalTemplate")) { <a class="sidebar-sublink @(IsActive("ApprovalTemplate") ? "active" : "")" asp-controller="ApprovalTemplate" asp-action="Index">Approval Templates</a> }
+                </div>
+            </div>
+        }
+
+        @* ── RECRUITMENT ── *@
+        @if (showRecruitment)
+        {
+            <div class="sidebar-section">
+                <button class="sidebar-link sidebar-parent" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#recruitmentMenu"
+                        aria-expanded="@recruitmentOpen.ToString().ToLowerInvariant()"
+                        aria-controls="recruitmentMenu">
+                    <i class="bi bi-person-lines-fill"></i>
+                    <span>Recruitment</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="collapse @(recruitmentOpen ? "show" : "") sidebar-submenu" id="recruitmentMenu">
+                    @if (Can("HrRequisitions"))   { <a class="sidebar-sublink @(IsActive("HrRequisitions") ? "active" : "")"      asp-controller="HrRequisitions"    asp-action="Index">Requisitions</a> }
+                    @if (Can("HrRequisitions"))   { <a class="sidebar-sublink @(IsActive("HrMyInterviews") ? "active" : "")"      asp-controller="HrRequisitions"    asp-action="MyInterviews">My Interviews</a> }
+                    @if (Can("HrRequisitions"))   { <a class="sidebar-sublink @(IsActive("HrRequisitionsInbox") ? "active" : "")" asp-controller="HrRequisitions"    asp-action="Inbox">Approval Inbox</a> }
+                    <a class="sidebar-sublink @(IsActive("HrOfferApprovals") ? "active" : "")"
+                       asp-controller="HrOffers" asp-action="MyApprovals"
+                       style="display:flex;align-items:center;justify-content:space-between;">
+                        <span>Offer Inbox</span>
+                        @if (pendingOfferApprovalCount > 0)
+                        {
+                            <span style="background:var(--ahr-accent);color:#fff;font-size:10px;font-weight:700;border-radius:10px;padding:1px 7px;line-height:1.6;">@pendingOfferApprovalCount</span>
+                        }
+                    </a>
+                    @if (Can("HrRequisitions"))   { <a class="sidebar-sublink @(IsActive("HrRecruitmentHead") ? "active" : "")"   asp-controller="HrRequisitions"    asp-action="RecruiterInbox">Recruiter Inbox</a> }
+                    @if (Can("HrJobPostings"))    { <a class="sidebar-sublink @(IsActive("HrJobPostings") ? "active" : "")"       asp-controller="HrJobPostings"     asp-action="Index">Job Postings</a> }
+                    @if (Can("HrAtsDashboard"))   { <a class="sidebar-sublink @(IsActive("HrAtsDashboard") ? "active" : "")"      asp-controller="HrAtsDashboard"    asp-action="Index">ATS Dashboard</a> }
+                    @if (Can("HrCandidates"))     { <a class="sidebar-sublink @(IsActive("HrCandidates") ? "active" : "")"        asp-controller="HrCandidates"      asp-action="Index">Candidates</a> }
+                    @if (Can("HrOffers"))         { <a class="sidebar-sublink @(IsActive("HrOffers") ? "active" : "")"            asp-controller="HrOffers"          asp-action="Index">Offers</a> }
+                    @if (Can("HrOnboarding"))     { <a class="sidebar-sublink @(IsActive("HrOnboarding") ? "active" : "")"        asp-controller="HrOnboarding"      asp-action="Index">Onboarding</a> }
+                    @if (Can("HrOnboardingTaskTemplates")) { <a class="sidebar-sublink @(IsActive("HrOnboardingTaskTemplates") ? "active" : "")" asp-controller="HrOnboardingTaskTemplates" asp-action="Index">Task Templates</a> }
+                    @if (Can("HrDepartmentApprovers"))     { <a class="sidebar-sublink @(IsActive("HrDepartmentApprovers") ? "active" : "")"    asp-controller="HrDepartmentApprovers"     asp-action="Index">Dept. Approvers</a> }
+                    @if (Can("HrRecruitmentSettings"))     { <a class="sidebar-sublink @(IsActive("HrRecruitmentSettings") ? "active" : "")"    asp-controller="HrRecruitmentSettings"     asp-action="Index">Settings</a> }
+                </div>
+            </div>
+        }
+
+        @* ── PAYROLL ── *@
+        @if (showPayroll)
+        {
+            <div class="sidebar-section">
+                <div class="sidebar-label">Payroll</div>
+
+                <button class="sidebar-link sidebar-parent" type="button"
+                        data-bs-toggle="collapse" data-bs-target="#payrollMenu"
+                        aria-expanded="@payrollOpen.ToString().ToLowerInvariant()"
+                        aria-controls="payrollMenu">
+                    <i class="bi bi-coin"></i>
+                    <span>Payroll</span>
+                    <i class="bi bi-chevron-down"></i>
+                </button>
+                <div class="collapse @(payrollOpen ? "show" : "") sidebar-submenu" id="payrollMenu">
+                    @if (Can("Payroll"))                   { <a class="sidebar-sublink @(IsActive("Payroll") ? "active" : "")"                   asp-controller="Payroll"                asp-action="Index">Payroll Dashboard</a> }
+                    @if (Can("PayRollDefinationFile"))      { <a class="sidebar-sublink @(IsActive("PayRollDefinationFile") ? "active" : "")"      asp-controller="PayRollDefinationFile"  asp-action="Index">Structures</a> }
+                    @if (Can("PayRollGenrate"))             { <a class="sidebar-sublink @(IsActive("PayRollGenrate") ? "active" : "")"             asp-controller="PayRollGenrate"         asp-action="Index">Breakups</a> }
+                    @if (Can("FiscalYear"))                 { <a class="sidebar-sublink @(IsActive("FiscalYear") ? "active" : "")"                 asp-controller="FiscalYear"             asp-action="Index">Fiscal Year</a> }
+                    @if (Can("SalaryPeriods"))              { <a class="sidebar-sublink @(IsActive("SalaryPeriods") ? "active" : "")"              asp-controller="SalaryPeriods"          asp-action="Index">Salary Periods</a> }
+                    @if (Can("TaxSlabMaster"))              { <a class="sidebar-sublink @(IsActive("TaxSlabMaster") ? "active" : "")"              asp-controller="TaxSlabMaster"          asp-action="Index">Tax Slabs</a> }
+                    @if (Can("TaxSurcharge"))               { <a class="sidebar-sublink @(IsActive("TaxSurcharge") ? "active" : "")"               asp-controller="TaxSurcharge"           asp-action="Index">Tax Surcharges</a> }
+                    @if (Can("Execution"))                  { <a class="sidebar-sublink @(IsActive("Execution") ? "active" : "")"                  asp-controller="Execution"              asp-action="Index">Execution</a> }
+                    @if (Can("SalarySlips"))                { <a class="sidebar-sublink @(IsActive("SalarySlips") ? "active" : "")"                asp-controller="SalarySlips"            asp-action="Index">Salary Slips</a> }
+                    @if (Can("IncomeTaxDetuction"))         { <a class="sidebar-sublink @(IsActive("IncomeTaxDetuction") ? "active" : "")"         asp-controller="IncomeTaxDetuction"     asp-action="Index">Income Tax Deduction</a> }
+                    @if (Can("WithoutPayDays"))             { <a class="sidebar-sublink @(IsActive("WithoutPayDays") ? "active" : "")"             asp-controller="WithoutPayDays"         asp-action="Index">Without Pay Days</a> }
+                    @if (Can("EOBIDetuction"))              { <a class="sidebar-sublink @(IsActive("EOBIDetuction") ? "active" : "")"              asp-controller="EOBIDetuction"          asp-action="Index">EOBI Deduction</a> }
+                    @if (Can("MasterLoanAdvance"))          { <a class="sidebar-sublink @(IsActive("MasterLoanAdvance") ? "active" : "")"          asp-controller="MasterLoanAdvance"      asp-action="Index">Loan &amp; Advance</a> }
+                    @if (Can("MasterLoanAdvanceDetail"))    { <a class="sidebar-sublink @(IsActive("MasterLoanAdvanceDetail") ? "active" : "")"    asp-controller="MasterLoanAdvanceDetail" asp-action="Index">Installments</a> }
+                    @if (Can("PFMembers"))                  { <a class="sidebar-sublink @(IsActive("PFMembers") ? "active" : "")"                  asp-controller="PFMembers"              asp-action="Index">Provident Funds</a> }
+                    @if (Can("Bonus"))                      { <a class="sidebar-sublink @(IsActive("Bonus") ? "active" : "")"                      asp-controller="Bonus"                  asp-action="Index">Bonuses</a> }
+                    @if (Can("SalaryAdjustment"))           { <a class="sidebar-sublink @(IsActive("SalaryAdjustment") ? "active" : "")"           asp-controller="SalaryAdjustment"       asp-action="Index">Salary Adjustments</a> }
+                </div>
+            </div>
+        }
+
+        @* ── ADMIN ── *@
+        @if (showAdmin)
+        {
+            <div class="sidebar-section">
+                <div class="sidebar-label">Admin</div>
+
+                @if (Can("Reports"))
+                {
+                    <a class="sidebar-link @(IsActive("Reports") ? "active" : "")"
+                       asp-controller="Reports" asp-action="Index">
+                        <i class="bi bi-graph-up"></i>
+                        <span>Reports</span>
+                    </a>
+                }
+
+                @if (showAdministration)
+                {
+                    <button class="sidebar-link sidebar-parent" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#adminMenu"
+                            aria-expanded="@adminOpen.ToString().ToLowerInvariant()"
+                            aria-controls="adminMenu">
+                        <i class="bi bi-shield-person"></i>
+                        <span>Administration</span>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <div class="collapse @(adminOpen ? "show" : "") sidebar-submenu" id="adminMenu">
+                        @if (Can("User"))         { <a class="sidebar-sublink @(IsActive("User") ? "active" : "")"         asp-controller="User"         asp-action="Index">Users</a> }
+                        @if (Can("Roles"))        { <a class="sidebar-sublink @(IsActive("Roles") ? "active" : "")"        asp-controller="Roles"        asp-action="Index">Roles</a> }
+                        @if (Can("UserRole"))     { <a class="sidebar-sublink @(IsActive("UserRole") ? "active" : "")"     asp-controller="UserRole"     asp-action="Index">User Roles</a> }
+                        @if (Can("Function"))     { <a class="sidebar-sublink @(IsActive("Function") ? "active" : "")"     asp-controller="Function"     asp-action="Index">Functions</a> }
+                        @if (Can("FunctionRole")) { <a class="sidebar-sublink @(IsActive("FunctionRole") ? "active" : "")" asp-controller="FunctionRole" asp-action="Index">Function Roles</a> }
+                        @if (Can("valueset"))     { <a class="sidebar-sublink @(IsActive("valueset") ? "active" : "")"     asp-controller="valueset"     asp-action="Index">Value Sets</a> }
+                        @if (Can("Settings"))     { <a class="sidebar-sublink @(IsActive("Settings") ? "active" : "")"     asp-controller="Settings"     asp-action="Index">Settings</a> }
+                    </div>
+                }
+            </div>
+        }
+
+        @* ── FOOTER: User info + actions ── *@
+        <div class="sidebar-footer">
+            <div class="sidebar-user">
+                <span class="avatar" aria-hidden="true">@initials</span>
+                <div class="sidebar-user-info">
+                    <span class="sidebar-user-name">@sessionName</span>
+                    <span class="sidebar-user-role">@(sessionRole.Split(',').FirstOrDefault()?.Trim() ?? "ERP Admin")</span>
+                </div>
+            </div>
+            <div class="sidebar-footer-actions">
+                <button class="sidebar-footer-btn" type="button"
+                        data-erp-theme-toggle
+                        aria-label="Toggle light / dark theme"
+                        title="Toggle theme">
+                    <i class="bi bi-moon-stars" id="sidebarThemeIcon"></i>
+                </button>
+                <button class="sidebar-footer-btn" type="button"
+                        data-bs-toggle="modal" data-bs-target="#commandPalette"
+                        aria-label="Command palette"
+                        title="Command palette  Ctrl K">
+                    <i class="bi bi-terminal"></i>
+                </button>
+                <a class="sidebar-footer-btn"
+                   asp-controller="Settings" asp-action="Index"
+                   aria-label="Settings"
+                   title="Settings">
+                    <i class="bi bi-gear"></i>
+                </a>
+                <a class="sidebar-footer-btn"
+                   asp-controller="User" asp-action="Logout"
+                   aria-label="Sign out"
+                   title="Sign out">
+                    <i class="bi bi-box-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</aside>

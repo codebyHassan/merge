@@ -1,0 +1,206 @@
+@model AlignHR.Models.ApprovalTemplate
+@using AlignHR.Models
+@{
+    ViewData["Title"] = "Edit Approval Template";
+    ViewBag.ActivePage = "ApprovalTemplate";
+    var roles    = ViewBag.Roles as List<AlignHR.Models.Role>;
+    var stepsList = Model.Steps.OrderBy(s => s.StepNo).ToList();
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h5 class="mb-0">Edit Approval Workflow Template <small class="text-muted ms-2">v@Model.Version</small></h5>
+        </div>
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger small py-2 px-3 mb-4">@TempData["ErrorMessage"]</div>
+        }
+
+        <form asp-action="Edit" method="post" id="templateForm" class="needs-validation" novalidate>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="Version" />
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-5">
+                    <label asp-for="TemplateName" class="form-label small fw-semibold">Template Name <span class="text-danger">*</span></label>
+                    <input asp-for="TemplateName" type="text" class="form-control form-control-sm" required />
+                    <span asp-validation-for="TemplateName" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="TypeId" class="form-label small fw-semibold">Document Type <span class="text-danger">*</span></label>
+                    <select asp-for="TypeId" asp-items="ViewBag.DocumentTypes" class="form-select form-select-sm" required>
+                        <option value="">Select document type...</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2">
+                    <label asp-for="FlowType" class="form-label small fw-semibold">Flow Type</label>
+                    <select asp-for="FlowType" class="form-select form-select-sm">
+                        <option value="@WorkflowFlowType.Department">Department</option>
+                        <option value="@WorkflowFlowType.Reporting">Reporting Line</option>
+                        <option value="@WorkflowFlowType.Position">Position / Grade</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-2 d-flex align-items-end pb-1">
+                    <div class="form-check">
+                        <input asp-for="IsActive" type="checkbox" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label small fw-semibold">Is Active</label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Description" class="form-label small fw-semibold">Description</label>
+                    <textarea asp-for="Description" class="form-control form-control-sm" rows="2"></textarea>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <h6 class="fw-semibold text-muted small text-uppercase">Approval Steps</h6>
+                <p class="text-muted small mb-0">
+                    Steps execute in order. <strong>Single</strong> = one approver. <strong>Parallel (All)</strong> = everyone must approve. <strong>Parallel (Any)</strong> = first approval advances. <strong>Optional</strong> = skipped if no approver is found.
+                </p>
+            </div>
+
+            <div class="table-responsive mb-4 border rounded">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light text-muted small text-uppercase">
+                        <tr>
+                            <th style="width:8%">Step</th>
+                            <th style="width:28%">Step Label</th>
+                            <th style="width:24%">Approver Role</th>
+                            <th style="width:18%">Approval Type</th>
+                            <th style="width:12%" class="text-center">Optional?</th>
+                            <th style="width:10%" class="text-center">Remove</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stepsBody">
+                        @for (int i = 0; i < stepsList.Count; i++)
+                        {
+                            var step = stepsList[i];
+                            <tr>
+                                <td class="px-3 py-2"><span class="step-number fw-bold text-primary">Step @(i + 1)</span></td>
+                                <td class="px-3 py-2">
+                                    <input type="text" class="form-control form-control-sm" name="items[@i].StepLabel" value="@step.StepLabel" placeholder="e.g. Manager Approval" required />
+                                </td>
+                                <td class="px-3 py-2">
+                                    <select class="form-select form-select-sm" name="items[@i].RoleId" required>
+                                        <option value="">Select Role...</option>
+                                        @if (roles != null)
+                                        {
+                                            foreach (var r in roles)
+                                            {
+                                                <option value="@r.Id" selected="@(r.Id == step.RoleId ? "selected" : null)">@r.Name</option>
+                                            }
+                                        }
+                                    </select>
+                                </td>
+                                <td class="px-3 py-2">
+                                    <select class="form-select form-select-sm" name="items[@i].ApprovalType">
+                                        <option value="@ApprovalType.Single" selected="@(step.ApprovalType == ApprovalType.Single ? "selected" : null)">Single</option>
+                                        <option value="@ApprovalType.Parallel" selected="@(step.ApprovalType == ApprovalType.Parallel ? "selected" : null)">Parallel (All)</option>
+                                        <option value="@ApprovalType.Any" selected="@(step.ApprovalType == ApprovalType.Any ? "selected" : null)">Parallel (Any)</option>
+                                    </select>
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    <input type="checkbox" class="form-check-input" name="items[@i].IsOptional" value="true" @(step.IsOptional ? "checked" : "") />
+                                </td>
+                                <td class="px-3 py-2 text-center">
+                                    <button type="button" class="btn btn-outline-danger btn-sm remove-btn" title="Remove">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mb-4">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="addStepBtn">
+                    <i class="fas fa-plus-circle me-1"></i> Add Step
+                </button>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2 mt-4">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<template id="stepRowTemplate">
+    <tr>
+        <td class="px-3 py-2"><span class="step-number fw-bold text-primary"></span></td>
+        <td class="px-3 py-2">
+            <input type="text" class="form-control form-control-sm" name="items[{index}].StepLabel" placeholder="e.g. Manager Approval" required />
+        </td>
+        <td class="px-3 py-2">
+            <select class="form-select form-select-sm" name="items[{index}].RoleId" required>
+                <option value="">Select Role...</option>
+                @if (roles != null)
+                {
+                    foreach (var r in roles)
+                    {
+                        <option value="@r.Id">@r.Name</option>
+                    }
+                }
+            </select>
+        </td>
+        <td class="px-3 py-2">
+            <select class="form-select form-select-sm" name="items[{index}].ApprovalType">
+                <option value="@ApprovalType.Single">Single</option>
+                <option value="@ApprovalType.Parallel">Parallel (All)</option>
+                <option value="@ApprovalType.Any">Parallel (Any)</option>
+            </select>
+        </td>
+        <td class="px-3 py-2 text-center">
+            <input type="checkbox" class="form-check-input" name="items[{index}].IsOptional" value="true" />
+        </td>
+        <td class="px-3 py-2 text-center">
+            <button type="button" class="btn btn-outline-danger btn-sm remove-btn" title="Remove">
+                <i class="fas fa-times"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let rowIdx = @stepsList.Count;
+            const stepsBody = document.getElementById('stepsBody');
+            const tmpl      = document.getElementById('stepRowTemplate').innerHTML;
+
+            stepsBody.querySelectorAll('tr').forEach(tr => {
+                tr.querySelector('.remove-btn')?.addEventListener('click', () => { tr.remove(); renumber(); });
+            });
+
+            document.getElementById('addStepBtn').addEventListener('click', function () {
+                const tr = document.createElement('tr');
+                tr.innerHTML = tmpl.replace(/\{index\}/g, rowIdx++);
+                stepsBody.appendChild(tr);
+                tr.querySelector('.remove-btn').addEventListener('click', () => { tr.remove(); renumber(); });
+                renumber();
+            });
+
+            function renumber() {
+                stepsBody.querySelectorAll('tr').forEach((row, idx) => {
+                    const span = row.querySelector('.step-number');
+                    if (span) span.textContent = 'Step ' + (idx + 1);
+                });
+            }
+
+            document.getElementById('templateForm').addEventListener('submit', function (e) {
+                const rows = stepsBody.querySelectorAll('tr');
+                if (!rows.length) { e.preventDefault(); alert('Add at least one step.'); return; }
+                rows.forEach((row, newIdx) => {
+                    row.querySelectorAll('input, select').forEach(el => {
+                        const n = el.getAttribute('name');
+                        if (n) el.setAttribute('name', n.replace(/items\[\d+\]/, `items[${newIdx}]`));
+                    });
+                });
+            });
+        });
+    </script>
+}

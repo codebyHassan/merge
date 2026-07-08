@@ -1,0 +1,53 @@
+@model AlignHR.Models.HrApplicationFormViewModel
+
+@{
+    ViewData["Title"] = "Add Application";
+    ViewBag.ActivePage = "HrJobPostings";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <div class="mb-3 small text-muted">Posting: <strong>@Model.JobCode — @Model.JobTitle</strong></div>
+
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="JobPostingFK" />
+            <input type="hidden" asp-for="JobCode" />
+            <input type="hidden" asp-for="JobTitle" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small"><div asp-validation-summary="ModelOnly"></div></div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label asp-for="CandidateFK" class="form-label small fw-semibold">Candidate <span class="text-danger">*</span></label>
+                    <select asp-for="CandidateFK" asp-items="ViewBag.Candidates" class="form-select form-select-sm" required>
+                        <option value="">— Select Candidate —</option>
+                    </select>
+                    <span asp-validation-for="CandidateFK" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="AppliedDate" class="form-label small fw-semibold">Applied Date</label>
+                    <input asp-for="AppliedDate" type="date" class="form-control form-control-sm" />
+                </div>
+                <div class="col-12">
+                    <label asp-for="RecruiterNotes" class="form-label small fw-semibold">Recruiter Notes</label>
+                    <textarea asp-for="RecruiterNotes" class="form-control form-control-sm" rows="3"></textarea>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" asp-route-jobPostingId="@Model.JobPostingFK" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-check me-1"></i>Add Application
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

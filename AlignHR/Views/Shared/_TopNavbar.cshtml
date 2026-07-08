@@ -1,0 +1,83 @@
+@{
+    var sessionName = Context.Session.GetString("UserName") ?? "Admin";
+    var sessionRole = Context.Session.GetString("UserRoles") ?? "ERP Admin";
+    var initials    = string.Concat(sessionName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(w => w[0].ToString().ToUpperInvariant()));
+    if (string.IsNullOrWhiteSpace(initials)) initials = "AD";
+}
+
+<nav class="erp-topbar" aria-label="Primary navigation">
+    <div class="container-fluid gap-2 d-flex align-items-center">
+
+        @* Mobile: open sidebar drawer *@
+        <button class="btn btn-icon d-lg-none" type="button"
+                data-erp-sidebar-toggle aria-label="Open navigation">
+            <i class="bi bi-list"></i>
+        </button>
+
+        @* Desktop: collapse sidebar *@
+        <button class="btn btn-icon d-none d-lg-inline-flex" type="button"
+                data-erp-sidebar-collapse aria-label="Collapse navigation">
+            <i class="bi bi-layout-sidebar"></i>
+        </button>
+
+        @* Global search *@
+        <button class="global-search btn" type="button"
+                data-bs-toggle="modal" data-bs-target="#commandPalette"
+                aria-label="Open global search (Ctrl K)">
+            <i class="bi bi-search"></i>
+            <span class="global-search-placeholder">Search employees, payroll, leave…</span>
+            <kbd>Ctrl K</kbd>
+        </button>
+
+        <div class="ms-auto d-flex align-items-center gap-2">
+
+            @* Quick action: New Employee *@
+            <a class="btn btn-primary btn-sm d-none d-md-inline-flex"
+               asp-controller="Employees" asp-action="Create">
+                <i class="bi bi-plus-lg"></i>
+                New Employee
+            </a>
+
+            @* Notifications *@
+            <button class="btn btn-icon position-relative" type="button"
+                    data-erp-toast-demo aria-label="Notifications">
+                <i class="bi bi-bell"></i>
+                <span class="notification-dot"></span>
+            </button>
+
+            @* User dropdown *@
+            <div class="dropdown">
+                <button class="btn user-menu" type="button"
+                        data-bs-toggle="dropdown" aria-expanded="false"
+                        aria-haspopup="true">
+                    <span class="avatar" aria-hidden="true">@initials</span>
+                    <span class="d-none d-xl-block text-start">
+                        <span class="user-name">@sessionName</span>
+                        <span class="user-role">@(sessionRole.Split(',').FirstOrDefault()?.Trim() ?? "ERP Admin")</span>
+                    </span>
+                    <i class="bi bi-chevron-down small"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><h6 class="dropdown-header">Workspace</h6></li>
+                    <li>
+                        <a class="dropdown-item" asp-controller="Dashboard" asp-action="Index">
+                            <i class="bi bi-bar-chart-line"></i> Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" asp-controller="Settings" asp-action="Index">
+                            <i class="bi bi-sliders"></i> Preferences
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider" /></li>
+                    <li>
+                        <a class="dropdown-item text-danger" asp-controller="User" asp-action="Logout">
+                            <i class="bi bi-box-arrow-right"></i> Sign out
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+</nav>

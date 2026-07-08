@@ -1,0 +1,222 @@
+@media (max-width: 1199.98px) {
+    .detail-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .employee-create-grid {
+        grid-template-columns: 220px minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 991.98px) {
+    .erp-main {
+        padding-left: 0;
+    }
+
+    .erp-topbar {
+        left: 0;
+    }
+
+    .erp-sidebar {
+        inset: 0;
+        width: 100vw;
+        pointer-events: none;
+        visibility: hidden;
+    }
+
+    .sidebar-backdrop {
+        position: absolute;
+        inset: 0;
+        display: block;
+        background: rgba(15, 23, 42, 0.45);
+        opacity: 0;
+        transition: opacity var(--erp-transition);
+    }
+
+    .sidebar-panel {
+        width: min(84vw, var(--erp-sidebar-width));
+        transform: translateX(-102%);
+        box-shadow: var(--erp-shadow-md);
+        transition: transform var(--erp-transition);
+    }
+
+    .sidebar-open .erp-sidebar {
+        pointer-events: auto;
+        visibility: visible;
+    }
+
+    .sidebar-open .sidebar-backdrop {
+        opacity: 1;
+    }
+
+    .sidebar-open .sidebar-panel {
+        transform: translateX(0);
+    }
+
+    .sidebar-collapsed .erp-main {
+        padding-left: 0;
+    }
+
+    .sidebar-collapsed .erp-topbar {
+        left: 0;
+    }
+
+    .global-search {
+        width: auto;
+        min-width: 1.95rem;
+        flex: 1 1 auto;
+    }
+
+    .employee-create-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .employee-profile-panel {
+        position: static;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    body {
+        font-size: 12.5px;
+    }
+
+    .erp-workspace {
+        padding: 0.55rem;
+    }
+
+    .workspace-header,
+    .page-header {
+        margin-bottom: 0.55rem;
+    }
+
+    .header-actions,
+    .page-actions,
+    .filter-group {
+        width: 100%;
+    }
+
+    .header-actions .btn,
+    .page-actions .btn,
+    .filter-group .btn,
+    .filter-group .form-control,
+    .filter-group .form-select {
+        flex: 1 1 auto;
+    }
+
+    .global-search-placeholder,
+    .global-search kbd {
+        display: none;
+    }
+
+    .module-grid,
+    .wizard-progress {
+        grid-template-columns: 1fr;
+    }
+
+    .table-toolbar .input-group,
+    .table-toolbar .form-select,
+    .filter-bar .form-control,
+    .filter-bar .form-select {
+        max-width: none;
+        width: 100%;
+    }
+
+    .erp-table-wrap {
+        max-height: none;
+        overflow: visible;
+        padding: 0.5rem;
+    }
+
+    .erp-table {
+        min-width: 0;
+        border-collapse: separate;
+        border-spacing: 0 0.5rem;
+        font-size: 12px;
+    }
+
+    .erp-table thead {
+        display: none;
+    }
+
+    .erp-table,
+    .erp-table tbody,
+    .erp-table tr,
+    .erp-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .erp-table tr {
+        border: 1px solid var(--erp-border);
+        border-radius: var(--erp-radius-md);
+        background: var(--erp-surface);
+        overflow: hidden;
+    }
+
+    .erp-table tbody td {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        border-bottom: 1px solid var(--erp-border);
+        padding: 0.5rem 0.65rem;
+        text-align: end;
+        white-space: normal;
+    }
+
+    .erp-table tbody td:last-child {
+        border-bottom: 0;
+    }
+
+    .erp-table tbody td::before {
+        flex: 0 0 42%;
+        color: var(--erp-muted);
+        content: attr(data-label);
+        font-size: 0.66rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-align: start;
+        text-transform: uppercase;
+    }
+
+    .sticky-actions {
+        position: static;
+        box-shadow: none;
+    }
+
+    .detail-list {
+        grid-template-columns: 1fr;
+    }
+
+    .employee-profile-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions-sticky {
+        justify-content: stretch;
+    }
+
+    .form-actions-sticky .btn {
+        flex: 1 1 0;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .workspace-header h1,
+    .page-header h1 {
+        font-size: 1rem;
+    }
+
+    .user-menu {
+        padding: 0.15rem;
+    }
+
+    .metric-card,
+    .erp-card,
+    .wizard-card,
+    .form-shell {
+        border-radius: var(--erp-radius-sm);
+    }
+}

@@ -1,0 +1,138 @@
+Business Requirement Clarification – Recruitment Department Approval Structure
+
+Please implement the following recruitment ownership model.
+
+==================================================
+Recruitment Department Structure
+================================
+
+The organization contains multiple business departments.
+
+Example:
+
+* IT
+* Infrastructure
+* Security
+* Finance
+* HR
+* Sales
+* Operations
+
+Multiple business departments can belong to a single Recruitment Department.
+
+Example:
+
+Technology Recruitment Department
+- IT
+- Infrastructure
+- Security
+- Data
+
+Corporate Recruitment Department
+- Finance
+- HR
+- Legal
+
+Commercial Recruitment Department
+- Sales
+- Marketing
+- Operations
+
+==================================================
+Recruitment Department Ownership
+================================
+
+Each Recruitment Department has one designated Recruitment Head.
+
+Example:
+
+Technology Recruitment Department
+Recruitment Head = Ali
+
+Corporate Recruitment Department
+Recruitment Head = Hassan
+
+Commercial Recruitment Department
+Recruitment Head = Bilal
+
+==================================================
+Workflow Requirement
+====================
+
+After the Line Manager, HRBP, and HOD approvals are completed, the requisition must move to the Recruitment Head responsible for the department associated with that requisition.
+
+Example:
+
+Department = IT
+
+IT belongs to Technology Recruitment Department.
+
+Technology Recruitment Department Head = Ali.
+
+Therefore, only Ali should receive this requisition for recruitment approval.
+
+==================================================
+Recruitment Head Responsibilities
+=================================
+
+The Recruitment Head must:
+
+1. Review the approved requisition.
+2. Approve or reject the recruitment request from the recruitment perspective.
+3. Assign the requisition to a recruiter within their own recruitment team.
+
+==================================================
+Visibility Rules
+================
+
+* Recruitment Heads should only see requisitions belonging to departments assigned to their Recruitment Department.
+* Recruitment Heads must not see requisitions outside their assigned departments.
+* Recruiters should only see requisitions assigned directly to them.
+* Recruiters cannot assign or reassign requisitions.
+* Only the Recruitment Head can perform recruiter assignment.
+
+==================================================
+Example Flow
+============
+
+Line Manager
+↓
+Department HRBP
+↓
+Department HOD
+↓
+Recruitment Head Approval
+↓
+Recruiter Assignment
+↓
+Recruitment Activities Begin
+
+Example:
+
+IT Department Request
+↓
+HRBP (IT)
+↓
+HOD (IT)
+↓
+Technology Recruitment Head (Ali)
+↓
+Assigned to Recruiter (Hamza)
+
+Finance Department Request
+↓
+HRBP (Finance)
+↓
+HOD (Finance)
+↓
+Corporate Recruitment Head (Hassan)
+↓
+Assigned to Recruiter (Saad)
+
+==================================================
+Expected Outcome
+================
+
+The system must support many departments being managed by a single Recruitment Department while maintaining strict ownership and visibility controls.
+
+Approval and assignment must always be determined by department-to-recruitment-department mapping rather than generic RBAC role matching.

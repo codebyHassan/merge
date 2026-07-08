@@ -1,0 +1,787 @@
+@model AlignHR.Models.PayrollDashboardViewModel
+@using System.Text.Json
+@{
+    ViewData["Title"] = "Payroll Dashboard";
+    ViewData["Subtitle"] = "Active payroll cycle, statutory deductions, allowances, and employee payout analytics.";
+    ViewBag.ActivePage = "Payroll";
+
+    var completedSteps = Model.ExecutionStates.Count(x => x.IsComplete);
+    var cycleStateClass = Model.HasPostedPeriod
+        ? "status-approved"
+        : Model.HasGeneratedSalarySlips
+            ? "status-active"
+            : Model.ActivePeriod == null
+                ? "status-risk"
+                : "status-pending";
+
+    var deductionChartLabels = Model.DeductionComponents.Select(x => x.Name).ToList();
+    var deductionChartValues = Model.DeductionComponents.Select(x => x.Amount).ToList();
+    var departmentChartLabels = Model.DepartmentSummaries.Select(x => x.DepartmentName).ToList();
+    var departmentChartValues = Model.DepartmentSummaries.Select(x => x.NetAmount).ToList();
+}
+
+@section Styles {
+    <style>
+        .payroll-dashboard {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .payroll-hero {
+            overflow: hidden;
+            padding: 0;
+            background:
+                radial-gradient(circle at top right, rgba(17, 24, 39, 0.2), transparent 32%),
+                linear-gradient(135deg, #F3F4F6 0%, #ffffff 52%, #f8fafc 100%);
+        }
+
+        .payroll-hero-shell {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(300px, 0.9fr);
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        .payroll-hero-copy h1 {
+            margin: 0;
+            font-size: 1.35rem;
+            font-weight: 850;
+            letter-spacing: -0.03em;
+        }
+
+        .payroll-hero-copy p {
+            margin: 0.35rem 0 0;
+            max-width: 52rem;
+            color: var(--erp-muted-strong);
+            font-size: 0.8rem;
+            line-height: 1.55;
+        }
+
+        .payroll-hero-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 0.9rem;
+        }
+
+        .payroll-hero-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            border: 1px solid rgba(17, 24, 39, 0.12);
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.8);
+            color: var(--erp-muted-strong);
+            padding: 0.32rem 0.68rem;
+            font-size: 0.72rem;
+            font-weight: 800;
+        }
+
+        .payroll-hero-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 1rem;
+        }
+
+        .payroll-hero-side {
+            display: grid;
+            gap: 0.65rem;
+            align-content: start;
+        }
+
+        .payroll-highlight-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.6rem;
+        }
+
+        .payroll-highlight {
+            border: 1px solid rgba(148, 163, 184, 0.16);
+            border-radius: 0.95rem;
+            background: rgba(255, 255, 255, 0.86);
+            padding: 0.9rem;
+        }
+
+        .payroll-highlight span {
+            display: block;
+            color: var(--erp-muted);
+            font-size: 0.68rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+
+        .payroll-highlight strong {
+            display: block;
+            margin-top: 0.25rem;
+            color: var(--erp-text);
+            font-size: 1.08rem;
+            font-weight: 850;
+            letter-spacing: -0.02em;
+        }
+
+        .payroll-highlight small {
+            display: block;
+            margin-top: 0.2rem;
+            color: var(--erp-muted);
+            font-size: 0.72rem;
+            line-height: 1.45;
+        }
+
+        .payroll-card-stack {
+            display: grid;
+            gap: 0.75rem;
+        }
+
+        .payroll-coverage-list,
+        .payroll-state-list,
+        .payroll-component-list {
+            display: grid;
+            gap: 0.55rem;
+        }
+
+        .payroll-coverage-item,
+        .payroll-state-item,
+        .payroll-component-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding-bottom: 0.55rem;
+            border-bottom: 1px dashed rgba(148, 163, 184, 0.24);
+        }
+
+        .payroll-coverage-item:last-child,
+        .payroll-state-item:last-child,
+        .payroll-component-item:last-child {
+            padding-bottom: 0;
+            border-bottom: 0;
+        }
+
+        .payroll-coverage-copy,
+        .payroll-state-copy {
+            display: grid;
+            gap: 0.18rem;
+        }
+
+        .payroll-coverage-copy strong,
+        .payroll-state-copy strong {
+            font-size: 0.78rem;
+            font-weight: 800;
+        }
+
+        .payroll-coverage-copy span,
+        .payroll-state-copy span,
+        .payroll-component-item span {
+            color: var(--erp-muted);
+            font-size: 0.72rem;
+        }
+
+        .payroll-coverage-value,
+        .payroll-state-meta,
+        .payroll-component-item strong {
+            font-size: 0.8rem;
+            font-weight: 850;
+            text-align: right;
+        }
+
+        .payroll-progress {
+            height: 0.38rem;
+            border-radius: 999px;
+            background: var(--erp-surface-subtle);
+            overflow: hidden;
+        }
+
+        .payroll-progress > span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--erp-primary), #9CA3AF);
+        }
+
+        .payroll-state-actions {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.8rem;
+        }
+
+        .payroll-insight-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            padding: 0.8rem 0.9rem;
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 0.9rem;
+            background: rgba(248, 250, 252, 0.9);
+            color: var(--erp-muted-strong);
+            font-size: 0.74rem;
+            line-height: 1.5;
+        }
+
+        .payroll-insight-note i {
+            color: var(--erp-primary);
+            margin-top: 0.1rem;
+        }
+
+        .payroll-mini-heading {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.6rem;
+        }
+
+        .payroll-mini-heading h3 {
+            margin: 0;
+            font-size: 0.88rem;
+            font-weight: 800;
+        }
+
+        .payroll-chart-slot {
+            height: 255px;
+        }
+
+        .payroll-tag-group {
+            display: inline-flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.25rem;
+        }
+
+        .payroll-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            border-radius: 999px;
+            padding: 0.14rem 0.42rem;
+            font-size: 0.66rem;
+            font-weight: 800;
+            line-height: 1.2;
+        }
+
+        .payroll-tag.is-info {
+            background: var(--erp-info-soft);
+            color: var(--erp-info);
+        }
+
+        .payroll-tag.is-success {
+            background: var(--erp-success-soft);
+            color: var(--erp-success);
+        }
+
+        .payroll-tag.is-warning {
+            background: var(--erp-warning-soft);
+            color: var(--erp-warning);
+        }
+
+        .payroll-empty-card {
+            display: grid;
+            place-items: center;
+            gap: 0.4rem;
+            min-height: 14rem;
+            text-align: center;
+        }
+
+        .payroll-empty-card i {
+            font-size: 1.5rem;
+            color: var(--erp-muted);
+        }
+
+        @@media (max-width: 1199.98px) {
+            .payroll-hero-shell {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @@media (max-width: 767.98px) {
+            .payroll-highlight-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+}
+
+<div class="payroll-dashboard">
+    <section class="payroll-hero erp-card">
+        <div class="payroll-hero-shell">
+            <div class="payroll-hero-copy">
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <h1>Payroll command center</h1>
+                    <span class="status-badge @cycleStateClass">@Model.CycleStatusLabel</span>
+                </div>
+                <p>
+                    Track the active payroll cycle with live statutory visibility across income tax, EOBI, provident fund, deductions,
+                    earnings, and employee payout readiness.
+                </p>
+
+                <div class="payroll-hero-meta">
+                    <span class="payroll-hero-pill"><i class="fa-solid fa-calendar-days"></i>@Model.PeriodLabel</span>
+                    <span class="payroll-hero-pill"><i class="fa-solid fa-clock"></i>@Model.PeriodDateRange</span>
+                    <span class="payroll-hero-pill">
+                        <i class="fa-solid @(Model.UsesEstimatedFigures ? "fa-flask" : "fa-file-invoice-dollar")"></i>
+                        @(Model.UsesEstimatedFigures ? "Projected from payroll structure" : "Driven by generated salary slips")
+                    </span>
+                </div>
+
+                <div class="payroll-hero-actions">
+                    <a class="btn btn-primary btn-sm" asp-controller="Execution" asp-action="Index">
+                        <i class="fa-solid fa-gears me-1"></i>Run execution
+                    </a>
+                    <a class="btn btn-outline-secondary btn-sm" asp-controller="SalarySlips" asp-action="Index">
+                        <i class="fa-solid fa-file-invoice-dollar me-1"></i>Open salary slips
+                    </a>
+                    <a class="btn btn-outline-secondary btn-sm" asp-controller="SalaryPeriods" asp-action="Index">
+                        <i class="fa-solid fa-calendar-week me-1"></i>Manage periods
+                    </a>
+                </div>
+            </div>
+
+            <div class="payroll-hero-side">
+                <div class="payroll-highlight-grid">
+                    <div class="payroll-highlight">
+                        <span>Cycle employees</span>
+                        <strong>@Model.EmployeesInCurrentCycle</strong>
+                        <small>@Model.PayrollConfiguredEmployees of @Model.ActiveEmployees active employees have payroll configured.</small>
+                    </div>
+                    <div class="payroll-highlight">
+                        <span>Completed steps</span>
+                        <strong>@completedSteps / @Model.ExecutionStates.Count</strong>
+                        <small>Execution status for tax, EOBI, PF, loans, bonuses, adjustments, and salary slips.</small>
+                    </div>
+                    <div class="payroll-highlight">
+                        <span>Avg gross</span>
+                        <strong>PKR @Model.AverageGrossPerEmployee.ToString("N0")</strong>
+                        <small>Average gross payroll base per employee in the current cycle.</small>
+                    </div>
+                    <div class="payroll-highlight">
+                        <span>Avg net</span>
+                        <strong>PKR @Model.AverageNetPerEmployee.ToString("N0")</strong>
+                        <small>Average net payable after statutory and approved deductions.</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="row g-2" aria-label="Payroll KPIs">
+        <div class="col-12 col-sm-6 col-xl-2">
+            <article class="metric-card">
+                <div class="metric-label">Active employees</div>
+                <div class="metric-value">@Model.ActiveEmployees</div>
+                <div class="metric-meta"><span class="trend-up"><i class="fa-solid fa-users"></i>Live</span><span>salary-active workforce</span></div>
+            </article>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <article class="metric-card">
+                <div class="metric-label">Gross payroll</div>
+                <div class="metric-value">PKR @Model.GrossPayroll.ToString("N0")</div>
+                <div class="metric-meta"><i class="fa-solid fa-wallet"></i><span>configured salary base</span></div>
+            </article>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <article class="metric-card">
+                <div class="metric-label">Earnings &amp; allowances</div>
+                <div class="metric-value">PKR @Model.TotalAllowances.ToString("N0")</div>
+                <div class="metric-meta"><span class="trend-up"><i class="fa-solid fa-arrow-trend-up"></i>+Components</span><span>bonus and earnings included</span></div>
+            </article>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <article class="metric-card">
+                <div class="metric-label">Total deductions</div>
+                <div class="metric-value">PKR @Model.TotalDeductions.ToString("N0")</div>
+                <div class="metric-meta"><span class="trend-down"><i class="fa-solid fa-arrow-trend-down"></i>@Model.DeductionRate.ToString("N1")%</span><span>of cycle earnings</span></div>
+            </article>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <article class="metric-card">
+                <div class="metric-label">Net payable</div>
+                <div class="metric-value">PKR @Model.NetPayable.ToString("N0")</div>
+                <div class="metric-meta"><i class="fa-solid fa-money-bill-transfer"></i><span>@(Model.HasGeneratedSalarySlips ? "final payroll payout" : "projected payout")</span></div>
+            </article>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-2">
+            <article class="metric-card">
+                <div class="metric-label">Without-pay days</div>
+                <div class="metric-value">@Model.WithoutPayDaysTotal.ToString("N1")</div>
+                <div class="metric-meta"><i class="fa-solid fa-user-clock"></i><span>@Model.EmployeesWithWithoutPay employee(s) impacted</span></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="row g-2">
+        <div class="col-12 col-xl-4">
+            <article class="erp-card h-100">
+                <div class="payroll-mini-heading">
+                    <div>
+                        <h3>Deduction mix</h3>
+                        <p class="text-muted mb-0 small">Current period split across statutory and other deductions.</p>
+                    </div>
+                    <span class="status-badge status-pending">PKR @Model.TotalDeductions.ToString("N0")</span>
+                </div>
+                @if (Model.DeductionComponents.Any())
+                {
+                    <div class="payroll-chart-slot">
+                        <canvas id="payrollMixChart" aria-label="Payroll deduction mix chart"></canvas>
+                    </div>
+                }
+                else
+                {
+                    <div class="payroll-empty-card">
+                        <i class="fa-solid fa-chart-pie"></i>
+                        <strong>No deduction records</strong>
+                        <span class="text-muted">Run payroll execution for the active period to populate statutory deductions.</span>
+                    </div>
+                }
+            </article>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <article class="erp-card h-100">
+                <div class="payroll-mini-heading">
+                    <div>
+                        <h3>Department payout spread</h3>
+                        <p class="text-muted mb-0 small">Top departments by current net payroll value.</p>
+                    </div>
+                    <span class="status-badge status-info">@Model.DepartmentSummaries.Count dept(s)</span>
+                </div>
+                @if (Model.DepartmentSummaries.Any())
+                {
+                    <div class="payroll-chart-slot">
+                        <canvas id="payrollDeptChart" aria-label="Department payroll chart"></canvas>
+                    </div>
+                }
+                else
+                {
+                    <div class="payroll-empty-card">
+                        <i class="fa-solid fa-building"></i>
+                        <strong>No department totals yet</strong>
+                        <span class="text-muted">Payroll structures need to be configured before departmental spread can be shown.</span>
+                    </div>
+                }
+            </article>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <article class="erp-card h-100">
+                <div class="payroll-mini-heading">
+                    <div>
+                        <h3>Statutory footprint</h3>
+                        <p class="text-muted mb-0 small">Coverage across EOBI, provident fund, filer base, and tax impact.</p>
+                    </div>
+                </div>
+                <div class="payroll-card-stack">
+                    <div class="payroll-coverage-list">
+                        <div class="payroll-coverage-item">
+                            <div class="payroll-coverage-copy">
+                                <strong>EOBI members</strong>
+                                <span>@Model.EmployeesWithEobi processed in period</span>
+                            </div>
+                            <div class="payroll-coverage-value">@Model.EobiMemberCount / @Model.ActiveEmployees</div>
+                        </div>
+                        <div class="payroll-progress"><span style="width:@(Model.ActiveEmployees == 0 ? 0 : (Model.EobiMemberCount * 100m / Model.ActiveEmployees).ToString("0.##"))%"></span></div>
+
+                        <div class="payroll-coverage-item">
+                            <div class="payroll-coverage-copy">
+                                <strong>PF members</strong>
+                                <span>@Model.EmployeesWithPf processed in period</span>
+                            </div>
+                            <div class="payroll-coverage-value">@Model.PfMemberCount / @Model.ActiveEmployees</div>
+                        </div>
+                        <div class="payroll-progress"><span style="width:@(Model.ActiveEmployees == 0 ? 0 : (Model.PfMemberCount * 100m / Model.ActiveEmployees).ToString("0.##"))%"></span></div>
+
+                        <div class="payroll-coverage-item">
+                            <div class="payroll-coverage-copy">
+                                <strong>Tax filers</strong>
+                                <span>@Model.EmployeesWithIncomeTax employee(s) carrying tax in this cycle</span>
+                            </div>
+                            <div class="payroll-coverage-value">@Model.TaxFilerCount / @Model.ActiveEmployees</div>
+                        </div>
+                        <div class="payroll-progress"><span style="width:@(Model.ActiveEmployees == 0 ? 0 : (Model.TaxFilerCount * 100m / Model.ActiveEmployees).ToString("0.##"))%"></span></div>
+                    </div>
+
+                    <div class="payroll-insight-note">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <div>
+                            Income tax: <strong>PKR @Model.IncomeTaxTotal.ToString("N0")</strong> ·
+                            EOBI: <strong>PKR @Model.EobiTotal.ToString("N0")</strong> ·
+                            PF: <strong>PKR @Model.PfTotal.ToString("N0")</strong>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <section class="row g-2">
+        <div class="col-12 col-xl-4">
+            <article class="erp-card h-100">
+                <div class="payroll-mini-heading">
+                    <div>
+                        <h3>Cycle execution</h3>
+                        <p class="text-muted mb-0 small">What has already been prepared for the active salary period.</p>
+                    </div>
+                    <span class="status-badge status-approved">@completedSteps complete</span>
+                </div>
+                <div class="payroll-state-list">
+                    @foreach (var step in Model.ExecutionStates)
+                    {
+                        <div class="payroll-state-item">
+                            <div class="payroll-state-copy">
+                                <strong>@step.Label</strong>
+                                <span>@step.HelperText</span>
+                            </div>
+                            <div class="payroll-state-meta">
+                                <span class="status-badge @(step.IsComplete ? "status-approved" : "status-pending")">
+                                    @(step.IsComplete ? "Ready" : "Pending")
+                                </span>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="payroll-state-actions">
+                    <a class="btn btn-soft btn-sm" asp-controller="Execution" asp-action="Index">
+                        <i class="fa-solid fa-arrow-right-long me-1"></i>Open execution board
+                    </a>
+                </div>
+            </article>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <article class="erp-card h-100">
+                <div class="payroll-mini-heading">
+                    <div>
+                        <h3>Earnings composition</h3>
+                        <p class="text-muted mb-0 small">Largest allowance and earning buckets in the active cycle.</p>
+                    </div>
+                    <span class="status-badge status-active">PKR @Model.TotalAllowances.ToString("N0")</span>
+                </div>
+                @if (Model.EarningComponents.Any())
+                {
+                    <div class="payroll-component-list">
+                        @foreach (var item in Model.EarningComponents.OrderByDescending(x => x.Amount).Take(6))
+                        {
+                            <div class="payroll-component-item">
+                                <span>@item.Name</span>
+                                <strong>PKR @item.Amount.ToString("N0")</strong>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="payroll-empty-card">
+                        <i class="fa-solid fa-layer-group"></i>
+                        <strong>No earnings distribution yet</strong>
+                        <span class="text-muted">Assign payroll structures to active employees to see component analytics.</span>
+                    </div>
+                }
+            </article>
+        </div>
+
+        <div class="col-12 col-xl-4">
+            <article class="erp-card h-100">
+                <div class="payroll-mini-heading">
+                    <div>
+                        <h3>Deduction analytics</h3>
+                        <p class="text-muted mb-0 small">Income tax, EOBI, PF, loan, and approved deduction pressure.</p>
+                    </div>
+                    <span class="status-badge status-risk">PKR @Model.TotalDeductions.ToString("N0")</span>
+                </div>
+                @if (Model.DeductionComponents.Any())
+                {
+                    <div class="payroll-component-list">
+                        @foreach (var item in Model.DeductionComponents.OrderByDescending(x => x.Amount).Take(6))
+                        {
+                            <div class="payroll-component-item">
+                                <span>@item.Name</span>
+                                <strong>PKR @item.Amount.ToString("N0")</strong>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="payroll-empty-card">
+                        <i class="fa-solid fa-receipt"></i>
+                        <strong>No deductions registered yet</strong>
+                        <span class="text-muted">Execution outputs for the active period will appear here once generated.</span>
+                    </div>
+                }
+            </article>
+        </div>
+    </section>
+
+    <section class="table-shell">
+        <div class="table-toolbar">
+            <div>
+                <h2 class="h5 fw-bold mb-1">Employee payroll snapshot</h2>
+                <p class="text-muted mb-0">Highest-impact employees in the current cycle by deduction load and payout value.</p>
+            </div>
+            <div class="filter-group">
+                <a class="btn btn-outline-secondary btn-sm" asp-controller="PFMembers" asp-action="Index"><i class="fa-solid fa-piggy-bank me-1"></i>PF members</a>
+                <a class="btn btn-outline-secondary btn-sm" asp-controller="IncomeTaxDetuction" asp-action="Index"><i class="fa-solid fa-landmark me-1"></i>Income tax</a>
+                <a class="btn btn-outline-secondary btn-sm" asp-controller="EOBIDetuction" asp-action="Index"><i class="fa-solid fa-briefcase-medical me-1"></i>EOBI</a>
+            </div>
+        </div>
+
+        @if (Model.EmployeeSnapshots.Any())
+        {
+            <div class="erp-table-wrap">
+                <table class="table table-hover erp-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Employee</th>
+                            <th scope="col">Department</th>
+                            <th scope="col">Gross</th>
+                            <th scope="col">Earnings</th>
+                            <th scope="col">Deductions</th>
+                            <th scope="col">Net</th>
+                            <th scope="col" class="text-end sticky-actions">Statutory flags</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.EmployeeSnapshots)
+                        {
+                            <tr>
+                                <td data-label="Employee">
+                                    <strong>@item.EmployeeName</strong>
+                                    <div class="text-muted small">@item.EmployeeCode</div>
+                                </td>
+                                <td data-label="Department">@item.DepartmentName</td>
+                                <td data-label="Gross">PKR @item.GrossAmount.ToString("N0")</td>
+                                <td data-label="Earnings" class="text-success-emphasis">PKR @item.EarningsAmount.ToString("N0")</td>
+                                <td data-label="Deductions" class="text-danger-emphasis">PKR @item.DeductionAmount.ToString("N0")</td>
+                                <td data-label="Net"><strong>PKR @item.NetAmount.ToString("N0")</strong></td>
+                                <td data-label="Statutory flags" class="text-end sticky-actions">
+                                    <div class="payroll-tag-group">
+                                        @if (item.IsEobiMember)
+                                        {
+                                            <span class="payroll-tag is-info"><i class="fa-solid fa-briefcase-medical"></i>EOBI</span>
+                                        }
+                                        @if (item.IsPfMember)
+                                        {
+                                            <span class="payroll-tag is-success"><i class="fa-solid fa-piggy-bank"></i>PF</span>
+                                        }
+                                        @if (item.HasIncomeTax)
+                                        {
+                                            <span class="payroll-tag is-warning"><i class="fa-solid fa-landmark"></i>Tax</span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="payroll-empty-card">
+                <i class="fa-solid fa-users-slash"></i>
+                <strong>No employee payroll rows available</strong>
+                <span class="text-muted">Create payroll structures or generate salary slips to populate employee analytics.</span>
+            </div>
+        }
+    </section>
+</div>
+
+@section Scripts {
+    <script>
+        (() => {
+            if (!window.Chart) {
+                return;
+            }
+
+            const deductionLabels = @Html.Raw(JsonSerializer.Serialize(deductionChartLabels));
+            const deductionValues = @Html.Raw(JsonSerializer.Serialize(deductionChartValues));
+            const departmentLabels = @Html.Raw(JsonSerializer.Serialize(departmentChartLabels));
+            const departmentValues = @Html.Raw(JsonSerializer.Serialize(departmentChartValues));
+
+            const moneyTick = (value) => {
+                const amount = Number(value || 0);
+                if (amount >= 1000000) {
+                    return `PKR ${(amount / 1000000).toFixed(1)}M`;
+                }
+                if (amount >= 1000) {
+                    return `PKR ${(amount / 1000).toFixed(0)}K`;
+                }
+                return `PKR ${amount.toFixed(0)}`;
+            };
+
+            const mixChart = document.getElementById("payrollMixChart");
+            if (mixChart && deductionLabels.length) {
+                new Chart(mixChart, {
+                    type: "doughnut",
+                    data: {
+                        labels: deductionLabels,
+                        datasets: [{
+                            data: deductionValues,
+                            backgroundColor: ["#b91c1c", "#dc6803", "#0369a1", "#7c3aed", "#475467", "#6B7280"],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: "68%",
+                        plugins: {
+                            legend: {
+                                position: "bottom",
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 10
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => `${context.label}: ${moneyTick(context.raw)}`
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            const deptChart = document.getElementById("payrollDeptChart");
+            if (deptChart && departmentLabels.length) {
+                new Chart(deptChart, {
+                    type: "bar",
+                    data: {
+                        labels: departmentLabels,
+                        datasets: [{
+                            label: "Net payroll",
+                            data: departmentValues,
+                            backgroundColor: "rgba(17, 24, 39, 0.78)",
+                            borderRadius: 10,
+                            maxBarThickness: 38
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: (context) => moneyTick(context.raw)
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (value) => moneyTick(value)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+}

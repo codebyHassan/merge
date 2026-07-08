@@ -1,0 +1,99 @@
+@model AlignHR.Models.LeaveType
+
+@{
+    ViewData["Title"] = "Create Leave Type";
+    ViewBag.ActivePage = "LeaveTypes";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+
+                <!-- Row 1: Identity fields -->
+                <div class="col-12 col-md-4">
+                    <label asp-for="Name" class="form-label small fw-semibold">Leave Type Name <span class="text-danger">*</span></label>
+                    <input asp-for="Name" class="form-control form-control-sm" placeholder="e.g. Annual Leave" required />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="Code" class="form-label small fw-semibold">Code <span class="text-danger">*</span></label>
+                    <input asp-for="Code" class="form-control form-control-sm" placeholder="e.g. AL" required />
+                    <span asp-validation-for="Code" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="ColorCode" class="form-label small fw-semibold">Display Color</label>
+                    <div class="d-flex align-items-center gap-2">
+                        <input asp-for="ColorCode" type="color" class="form-control form-control-sm"
+                               style="width:38px;height:31px;padding:2px;cursor:pointer;" />
+                        <input type="text" id="hxDisplay" class="form-control form-control-sm font-monospace"
+                               readonly style="width:100px;" />
+                    </div>
+                    <div class="form-text">Used for calendars and reports.</div>
+                </div>
+
+                <!-- Row 2: Toggles -->
+                <div class="col-12 col-md-4">
+                    <label class="custom-toggle">
+                        <input asp-for="IsPaid" type="checkbox" />
+                        <div class="toggle-switch"></div>
+                        <div class="toggle-content">
+                            <div class="toggle-title">Paid Leave</div>
+                            <div class="toggle-desc">Standard compensation applies during this leave.</div>
+                        </div>
+                    </label>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="custom-toggle">
+                        <input asp-for="RequiresAttachment" type="checkbox" />
+                        <div class="toggle-switch"></div>
+                        <div class="toggle-content">
+                            <div class="toggle-title">Requires Documentation</div>
+                            <div class="toggle-desc">Employee must attach proof (e.g. medical certificate).</div>
+                        </div>
+                    </label>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label class="custom-toggle">
+                        <input asp-for="IsActive" type="checkbox" />
+                        <div class="toggle-switch"></div>
+                        <div class="toggle-content">
+                            <div class="toggle-title">Active</div>
+                            <div class="toggle-desc">Visible and selectable in the employee portal.</div>
+                        </div>
+                    </label>
+                </div>
+
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-check me-1"></i>Create Leave Type
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        var colorInput = document.getElementById('ColorCode');
+        var colorDisplay = document.getElementById('hxDisplay');
+        if (colorInput && colorDisplay) {
+            colorDisplay.value = colorInput.value || '#d1d5db';
+            colorInput.addEventListener('input', function () { colorDisplay.value = this.value; });
+        }
+    </script>
+}

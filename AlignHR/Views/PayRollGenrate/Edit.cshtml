@@ -1,0 +1,496 @@
+@model AlignHR.Models.PayRollGenrate
+@{
+    ViewData["Title"] = "Edit Payroll";
+    ViewBag.ActivePage = "PayRollGenrate";
+    var employees = ViewBag.Employees as List<AlignHR.Models.Employee>;
+    var defList = ViewBag.Definitions as List<AlignHR.Models.PayRollDefinationFile>;
+    bool isManual = ViewBag.IsManual ?? false;
+    int selectedDefId = ViewBag.SelectedDefinitionId ?? 0;
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div id="statusBadge" class="badge @(isManual ? "bg-warning bg-opacity-10 text-warning" : "bg-info bg-opacity-10 text-info") animate-pulse px-3 py-2">
+                @(isManual ? "Manual Mode" : "Waiting for selection...")
+            </div>
+        </div>
+
+        <form asp-action="Edit" method="post" id="payrollForm" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="id" />
+            
+            <div class="row g-4 mb-4">
+                <div class="col-12 col-md-6 input-section">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Assignment Method</label>
+                        <div class="d-flex align-items-center gap-3 bg-light p-2 rounded border">
+                            <span class="small fw-semibold text-muted" id="autoLabel">Automatic</span>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input" type="checkbox" id="methodToggle" name="IsManual" value="true" @(isManual ? "checked" : "") />
+                            </div>
+                            <span class="small fw-semibold text-muted" id="manualLabel">Manual</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 position-relative" style="z-index: 1001;">
+                        <label class="form-label small fw-semibold">Search Employee <span class="text-danger">*</span></label>
+                        <div class="position-relative">
+                            @{
+                                var currentEmployee = employees.FirstOrDefault(e => e.Id == Model.EmployeeFK);
+                                string employeeDisplay = currentEmployee != null ? $"{currentEmployee.FirstName} {currentEmployee.LastName} ({currentEmployee.Code})" : "";
+                            }
+                            <input type="text" id="employeeSearch" name="term" class="form-control form-control-sm" placeholder="Type name or code..." autocomplete="off"
+                                   value="@employeeDisplay"
+                                   hx-get="/Ajax/SearchEmployees"
+                                   hx-trigger="keyup delay:300ms, search"
+                                   hx-target="#employeeResults"
+                                   hx-indicator="#emp-loader" />
+                            <span id="emp-loader" class="htmx-indicator position-absolute end-0 top-50 translate-middle-y pe-2">
+                                <i class="fas fa-spinner fa-spin text-primary"></i>
+                            </span>
+                        </div>
+                        <div id="employeeResults" class="search-results-container"></div>
+                        <input type="hidden" asp-for="EmployeeFK" id="selectedEmployeeId" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Gross Salary</label>
+                        <input asp-for="salery" type="number" class="form-control form-control-sm" id="salaryInput" required />
+                    </div>
+
+                    <div id="autoSettings" style="display: @(isManual ? "none" : "block")">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Payroll Definition <span class="text-danger">*</span></label>
+                            <select name="PayRollDefinationFK" id="definitionSelect" class="form-select form-select-sm"
+                                    hx-get="/PayRollGenrate/GenerateBreakdown"
+                                    hx-target="#breakdownContainer"
+                                    hx-trigger="change"
+                                    hx-include="#salaryInput"
+                                    hx-vals='js:{salary: document.getElementById("salaryInput").value, definitionId: this.value}'>
+                                <option value="">-- Select Definition --</option>
+                                @foreach (var def in defList)
+                                {
+                                    bool isSelected = (def.Id == selectedDefId || def.DefinitionName == (ViewBag.SelectedDefinitionName as string));
+                                    <option value="@def.Id" selected="@(isSelected ? "selected" : null)">@def.DefinitionName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="mt-4">
+                            <button type="button" class="btn btn-primary btn-sm" id="generateBtn"
+                                    hx-get="/PayRollGenrate/GenerateBreakdown"
+                                    hx-target="#breakdownContainer"
+                                    hx-include="#salaryInput, #definitionSelect"
+                                    hx-vals='js:{salary: document.getElementById("salaryInput").value, definitionId: document.getElementById("definitionSelect").value}'>
+                                <i class="fas fa-magic me-2"></i> Generate Salary Breakup
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="manualSettings" style="display: @(isManual ? "block" : "none")">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="alert alert-info small py-2 px-3 mb-0">
+                                <i class="fas fa-info-circle me-1"></i> Manual mode: select Element and percentage.
+                            </div>
+                            <span id="manualTotalBadge" class="badge bg-warning bg-opacity-10 text-warning px-2 py-1">Total: 0%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-6 preview-section">
+                    <div id="cardLoader" class="htmx-indicator text-center p-3">
+                        <i class="fas fa-spinner fa-spin text-primary fs-4"></i>
+                    </div>
+                    <div id="employeeCard" class="employee-profile-slot h-100">
+                        <!-- Loaded via HTMX -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="breakdownContainer">
+                @if (!isManual && ViewBag.BreakdownItems != null)
+                {
+                    ViewBag.TotalSalary = Model.salery;
+                    <partial name="_PayrollBreakdown" model="ViewBag.BreakdownItems" />
+                }
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm" id="submitBtn">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <template id="manualRowTemplate">
+        <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 0.75rem;">
+                <select class="form-select form-select-sm manual-comp-select" name="manualItems[{index}].PayRollComFK" required>
+                    <option value="">Select Element...</option>
+                    @foreach (var v in ViewBag.Valuesets as List<AlignHR.Models.Valueset>)
+                    {
+                        <option value="@v.Id" data-name="@v.Name">@v.GroupName - @v.Name</option>
+                    }
+                </select>
+                <input type="hidden" name="manualItems[{index}].label" class="manual-label-hidden" />
+                <input type="hidden" name="manualItems[{index}].Field" class="manual-field-hidden" />
+            </td>
+            <td style="padding: 0.75rem;">
+                <div class="input-group input-group-sm">
+                    <input type="number" class="form-control manual-percent-input" name="manualItems[{index}].Percentage" step="0.01" min="0" max="100" placeholder="0" required />
+                    <span class="input-group-text">%</span>
+                </div>
+            </td>
+            <td style="padding: 0.75rem;">
+                <input type="number" class="form-control form-control-sm manual-amount-input" step="1" min="0" placeholder="0" readonly style="background: #f8fafc;" />
+            </td>
+            <td style="padding: 0.75rem; text-align: center;">
+                <button type="button" class="btn btn-outline-danger btn-sm btn-remove-row payroll-remove-btn payroll-remove-btn--compact">
+                    <i class="fas fa-times"></i>
+                </button>
+            </td>
+        </tr>
+    </template>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Clear hidden ID when user types
+            const searchInput = document.getElementById('employeeSearch');
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    const hiddenInput = document.getElementById('selectedEmployeeId');
+                    if (hiddenInput) hiddenInput.value = '';
+                });
+            }
+
+            // Handle Employee Selection
+            document.body.addEventListener('click', function(e) {
+                const row = e.target.closest('.search-result-item');
+                if (row) {
+                    const id = row.dataset.id;
+                    const name = row.dataset.name;
+                    const code = row.dataset.code;
+                    
+                    const hiddenInput = document.getElementById('selectedEmployeeId');
+                    hiddenInput.value = id;
+                    document.getElementById('employeeResults').innerHTML = '';
+                    document.getElementById('employeeSearch').value = name + ' (' + code + ')';
+                    
+                    // Trigger HTMX to load employee card
+                    htmx.ajax('GET', '/Ajax/GetEmployeeCard', {
+                        values: { id: id },
+                        target: '#employeeCard',
+                        indicator: '#cardLoader'
+                    });
+                }
+            });
+
+            // Close search results when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                    document.getElementById('employeeResults').innerHTML = '';
+                }
+            });
+
+            // Initial load of employee card
+            const initialEmpId = document.getElementById('selectedEmployeeId').value;
+            if (initialEmpId) {
+                htmx.ajax('GET', '/Ajax/GetEmployeeCard', {
+                    values: { id: initialEmpId },
+                    target: '#employeeCard',
+                    indicator: '#cardLoader'
+                });
+            }
+
+            const methodToggle = document.getElementById('methodToggle');
+
+            const autoSettings = document.getElementById('autoSettings');
+            const manualSettings = document.getElementById('manualSettings');
+            const autoLabel = document.getElementById('autoLabel');
+            const manualLabel = document.getElementById('manualLabel');
+            const salaryInput = document.getElementById('salaryInput');
+            const definitionSelect = document.getElementById('definitionSelect');
+            const breakdownContainer = document.getElementById('breakdownContainer');
+            const template = document.getElementById('manualRowTemplate').innerHTML;
+            let manualRowIdx = 0;
+
+            function updateMethodUI() {
+                const isManual = methodToggle.checked;
+                const submitBtn = document.getElementById('submitBtn');
+                const badge = document.getElementById('statusBadge');
+                autoSettings.style.display = isManual ? 'none' : 'block';
+                manualSettings.style.display = isManual ? 'block' : 'none';
+                autoLabel.className = isManual ? 'small fw-semibold text-muted' : 'small fw-bold text-primary';
+                manualLabel.className = isManual ? 'small fw-bold text-primary' : 'small fw-semibold text-muted';
+                
+                if (isManual) {
+                    if (definitionSelect) definitionSelect.removeAttribute('required');
+                    if (document.getElementById('manualItemsBody') === null) {
+                        initManualTable();
+                    }
+                } else {
+                    if (definitionSelect) definitionSelect.setAttribute('required', 'required');
+                    breakdownContainer.innerHTML = '';
+                    if (badge) {
+                        badge.textContent = 'Waiting for selection...';
+                        badge.className = 'badge bg-info bg-opacity-10 text-info animate-pulse px-3 py-2';
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                }
+            }
+
+            methodToggle.addEventListener('click', function(e) {
+                if (!confirm("Are you sure you want to switch? Your current breakdown data will be removed.")) {
+                    e.preventDefault();
+                }
+            });
+            methodToggle.addEventListener('change', updateMethodUI);
+
+            function initManualTable() {
+                breakdownContainer.innerHTML = `
+                    <div class="breakdown-container animate-fade-in mb-4" style="background: #fff; padding: 1.5rem; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                        <h4 style="margin-bottom: 1.5rem; color: #1e293b; display: flex; align-items: center; gap: 0.5rem;">
+                            <i class="fas fa-edit" style="color: #6366f1;"></i> Manual Salary Breakup
+                        </h4>
+                        <div class="table-responsive mb-4 border rounded">
+                            <table class="table table-hover mb-0 align-middle">
+                                <thead class="table-light text-muted small text-uppercase">
+                                    <tr>
+                                        <th class="fw-semibold px-3 py-2">Element</th>
+                                        <th class="fw-semibold px-3 py-2">Percentage %</th>
+                                        <th class="fw-semibold px-3 py-2">Amount</th>
+                                        <th class="fw-semibold px-3 py-2 text-center">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="manualItemsBody"></tbody>
+                                <tfoot>
+                                    <tr class="table-light fw-bold">
+                                        <td class="px-3 py-3">Total Breakdown</td>
+                                        <td class="px-3 py-3" id="totalPercentCell">0%</td>
+                                        <td class="px-3 py-3" id="totalAmountCell">0</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <div class="mb-2">
+                            <button type="button" class="btn btn-primary btn-sm d-inline-flex align-items-center gap-2" id="dynamicAddManualItemBtn">
+                                <i class="fas fa-plus-circle"></i> Add Element
+                            </button>
+                        </div>
+                    </div>
+                `;
+                manualRowIdx = 0;
+                document.getElementById('dynamicAddManualItemBtn').addEventListener('click', function() { addManualRow(); });
+            }
+
+            function addManualRow(data) {
+                const tbody = document.getElementById('manualItemsBody');
+                if (!tbody) return;
+                
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #f1f5f9';
+                tr.innerHTML = template.replace(/\{index\}/g, manualRowIdx++);
+                tbody.appendChild(tr);
+
+                if (data) {
+                    const sel = tr.querySelector('.manual-comp-select');
+                    sel.value = data.PayRollComFK;
+                    tr.querySelector('.manual-percent-input').value = data.Percentage;
+                    tr.querySelector('.manual-label-hidden').value = data.label || '';
+                    tr.querySelector('.manual-field-hidden').value = data.Field || '';
+                    const gross = parseFloat(salaryInput.value) || 0;
+                    const pct = parseFloat(data.Percentage) || 0;
+                    tr.querySelector('.manual-amount-input').value = Math.round((gross * pct) / 100);
+                }
+
+                bindRowEvents(tr);
+                calculateManualTotals();
+            }
+
+            function bindRowEvents(tr) {
+                const percentInput = tr.querySelector('.manual-percent-input');
+                const amountInput = tr.querySelector('.manual-amount-input');
+                const compSelect = tr.querySelector('.manual-comp-select');
+                const labelHidden = tr.querySelector('.manual-label-hidden');
+                const fieldHidden = tr.querySelector('.manual-field-hidden');
+                const removeBtn = tr.querySelector('.btn-remove-row');
+
+                compSelect.addEventListener('change', function() {
+                    const selectedOption = this.options[this.selectedIndex];
+                    const name = selectedOption.getAttribute('data-name');
+                    labelHidden.value = name || '';
+                    fieldHidden.value = name || '';
+                });
+
+                percentInput.addEventListener('input', function() {
+                    const gross = parseFloat(salaryInput.value) || 0;
+                    const pct = parseFloat(this.value) || 0;
+                    amountInput.value = Math.round((gross * pct) / 100);
+                    calculateManualTotals();
+                });
+
+                removeBtn.addEventListener('click', function() {
+                    tr.remove();
+                    calculateManualTotals();
+                });
+            }
+
+            function calculateManualTotals() {
+                let totalPct = 0;
+                let totalAmt = 0;
+                const gross = parseFloat(salaryInput.value) || 0;
+                const badge = document.getElementById('statusBadge');
+                const manualBadge = document.getElementById('manualTotalBadge');
+                const submitBtn = document.getElementById('submitBtn');
+
+                document.querySelectorAll('.manual-percent-input').forEach(function(input) {
+                    totalPct += parseFloat(input.value) || 0;
+                });
+                document.querySelectorAll('.manual-amount-input').forEach(function(input) {
+                    totalAmt += parseFloat(input.value) || 0;
+                });
+
+                totalPct = Math.round(totalPct * 100) / 100;
+                const isValid = Math.abs(totalPct - 100) < 0.01;
+
+                if (manualBadge) {
+                    manualBadge.textContent = 'Total: ' + totalPct + '%';
+                    manualBadge.className = 'badge px-2 py-1 ' + 
+                        (isValid ? 'bg-success bg-opacity-10 text-success' : (totalPct > 100 ? 'bg-danger bg-opacity-10 text-danger' : 'bg-warning bg-opacity-10 text-warning'));
+                }
+
+                var totalPercentCell = document.getElementById('totalPercentCell');
+                var totalAmountCell = document.getElementById('totalAmountCell');
+                if (totalPercentCell) totalPercentCell.textContent = totalPct + '%';
+                if (totalAmountCell) totalAmountCell.textContent = totalAmt.toLocaleString();
+
+                if (isValid && Math.abs(totalAmt - gross) < 2) {
+                    if (badge) {
+                        badge.textContent = 'Breakdown Valid (100%)';
+                        badge.className = 'badge bg-success bg-opacity-10 text-success px-3 py-2';
+                    }
+                    submitBtn.disabled = false;
+                    submitBtn.style.opacity = '1';
+                    submitBtn.style.cursor = 'pointer';
+                } else {
+                    if (badge) {
+                        badge.textContent = 'Total must match Gross Salary (Current: ' + totalPct + '%)';
+                        badge.className = 'badge bg-warning bg-opacity-10 text-warning px-3 py-2';
+                    }
+                    submitBtn.disabled = true;
+                    submitBtn.style.opacity = '0.5';
+                    submitBtn.style.cursor = 'not-allowed';
+                }
+            }
+
+            salaryInput.addEventListener('input', function() {
+                if (methodToggle.checked) {
+                    document.querySelectorAll('#manualItemsBody tr').forEach(function(tr) {
+                        var pctInput = tr.querySelector('.manual-percent-input');
+                        var amtInput = tr.querySelector('.manual-amount-input');
+                        if (pctInput && amtInput) {
+                            var pct = parseFloat(pctInput.value) || 0;
+                            var gross = parseFloat(salaryInput.value) || 0;
+                            amtInput.value = Math.round((gross * pct) / 100);
+                        }
+                    });
+                    calculateManualTotals();
+                }
+            });
+
+            document.getElementById('payrollForm').addEventListener('submit', function(e) {
+                if (methodToggle.checked) {
+                    var totalPct = 0;
+                    document.querySelectorAll('.manual-percent-input').forEach(function(input) {
+                        totalPct += parseFloat(input.value) || 0;
+                    });
+                    
+                    if (Math.abs(totalPct - 100) > 0.05) {
+                        e.preventDefault();
+                        alert('Manual breakdown total must be 100%. Current: ' + totalPct + '%');
+                        return;
+                    }
+
+                    var rows = document.querySelectorAll('#manualItemsBody tr');
+                    rows.forEach(function(row, idx) {
+                        row.querySelectorAll('input, select').forEach(function(input) {
+                            var name = input.getAttribute('name');
+                            if (name) {
+                                input.setAttribute('name', name.replace(/manualItems\[\d+\]/, 'manualItems[' + idx + ']'));
+                            }
+                        });
+                    });
+                } else {
+                    // Auto mode — ensure definition is selected
+                    var defVal = document.getElementById('definitionSelect').value;
+                    if (!defVal || defVal === '' || defVal === '0') {
+                        e.preventDefault();
+                        alert('Please select a Payroll Definition.');
+                        return;
+                    }
+                }
+            });
+
+            // HTMX integration for request prevention
+            document.body.addEventListener('htmx:configRequest', function(evt) {
+                var isManualMode = document.getElementById('methodToggle').checked;
+                var isBreakdownPath = evt.detail.path && evt.detail.path.includes('GenerateBreakdown');
+                var isBreakdownTarget = evt.detail.target && evt.detail.target.id === 'breakdownContainer';
+                
+                if (isManualMode && (isBreakdownPath || isBreakdownTarget)) {
+                    evt.preventDefault();
+                }
+            });
+
+            document.body.addEventListener('htmx:afterSwap', function(evt) {
+                if (evt.detail.target.id === 'breakdownContainer' && !methodToggle.checked) {
+                    var badge = document.getElementById('statusBadge');
+                    if (badge) {
+                        badge.textContent = 'Breakdown Generated';
+                        badge.className = 'badge bg-success bg-opacity-10 text-success px-3 py-2';
+                        badge.classList.remove('animate-pulse');
+                    }
+                }
+            });
+
+            // --- Load existing data on page load ---
+            @if (isManual)
+            {
+                <text>
+                initManualTable();
+                </text>
+
+                if (ViewBag.BreakdownItems != null)
+                {
+                    var items = ViewBag.BreakdownItems as List<AlignHR.Models.PayRollDefinationFile>;
+                    if (items != null && items.Any())
+                    {
+                        var jsonOptions = new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = null };
+                        var serializeItems = items.Select(d => new { d.PayRollComFK, d.Percentage, d.label, d.Field }).ToList();
+                        var itemsJson = System.Text.Json.JsonSerializer.Serialize(serializeItems, jsonOptions);
+                        <text>
+                        var manualData = @Html.Raw(itemsJson);
+                        manualData.forEach(function(item) {
+                            addManualRow(item);
+                        });
+                        </text>
+                    }
+                }
+            }
+            else
+            {
+                <text>
+                updateMethodUI();
+                </text>
+            }
+        });
+    </script>
+}

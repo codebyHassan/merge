@@ -1,0 +1,1200 @@
+@model AlignHR.Models.LeaveRequest
+
+@{
+    ViewData["Title"] = "New Leave Request";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.ActivePage = "LeaveRequests";
+    var canApplyOthers = (bool)(ViewData["CanApplyForOthers"] ?? false);
+    var defaultEmp = ViewData["DefaultEmployee"] as AlignHR.Models.Employee;
+}
+
+@section Styles {
+<style>
+/* ════════════════════════════════════════════════════════════
+   LEAVE REQUEST · CREATE — Premium Layout
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Page Grid ─────────────────────────────────────────────── */
+.lr-page {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 1rem;
+    align-items: start;
+}
+.lr-profile-col { position: sticky; top: calc(var(--erp-topbar-height) + 0.75rem); }
+
+/* ── Hero Header ───────────────────────────────────────────── */
+.lr-hero {
+    position: relative;
+    overflow: hidden;
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 0.85rem;
+    border-radius: var(--erp-radius-md);
+    background: linear-gradient(135deg, #ffffff 0%, #F3F4F6 60%, #F3F4F6 100%);
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 4px 18px rgba(17, 24, 39,0.08);
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+.lr-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -50px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(17, 24, 39,0.18), transparent 65%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.lr-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; right: 80px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(156, 163, 175,0.14), transparent 60%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+.lr-hero-icon {
+    width: 46px; height: 46px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--erp-primary) 0%, #9CA3AF 100%);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 1.05rem;
+    box-shadow: 0 8px 18px rgba(17, 24, 39,0.4);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+}
+.lr-hero-text { position: relative; z-index: 1; flex: 1; min-width: 0; }
+.lr-hero-text h1 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--erp-text);
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+.lr-hero-text p {
+    margin: 0.15rem 0 0;
+    font-size: 0.72rem;
+    color: var(--erp-muted-strong);
+    font-weight: 500;
+}
+.lr-hero-meta { position: relative; z-index: 1; display: flex; gap: 0.4rem; flex-shrink: 0; flex-wrap: wrap; }
+.lr-hero-pill {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.3rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(254,215,170,0.7);
+    font-size: 0.66rem; font-weight: 700;
+    color: var(--erp-text);
+    backdrop-filter: blur(8px);
+}
+.lr-hero-pill i { font-size: 0.6rem; color: var(--erp-primary-600); }
+
+/* ── Section Headers ───────────────────────────────────────── */
+.lr-section + .lr-section { margin-top: 1.1rem; }
+.lr-sec-head {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.7rem;
+    border-bottom: 1px dashed var(--erp-border);
+}
+.lr-sec-badge {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 0.74rem;
+    box-shadow: 0 3px 9px rgba(0,0,0,0.12);
+    flex-shrink: 0;
+}
+.lr-sec-badge.b-orange  { background: linear-gradient(135deg, #111827, #9CA3AF); box-shadow: 0 4px 10px rgba(17, 24, 39,0.3); }
+.lr-sec-badge.b-indigo  { background: linear-gradient(135deg, #6366f1, #818cf8); box-shadow: 0 4px 10px rgba(99,102,241,0.3); }
+.lr-sec-badge.b-emerald { background: linear-gradient(135deg, #10b981, #34d399); box-shadow: 0 4px 10px rgba(16,185,129,0.3); }
+.lr-sec-info h3 {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: var(--erp-text);
+    line-height: 1.1;
+}
+.lr-sec-info p {
+    margin: 0.12rem 0 0;
+    font-size: 0.65rem;
+    color: var(--erp-muted);
+    font-weight: 500;
+}
+
+/* ── Day Count Banner ──────────────────────────────────────── */
+.lr-day-banner {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.6rem 0.85rem;
+    background: linear-gradient(135deg, #F3F4F6 0%, #ffffff 60%);
+    border: 1px solid #E5E7EB;
+    border-radius: var(--erp-radius-md);
+    margin-top: 0.2rem;
+}
+.lr-day-left {
+    display: flex; align-items: center; gap: 0.55rem;
+    min-width: 0;
+}
+.lr-day-icon {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--erp-primary), #9CA3AF);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff;
+    font-size: 0.86rem;
+    box-shadow: 0 3px 9px rgba(17, 24, 39,0.3);
+    flex-shrink: 0;
+}
+.lr-day-left .lbl {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--erp-muted);
+    display: block;
+}
+.lr-day-left .desc {
+    font-size: 0.74rem;
+    color: var(--erp-text);
+    font-weight: 700;
+    margin-top: 0.05rem;
+}
+.lr-day-count {
+    display: flex; align-items: baseline; gap: 0.3rem;
+    flex-shrink: 0;
+}
+.lr-day-count .num {
+    font-size: 1.55rem;
+    font-weight: 850;
+    color: var(--erp-primary-600);
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+.lr-day-count .unit {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--erp-muted-strong);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ── Half Day Block (combined card) ────────────────────────── */
+.lr-halfday {
+    grid-column: 1 / -1;
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-md);
+    background: var(--erp-surface);
+    overflow: hidden;
+    transition: border-color 0.2s, background 0.2s;
+}
+.lr-halfday.active { border-color: var(--erp-primary); background: var(--erp-primary-soft); }
+.lr-halfday-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.55rem 0.75rem;
+    cursor: pointer;
+    user-select: none;
+}
+.lr-halfday-info { display: flex; align-items: center; gap: 0.6rem; }
+.lr-halfday-icon {
+    width: 32px; height: 32px;
+    border-radius: 9px;
+    background: var(--erp-surface-subtle);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--erp-muted);
+    font-size: 0.86rem;
+    transition: background 0.2s, color 0.2s;
+}
+.lr-halfday.active .lr-halfday-icon {
+    background: linear-gradient(135deg, var(--erp-primary), #9CA3AF);
+    color: #fff;
+    box-shadow: 0 3px 9px rgba(17, 24, 39,0.3);
+}
+.lr-halfday-text strong {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--erp-text);
+}
+.lr-halfday-text small {
+    font-size: 0.66rem;
+    color: var(--erp-muted);
+}
+.lr-halfday-session {
+    display: none;
+    padding: 0.55rem 0.75rem 0.7rem;
+    border-top: 1px dashed var(--erp-border);
+    background: rgba(255,255,255,0.5);
+}
+.lr-halfday.active .lr-halfday-session { display: block; }
+.lr-halfday-session .label {
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--erp-muted-strong);
+    margin-bottom: 0.35rem;
+}
+
+.lr-segmented {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+}
+.lr-seg {
+    position: relative;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-sm);
+    background: var(--erp-surface);
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.18s;
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--erp-muted-strong);
+    display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+}
+.lr-seg i { font-size: 0.78rem; }
+.lr-seg:hover {
+    border-color: var(--erp-primary);
+    color: var(--erp-primary-600);
+}
+.lr-seg.on {
+    border-color: var(--erp-primary);
+    background: linear-gradient(135deg, var(--erp-primary), #9CA3AF);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(17, 24, 39,0.35);
+}
+.lr-seg.on i { color: #fff; }
+
+/* ════════════════════════════════════════════════════════════
+   EMPLOYEE PROFILE PANEL
+   ════════════════════════════════════════════════════════════ */
+.lr-emp-panel {
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-md);
+    background: var(--erp-surface);
+    box-shadow: 0 6px 20px rgba(16,24,40,0.06);
+    overflow: hidden;
+}
+
+/* Panel Header */
+.lr-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.7rem;
+    border-bottom: 1px solid var(--erp-border);
+    background: var(--erp-surface-subtle);
+}
+.lr-panel-head .title {
+    font-size: 0.62rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--erp-muted-strong);
+    display: flex; align-items: center; gap: 0.35rem;
+}
+.lr-panel-head .title i { color: var(--erp-primary); font-size: 0.7rem; }
+.lr-live {
+    display: flex; align-items: center; gap: 0.3rem;
+    font-size: 0.6rem; font-weight: 700; color: var(--erp-success);
+}
+.lr-live::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    background: var(--erp-success);
+    box-shadow: 0 0 0 0 rgba(21,128,61,0.45);
+    animation: lrPing 1.6s ease-in-out infinite;
+}
+@@keyframes lrPing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(21,128,61,0.45); opacity: 1; }
+    70% { box-shadow: 0 0 0 6px rgba(21,128,61,0); opacity: 0.6; }
+}
+
+/* Cover */
+.lr-emp-cover {
+    position: relative;
+    height: 56px;
+    background:
+        radial-gradient(at 15% 20%, rgba(255,255,255,0.25), transparent 50%),
+        radial-gradient(at 85% 80%, rgba(255,237,213,0.4), transparent 50%),
+        linear-gradient(125deg, #1F2937 0%, #111827 50%, #9CA3AF 100%);
+    overflow: hidden;
+}
+.lr-emp-cover::after {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 14px);
+    pointer-events: none;
+}
+
+/* Avatar (overlap cover) */
+.lr-emp-avatar-wrap {
+    display: flex;
+    align-items: flex-end;
+    padding: 0 0.85rem;
+    margin-top: -30px;
+    position: relative;
+    z-index: 2;
+}
+.lr-emp-avatar {
+    width: 64px; height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, var(--erp-primary-soft), #E5E7EB);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; font-weight: 800;
+    color: var(--erp-primary-600);
+    border: 3px solid #fff;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.16);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+.lr-emp-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Identity (name, code, status) */
+.lr-emp-identity {
+    padding: 0.55rem 0.85rem 0.55rem;
+}
+.lr-emp-name {
+    margin: 0;
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: var(--erp-text);
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+.lr-emp-sub {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.25rem;
+    flex-wrap: wrap;
+}
+.lr-emp-code {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--erp-muted);
+    background: var(--erp-surface-subtle);
+    border: 1px solid var(--erp-border);
+    padding: 0.1rem 0.4rem;
+    border-radius: var(--erp-radius-xs);
+}
+.lr-stat-dot {
+    display: inline-flex; align-items: center; gap: 0.25rem;
+    padding: 0.12rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.6rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.lr-stat-dot.active   { background: var(--erp-success-soft); color: var(--erp-success); }
+.lr-stat-dot.inactive { background: var(--erp-danger-soft);  color: var(--erp-danger); }
+.lr-stat-dot.default  { background: var(--erp-surface-subtle); color: var(--erp-muted-strong); }
+.lr-stat-dot i { font-size: 0.4rem; }
+
+/* Stat Chips Grid */
+.lr-chips {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.4rem;
+    padding: 0 0.85rem 0.65rem;
+}
+.lr-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.55rem;
+    background: var(--erp-surface-subtle);
+    border: 1px solid var(--erp-border);
+    border-radius: var(--erp-radius-sm);
+    min-width: 0;
+    transition: all 0.15s;
+}
+.lr-chip:hover {
+    background: var(--erp-primary-soft);
+    border-color: #E5E7EB;
+    transform: translateY(-1px);
+}
+.lr-chip-icon {
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    background: var(--erp-surface);
+    border: 1px solid var(--erp-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--erp-primary);
+    font-size: 0.7rem;
+    flex-shrink: 0;
+}
+.lr-chip-text { min-width: 0; flex: 1; }
+.lr-chip-text .lbl {
+    display: block;
+    font-size: 0.56rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--erp-muted);
+    line-height: 1;
+}
+.lr-chip-text .val {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--erp-text);
+    margin-top: 0.15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Details list */
+.lr-details {
+    border-top: 1px solid var(--erp-border);
+    background: var(--erp-surface-soft);
+    padding: 0.55rem 0.85rem 0.65rem;
+}
+.lr-details-title {
+    font-size: 0.58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--erp-muted);
+    margin-bottom: 0.4rem;
+    display: flex; align-items: center; gap: 0.35rem;
+}
+.lr-details-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--erp-border);
+}
+.lr-details-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.lr-detail {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.74rem;
+}
+.lr-detail .lbl {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: var(--erp-muted-strong);
+    font-weight: 600;
+}
+.lr-detail .lbl i {
+    width: 13px;
+    text-align: center;
+    color: var(--erp-muted);
+    font-size: 0.66rem;
+}
+.lr-detail .val {
+    color: var(--erp-text);
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 60%;
+    text-align: right;
+}
+
+/* Empty State */
+.lr-empty {
+    padding: 1.6rem 1rem 1.4rem;
+    text-align: center;
+}
+.lr-empty .ico {
+    width: 52px; height: 52px;
+    margin: 0 auto 0.55rem;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--erp-surface-subtle), var(--erp-surface-soft));
+    border: 1px solid var(--erp-border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--erp-border-strong);
+    font-size: 1.3rem;
+}
+.lr-empty strong {
+    display: block;
+    font-size: 0.78rem;
+    font-weight: 800;
+    color: var(--erp-text);
+    margin-bottom: 0.2rem;
+}
+.lr-empty p {
+    margin: 0;
+    font-size: 0.7rem;
+    color: var(--erp-muted);
+    line-height: 1.5;
+}
+
+/* Animations */
+.lr-emp-body { animation: lrFadeUp 0.28s ease-out; }
+@@keyframes lrFadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Form refinements */
+.lr-form-shell { margin: 0 !important; }
+.lr-form-shell .card-inner { padding: 1rem 1.1rem !important; }
+
+/* Sticky Action Bar */
+.lr-actions {
+    position: sticky;
+    bottom: 0;
+    margin: 1rem -1.1rem -1rem;
+    padding: 0.65rem 1.1rem;
+    background: linear-gradient(180deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.98) 40%);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--erp-border);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 5;
+}
+.lr-actions .btn-primary {
+    padding: 0.4rem 1rem !important;
+    box-shadow: 0 4px 14px rgba(17, 24, 39,0.35);
+}
+.lr-actions .btn-primary:hover { box-shadow: 0 6px 18px rgba(17, 24, 39,0.5); }
+
+@@media (max-width: 992px) {
+    .lr-page { grid-template-columns: 1fr; }
+    .lr-profile-col { position: static; order: -1; }
+}
+
+/* ════════════════════════════════════════════════════════════
+   EMPLOYEE SEARCH DROPDOWN — Premium Override
+   ════════════════════════════════════════════════════════════ */
+
+/* Raise the wrapper so dropdown floats above everything */
+#employeeResults {
+    position: absolute !important;
+    top: calc(100% + 6px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 9999 !important;
+    border: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+}
+
+/* The dropdown card itself */
+#employeeResults:not(:empty) {
+    border: 1px solid var(--erp-border) !important;
+    border-radius: 12px !important;
+    background: var(--erp-surface) !important;
+    box-shadow: 0 16px 40px rgba(16,24,40,0.16), 0 4px 12px rgba(16,24,40,0.06) !important;
+    overflow: hidden !important;
+    animation: srSlideIn 0.18s cubic-bezier(0.16,1,0.3,1);
+}
+@@keyframes srSlideIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Header bar inside dropdown */
+#employeeResults::before {
+    content: 'Matching Employees';
+    display: block;
+    padding: 0.5rem 0.75rem 0.35rem;
+    font-size: 0.58rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--erp-muted);
+    border-bottom: 1px solid var(--erp-border);
+    background: var(--erp-surface-subtle);
+}
+
+/* Each result row */
+#employeeResults .search-result-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.7rem !important;
+    padding: 0.6rem 0.75rem !important;
+    border-bottom: 1px solid var(--erp-border) !important;
+    cursor: pointer !important;
+    transition: background 0.13s, transform 0.1s !important;
+    background: var(--erp-surface) !important;
+    position: relative !important;
+}
+#employeeResults .search-result-item:last-child {
+    border-bottom: none !important;
+}
+#employeeResults .search-result-item:hover {
+    background: var(--erp-primary-soft) !important;
+}
+#employeeResults .search-result-item:hover .sr-avatar {
+    box-shadow: 0 4px 12px rgba(17, 24, 39,0.3);
+    transform: scale(1.05);
+}
+#employeeResults .search-result-item:hover .item-action {
+    background: var(--erp-primary) !important;
+    color: #fff !important;
+    border-color: var(--erp-primary) !important;
+    transform: scale(1.1);
+}
+
+/* Avatar injected by JS */
+.sr-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--erp-primary-soft), #E5E7EB);
+    border: 1.5px solid #E5E7EB;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: var(--erp-primary-600);
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.sr-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Item text area */
+#employeeResults .item-info {
+    flex: 1 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 3px !important;
+}
+#employeeResults .item-name {
+    font-size: 0.8rem !important;
+    font-weight: 800 !important;
+    color: var(--erp-text) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    line-height: 1.2 !important;
+}
+#employeeResults .item-meta {
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.35rem !important;
+    flex-wrap: nowrap !important;
+}
+#employeeResults .badge-code {
+    display: inline-flex !important;
+    align-items: center !important;
+    padding: 0.1rem 0.4rem !important;
+    border-radius: 999px !important;
+    font-size: 0.6rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    background: var(--erp-surface-subtle) !important;
+    border: 1px solid var(--erp-border) !important;
+    color: var(--erp-muted-strong) !important;
+}
+#employeeResults .item-meta .text-muted {
+    font-size: 0.68rem !important;
+    font-weight: 600 !important;
+    color: var(--erp-muted) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* Action icon */
+#employeeResults .item-action {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    background: var(--erp-surface-subtle) !important;
+    border: 1px solid var(--erp-border) !important;
+    color: var(--erp-primary) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    font-size: 0.72rem !important;
+    transition: background 0.15s, color 0.15s, transform 0.15s, border-color 0.15s !important;
+}
+
+/* Empty / no-results state */
+#employeeResults .search-empty {
+    padding: 1.5rem 1rem !important;
+    text-align: center !important;
+    color: var(--erp-muted) !important;
+    font-size: 0.74rem !important;
+    font-weight: 500 !important;
+}
+#employeeResults .search-empty i {
+    font-size: 1.6rem !important;
+    color: var(--erp-border-strong) !important;
+    margin-bottom: 0.4rem !important;
+}
+</style>
+}
+
+<!-- Breadcrumb -->
+
+
+<div class="lr-page">
+
+    <!-- ═══════════════════════════════════════════════════════
+         LEFT · Form Panel
+         ═══════════════════════════════════════════════════════ -->
+    <div class="form-shell lr-form-shell">
+        <div class="card-inner">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                <!-- ── Section 1: Who & What ── -->
+                <div class="lr-section">
+                    <div class="lr-sec-head">
+                        <div class="lr-sec-badge b-orange"><i class="fas fa-user-tag"></i></div>
+                        <div class="lr-sec-info">
+                            <h3>Applicant &amp; Leave Type</h3>
+                            <p>Select the employee and the leave category they're applying for</p>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <!-- Employee -->
+                        <div class="form-item" style="position:relative;z-index:9990;">
+                            <label class="form-label">Employee <span class="required">*</span></label>
+                            @if (canApplyOthers)
+                            {
+                                <div style="position:relative;">
+                                    <i class="fas fa-search" style="position:absolute;left:0.65rem;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:0.72rem;pointer-events:none;"></i>
+                                    <input type="text" id="employeeSearch" name="term" class="form-control" style="padding-left:1.95rem;"
+                                           placeholder="Search by name or code…" autocomplete="off"
+                                           hx-get="@Url.Action("SearchEmployees")"
+                                           hx-trigger="keyup changed delay:300ms"
+                                           hx-target="#employeeResults"
+                                           hx-indicator="#emp-loader" />
+                                    <span id="emp-loader" class="htmx-indicator" style="position:absolute;right:9px;top:50%;transform:translateY(-50%);">
+                                        <i class="fas fa-spinner fa-spin" style="color:var(--erp-primary);font-size:0.7rem;"></i>
+                                    </span>
+                                </div>
+                                <div id="employeeResults" class="search-results-container"></div>
+                            }
+                            else
+                            {
+                                <input type="text" class="form-control" value="@(defaultEmp?.FullName ?? "Self")" readonly style="background:var(--erp-surface-subtle);" />
+                            }
+                            <input type="hidden" asp-for="EmployeeId" id="selectedEmployeeId" value="@(defaultEmp?.Id)" />
+                            <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Leave Type -->
+                        <div class="form-item">
+                            <label asp-for="LeaveTypeId" class="form-label">Leave Type <span class="required">*</span></label>
+                            <select asp-for="LeaveTypeId" class="form-control" asp-items="ViewBag.LeaveTypeId">
+                                <option value="">— Select —</option>
+                            </select>
+                            <span asp-validation-for="LeaveTypeId" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Section 2 & 3: Schedule + Details (combined) ── -->
+                <div class="lr-section">
+                    <div class="form-grid">
+                        <!-- Row 1: Dates -->
+                        <div class="form-item">
+                            <label asp-for="FromDate" class="form-label">From Date <span class="required">*</span></label>
+                            <input asp-for="FromDate" type="date" class="form-control" id="fromDate" />
+                            <span asp-validation-for="FromDate" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-item">
+                            <label asp-for="ToDate" class="form-label">To Date <span class="required">*</span></label>
+                            <input asp-for="ToDate" type="date" class="form-control" id="toDate" />
+                            <span asp-validation-for="ToDate" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Day Count Banner -->
+                        <div class="lr-day-banner">
+                            <div class="lr-day-left">
+                                <div class="lr-day-icon"><i class="fas fa-hourglass-half"></i></div>
+                                <div>
+                                    <span class="lbl">Calculated</span>
+                                    <div class="desc">Total leave duration</div>
+                                </div>
+                            </div>
+                            <div class="lr-day-count">
+                                <span class="num" id="daysDisplay">0</span>
+                                <span class="unit" id="daysUnit">days</span>
+                                <input asp-for="DaysCount" type="hidden" id="daysCount" value="0" />
+                            </div>
+                        </div>
+
+                        <!-- Half-Day Block -->
+                        <div class="lr-halfday" id="halfDayBlock">
+                            <div class="lr-halfday-row" onclick="document.getElementById('isHalfDay').click()">
+                                <div class="lr-halfday-info">
+                                    <div class="lr-halfday-icon"><i class="fas fa-clock-rotate-left"></i></div>
+                                    <div class="lr-halfday-text">
+                                        <strong>Half-day application</strong>
+                                        <small>Submit a partial-day leave instead of a full day</small>
+                                    </div>
+                                </div>
+                                <div class="custom-toggle" style="pointer-events:none;margin:0;padding:0;border:none;background:none;gap:0;">
+                                    <input asp-for="IsHalfDay" id="isHalfDay" />
+                                    <div class="toggle-switch"></div>
+                                </div>
+                            </div>
+                            <div class="lr-halfday-session">
+                                <div class="label">Choose Session</div>
+                                <input type="hidden" asp-for="HalfDaySession" id="halfDaySession" value="FirstHalf" />
+                                <div class="lr-segmented">
+                                    <button type="button" class="lr-seg on" data-session="FirstHalf">
+                                        <i class="fas fa-sun"></i> First Half
+                                    </button>
+                                    <button type="button" class="lr-seg" data-session="SecondHalf">
+                                        <i class="fas fa-cloud-sun"></i> Second Half
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Reason + Attachment -->
+                        <div class="form-item">
+                            <label asp-for="Reason" class="form-label">Reason / Remarks</label>
+                            <textarea asp-for="Reason" class="form-control" rows="2" placeholder="Briefly explain the reason for this leave…"></textarea>
+                            <span asp-validation-for="Reason" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-item">
+                            <label asp-for="AttachmentUrl" class="form-label">
+                                Attachment <span style="font-size:0.62rem;font-weight:500;color:var(--erp-muted);text-transform:none;letter-spacing:0;">(Optional)</span>
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="fas fa-link" style="font-size:0.68rem;"></i></span>
+                                <input asp-for="AttachmentUrl" class="form-control" placeholder="https://…" />
+                            </div>
+                            <span asp-validation-for="AttachmentUrl" class="text-danger small"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sticky Action Bar -->
+                <div class="lr-actions">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fas fa-paper-plane me-1"></i> Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         RIGHT · Employee Profile Panel
+         ═══════════════════════════════════════════════════════ -->
+    <aside class="lr-profile-col">
+        <div class="lr-emp-panel">
+            <div class="lr-panel-head">
+                <span class="title"><i class="fas fa-address-card"></i> Employee Profile</span>
+                <span class="lr-live">Live</span>
+            </div>
+
+            <div id="lr-emp-body">
+                @if (defaultEmp != null)
+                {
+                    <div class="lr-emp-body">
+                        <div class="lr-emp-cover"></div>
+                        <div class="lr-emp-avatar-wrap">
+                            <div class="lr-emp-avatar">
+                                @if (!string.IsNullOrEmpty(defaultEmp.ProfileImage))
+                                {
+                                    <img src="/uploads/employees/@defaultEmp.ProfileImage" alt="@defaultEmp.FirstName"
+                                         onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                    <span style="display:none;">@(string.Concat(defaultEmp.FirstName[0], defaultEmp.LastName[0]).ToUpper())</span>
+                                }
+                                else
+                                {
+                                    @(string.Concat(defaultEmp.FirstName[0], defaultEmp.LastName[0]).ToUpper())
+                                }
+                            </div>
+                        </div>
+                        <div class="lr-emp-identity">
+                            <h4 class="lr-emp-name">@defaultEmp.FullName</h4>
+                            <div class="lr-emp-sub">
+                                <span class="lr-emp-code">#@defaultEmp.Code</span>
+                                @{
+                                    var statusKey = (defaultEmp.SalaryStatus ?? "").ToLower() == "inactive" ? "inactive" : "active";
+                                }
+                                <span class="lr-stat-dot @statusKey">
+                                    <i class="fas fa-circle"></i> @(defaultEmp.SalaryStatus ?? "Active")
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="lr-chips">
+                            <div class="lr-chip">
+                                <div class="lr-chip-icon"><i class="fas fa-building"></i></div>
+                                <div class="lr-chip-text"><span class="lbl">Department</span><span class="val">@(defaultEmp.Department?.Name ?? "—")</span></div>
+                            </div>
+                            <div class="lr-chip">
+                                <div class="lr-chip-icon"><i class="fas fa-id-badge"></i></div>
+                                <div class="lr-chip-text"><span class="lbl">Designation</span><span class="val">@(defaultEmp.Designation?.Name ?? "—")</span></div>
+                            </div>
+                            <div class="lr-chip">
+                                <div class="lr-chip-icon"><i class="fas fa-layer-group"></i></div>
+                                <div class="lr-chip-text"><span class="lbl">Grade</span><span class="val">@(defaultEmp.Grade?.Name ?? "—")</span></div>
+                            </div>
+                            <div class="lr-chip">
+                                <div class="lr-chip-icon"><i class="fas fa-map-marker-alt"></i></div>
+                                <div class="lr-chip-text"><span class="lbl">Location</span><span class="val">@(defaultEmp.Location?.Name ?? "—")</span></div>
+                            </div>
+                        </div>
+
+                        <div class="lr-details">
+                            <div class="lr-details-title">More Details</div>
+                            <div class="lr-details-list">
+                                <div class="lr-detail"><span class="lbl"><i class="fas fa-sitemap"></i> Division</span><span class="val">@(defaultEmp.Division?.Name ?? "—")</span></div>
+                                <div class="lr-detail"><span class="lbl"><i class="fas fa-diagram-project"></i> Sub-Dept</span><span class="val">@(defaultEmp.SubDepartment?.Name ?? "—")</span></div>
+                                <div class="lr-detail"><span class="lbl"><i class="fas fa-briefcase"></i> Emp. Type</span><span class="val">@(defaultEmp.EmploymentType?.Name ?? "—")</span></div>
+                                <div class="lr-detail"><span class="lbl"><i class="fas fa-user-check"></i> Status</span><span class="val">@(defaultEmp.EmploymentStatus?.Name ?? "—")</span></div>
+                                <div class="lr-detail"><span class="lbl"><i class="fas fa-calendar-plus"></i> Joined</span><span class="val">@defaultEmp.Dateofjoin.ToString("MMM d, yyyy")</span></div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="lr-empty">
+                        <div class="ico"><i class="fas fa-user-magnifying-glass"></i></div>
+                        <strong>@(canApplyOthers ? "No employee selected" : "No employee profile found")</strong>
+                        <p>@(canApplyOthers ? "Search and pick an employee to preview their full profile." : "Please contact HR to link your account.")</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </aside>
+
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+    @if (canApplyOthers)
+    {
+        <script>
+        (function () {
+            const searchInput  = document.getElementById('employeeSearch');
+            const hiddenId     = document.getElementById('selectedEmployeeId');
+            const resultsBox   = document.getElementById('employeeResults');
+            const profileBody  = document.getElementById('lr-emp-body');
+
+            if (searchInput) {
+                searchInput.addEventListener('input', () => { hiddenId.value = ''; });
+            }
+
+            document.body.addEventListener('click', function (e) {
+                const row = e.target.closest('.search-result-item');
+                if (!row) return;
+
+                const d = row.dataset;
+                hiddenId.value       = d.id;
+                searchInput.value    = d.name + ' (' + d.code + ')';
+                resultsBox.innerHTML = '';
+
+                profileBody.innerHTML = buildCard(d);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults')) {
+                    resultsBox.innerHTML = '';
+                }
+            });
+
+            function statusKey(s) {
+                if (!s) return 'default';
+                return s.toLowerCase() === 'inactive' ? 'inactive' : 'active';
+            }
+
+            function chip(icon, label, value) {
+                return `<div class="lr-chip">
+                    <div class="lr-chip-icon"><i class="fas fa-${icon}"></i></div>
+                    <div class="lr-chip-text"><span class="lbl">${label}</span><span class="val">${value || '—'}</span></div>
+                </div>`;
+            }
+            function detail(icon, label, value) {
+                return `<div class="lr-detail"><span class="lbl"><i class="fas fa-${icon}"></i> ${label}</span><span class="val">${value || '—'}</span></div>`;
+            }
+
+            function buildCard(d) {
+                const initials = (d.name || '??').trim().split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+                const sk = statusKey(d.status);
+                const statusText = d.status || 'Active';
+
+                const avatarInner = d.image
+                    ? `<img src="/uploads/employees/${d.image}" alt="${d.name}"
+                          onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                       <span style="display:none;">${initials}</span>`
+                    : initials;
+
+                return `
+                <div class="lr-emp-body">
+                    <div class="lr-emp-cover"></div>
+                    <div class="lr-emp-avatar-wrap">
+                        <div class="lr-emp-avatar">${avatarInner}</div>
+                    </div>
+                    <div class="lr-emp-identity">
+                        <h4 class="lr-emp-name">${d.name}</h4>
+                        <div class="lr-emp-sub">
+                            <span class="lr-emp-code">#${d.code}</span>
+                            <span class="lr-stat-dot ${sk}"><i class="fas fa-circle"></i> ${statusText}</span>
+                        </div>
+                    </div>
+                    <div class="lr-chips">
+                        ${chip('building',  'Department',  d.dept)}
+                        ${chip('id-badge',  'Designation', d.designation)}
+                        ${chip('layer-group', 'Grade',     d.grade)}
+                        ${chip('map-marker-alt', 'Location', d.location)}
+                    </div>
+                    <div class="lr-details">
+                        <div class="lr-details-title">More Details</div>
+                        <div class="lr-details-list">
+                            ${detail('sitemap',          'Division',   d.division)}
+                            ${detail('diagram-project', 'Sub-Dept',    d.subdept)}
+                            ${detail('briefcase',       'Emp. Type',   d.emptype)}
+                            ${detail('user-check',      'Status',      d.empstatus)}
+                            ${detail('calendar-plus',   'Joined',      d.doj)}
+                        </div>
+                    </div>
+                </div>`;
+            }
+        })();
+        </script>
+    }
+
+    <script>
+    (function () {
+        const isHalfDay    = document.getElementById('isHalfDay');
+        const halfDayBlock = document.getElementById('halfDayBlock');
+        const fromDate     = document.getElementById('fromDate');
+        const toDate       = document.getElementById('toDate');
+        const daysCount    = document.getElementById('daysCount');
+        const daysDisplay  = document.getElementById('daysDisplay');
+        const daysUnit     = document.getElementById('daysUnit');
+        const sessionInput = document.getElementById('halfDaySession');
+        const segButtons   = document.querySelectorAll('.lr-seg');
+
+        function setDays(n) {
+            const val = Number(n) || 0;
+            daysCount.value = val;
+            daysDisplay.textContent = val % 1 === 0 ? val : val.toFixed(2).replace(/\.?0+$/, '');
+            daysUnit.textContent = (val === 1) ? 'day' : 'days';
+        }
+
+        function calculateDays() {
+            if (fromDate.value && toDate.value && !isHalfDay.checked) {
+                const ms   = new Date(toDate.value) - new Date(fromDate.value);
+                const days = Math.ceil(ms / 86400000) + 1;
+                setDays(days > 0 ? days : 0);
+            } else if (!isHalfDay.checked) {
+                setDays(0);
+            }
+        }
+
+        function syncHalfDay() {
+            const on = isHalfDay.checked;
+            halfDayBlock.classList.toggle('active', on);
+            if (on) setDays(0.5);
+            else    calculateDays();
+        }
+
+        isHalfDay.addEventListener('change', syncHalfDay);
+        fromDate.addEventListener('change', calculateDays);
+        toDate.addEventListener('change', calculateDays);
+
+        /* Segmented control for Half-day Session */
+        segButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                segButtons.forEach(b => b.classList.remove('on'));
+                btn.classList.add('on');
+                sessionInput.value = btn.dataset.session;
+            });
+        });
+
+        /* Init */
+        syncHalfDay();
+        calculateDays();
+    })();
+    </script>
+
+    @if (canApplyOthers)
+    {
+        <script>
+        /* ── Avatar injection into HTMX search results ── */
+        (function () {
+            function injectAvatars(container) {
+                container.querySelectorAll('.search-result-item').forEach(function (row) {
+                    if (row.querySelector('.sr-avatar')) return; /* already injected */
+
+                    const name  = row.dataset.name  || '??';
+                    const image = row.dataset.image || '';
+
+                    const initials = name.trim().split(' ')
+                        .filter(Boolean)
+                        .map(w => w[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase();
+
+                    const avatar = document.createElement('div');
+                    avatar.className = 'sr-avatar';
+
+                    if (image) {
+                        const img = document.createElement('img');
+                        img.src = '/uploads/employees/' + image;
+                        img.alt = name;
+                        img.onerror = function () {
+                            this.style.display = 'none';
+                            avatar.textContent = initials;
+                        };
+                        avatar.appendChild(img);
+                    } else {
+                        avatar.textContent = initials;
+                    }
+
+                    row.insertBefore(avatar, row.firstChild);
+                });
+            }
+
+            /* Fire after every HTMX swap into #employeeResults */
+            document.addEventListener('htmx:afterSwap', function (e) {
+                if (e.target && e.target.id === 'employeeResults') {
+                    injectAvatars(e.target);
+                }
+            });
+        })();
+        </script>
+    }
+}

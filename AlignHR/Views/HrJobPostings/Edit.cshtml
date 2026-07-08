@@ -1,0 +1,424 @@
+@model AlignHR.Models.HrJobPostingFormViewModel
+
+@{
+    ViewData["Title"] = "Edit Job Posting";
+    ViewBag.ActivePage = "HrJobPostings";
+    var hasErrors = !ViewData.ModelState.IsValid;
+}
+
+<style>
+    .jp-wrap {
+        display: grid;
+        grid-template-columns: 148px 1fr;
+    }
+
+    .jp-rail {
+        padding: 0.125rem 1.25rem 0 0;
+        border-right: 1px solid var(--ahr-border);
+    }
+
+    .jp-step {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.3rem 0.4rem;
+        border-radius: 4px;
+    }
+
+    .jp-step.s-active { background: color-mix(in srgb, var(--ahr-accent, #4f46e5) 8%, transparent); }
+
+    .jp-dot {
+        width: 22px; height: 22px;
+        border-radius: 50%;
+        font-size: 0.68rem; font-weight: 700;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        border: 1.5px solid var(--ahr-border);
+        color: var(--ahr-text-muted);
+        background: var(--ahr-surface);
+    }
+
+    .s-active .jp-dot {
+        background: var(--ahr-accent, #4f46e5);
+        color: #fff;
+        border-color: var(--ahr-accent, #4f46e5);
+    }
+
+    .s-done .jp-dot {
+        background: #22c55e;
+        color: #fff;
+        border-color: #22c55e;
+    }
+
+    .jp-step-lbl {
+        font-size: 0.71rem;
+        color: var(--ahr-text-muted);
+        font-weight: 500;
+        line-height: 1.2;
+    }
+
+    .s-active .jp-step-lbl { color: var(--ahr-text); font-weight: 600; }
+
+    .jp-line {
+        width: 1px;
+        height: 14px;
+        background: var(--ahr-border);
+        margin: 1px 0 1px calc(0.4rem + 10px);
+    }
+
+    .jp-line.done { background: #22c55e; }
+
+    .jp-body { padding: 0 0 0 1.75rem; }
+
+    .jp-step-head {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--ahr-text-tertiary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1rem;
+        padding-bottom: 0.6rem;
+        border-bottom: 1px solid var(--ahr-border);
+    }
+
+    .jp-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        margin-top: 1.5rem;
+        border-top: 1px solid var(--ahr-border);
+    }
+
+
+    @@media (max-width: 767px) {
+        .jp-wrap { grid-template-columns: 1fr; }
+        .jp-rail {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            border-right: none;
+            border-bottom: 1px solid var(--ahr-border);
+            padding: 0 0 0.75rem 0;
+            margin-bottom: 1rem;
+            gap: 0.25rem;
+        }
+        .jp-step-lbl { display: none; }
+        .jp-line { height: 1px; width: 20px; margin: 0; margin-top: 10px; align-self: flex-start; }
+        .jp-step { padding: 0.2rem; }
+        .jp-body { padding: 0; }
+    }
+</style>
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        <div class="mb-3 d-flex align-items-center gap-2">
+            <span class="fw-semibold" style="font-family:var(--ahr-font-mono);font-size:12px;color:var(--ahr-text-muted);">@Model.JobCode</span>
+            <span class="status-badge badge-secondary" style="font-size:10px;">@Model.PostingStatus</span>
+        </div>
+
+        <form asp-action="Edit" asp-route-id="@Model.Id" method="post" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="RequisitionFK" />
+            <input type="hidden" asp-for="RequisitionNo" />
+            <input type="hidden" asp-for="JobCode" />
+            <input type="hidden" asp-for="PostingStatus" />
+
+            @if (hasErrors)
+            {
+                <div class="alert alert-danger py-2 px-3 small mb-3" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="jp-wrap">
+
+                @* ── Step Rail ── *@
+                <div class="jp-rail">
+                    <div class="jp-step s-active" id="js1">
+                        <div class="jp-dot" id="jd1">1</div>
+                        <span class="jp-step-lbl">Job Details</span>
+                    </div>
+                    <div class="jp-line" id="jc1"></div>
+                    <div class="jp-step" id="js2">
+                        <div class="jp-dot" id="jd2">2</div>
+                        <span class="jp-step-lbl">Interview Rounds</span>
+                    </div>
+                </div>
+
+                @* ── Step Body ── *@
+                <div class="jp-body">
+
+                    @* ── Step 1: Job Details ── *@
+                    <div id="jp1">
+                        <div class="jp-step-head">Job Details</div>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label asp-for="JobTitle" class="form-label small fw-semibold">Job Title <span class="text-danger">*</span></label>
+                                <input asp-for="JobTitle" id="jpTitle" class="form-control form-control-sm" autocomplete="off" />
+                                <span asp-validation-for="JobTitle" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label asp-for="EmploymentType" class="form-label small fw-semibold">Employment Type</label>
+                                <select asp-for="EmploymentType" class="form-select form-select-sm">
+                                    <option value="">— Select —</option>
+                                    <option>Full-Time</option>
+                                    <option>Part-Time</option>
+                                    <option>Contract</option>
+                                    <option>Internship</option>
+                                </select>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label asp-for="Location" class="form-label small fw-semibold">Location</label>
+                                <input asp-for="Location" class="form-control form-control-sm" />
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label asp-for="OpenDate" class="form-label small fw-semibold">Open Date <span class="text-danger">*</span></label>
+                                <input asp-for="OpenDate" id="jpOpenDate" type="date" class="form-control form-control-sm" />
+                                <span asp-validation-for="OpenDate" class="text-danger small"></span>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label asp-for="CloseDate" class="form-label small fw-semibold">Close Date</label>
+                                <input asp-for="CloseDate" type="date" class="form-control form-control-sm" />
+                            </div>
+                            <div class="col-12">
+                                <label asp-for="JobDescription" class="form-label small fw-semibold">Job Description</label>
+                                <textarea asp-for="JobDescription" class="form-control form-control-sm" rows="4"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* ── Step 2: Interview Rounds + Criteria ── *@
+                    <div id="jp2" style="display:none">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-2" style="border-bottom:1px solid var(--ahr-border)">
+                            <span class="jp-step-head mb-0 pb-0 border-0">Interview Rounds &amp; Criteria</span>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="addRound()">+ Add Round</button>
+                        </div>
+                        <div id="roundsError" class="alert alert-danger py-2 px-3 small mb-2" style="display:none"></div>
+                        <div id="roundsWrap">
+                            @for (int ri = 0; ri < Model.Rounds.Count; ri++)
+                            {
+                                <div class="card mb-3">
+                                    <div class="card-body p-2 pb-1">
+                                        <input type="hidden" name="Rounds[@ri].Id" value="@Model.Rounds[ri].Id" />
+                                        @* Row 1: Round name + order + mandatory + remove *@
+                                        <div class="d-flex align-items-center gap-2 mb-2">
+                                            <input name="Rounds[@ri].RoundName" value="@Model.Rounds[ri].RoundName"
+                                                   class="form-control form-control-sm flex-fill" placeholder="e.g. HR Screening" />
+                                            <input type="hidden" name="Rounds[@ri].RoundOrder" value="@Model.Rounds[ri].RoundOrder" />
+                                            <div class="form-check mb-0 d-flex align-items-center gap-1 flex-shrink-0">
+                                                <input name="Rounds[@ri].IsMandatory" type="checkbox" class="form-check-input mt-0"
+                                                       @(Model.Rounds[ri].IsMandatory ? "checked" : "") value="true" />
+                                                <label class="form-check-label small text-muted">Mandatory</label>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger flex-shrink-0" onclick="removeRound(this)">&times;</button>
+                                        </div>
+                                        @* Row 2+: Criteria grid — 3 per row *@
+                                        <div class="row g-2 criteria-list mb-1">
+                                            @for (int ci = 0; ci < Model.Rounds[ri].Criteria.Count; ci++)
+                                            {
+                                                <div class="col-12 col-sm-6">
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="hidden" name="Rounds[@ri].Criteria[@ci].Id" value="@Model.Rounds[ri].Criteria[ci].Id" />
+                                                        <input name="Rounds[@ri].Criteria[@ci].CriteriaName" value="@Model.Rounds[ri].Criteria[ci].CriteriaName"
+                                                               class="form-control" placeholder="Criteria name" style="flex:5" />
+                                                        <input name="Rounds[@ri].Criteria[@ci].MaxScore" value="@Model.Rounds[ri].Criteria[ci].MaxScore.ToString("0.##")"
+                                                               type="number" min="1" max="100" step="0.5" class="form-control" style="flex:1;min-width:0" placeholder="Score" />
+                                                        <button type="button" class="btn btn-outline-secondary" onclick="removeCriteria(this)">&times;</button>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="d-flex align-items-center justify-content-between pt-1" style="border-top:1px dashed var(--ahr-border)">
+                                            <span class="criteria-empty text-muted small fst-italic" @(Model.Rounds[ri].Criteria.Count > 0 ? "style=display:none" : "")>
+                                                No criteria — add at least one.
+                                            </span>
+                                            <span class="flex-grow-1"></span>
+                                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addCriteria(this, @ri)">+ Add Criteria</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        <div id="roundsEmpty" class="text-center py-4 border rounded"
+                             style="color:var(--ahr-text-muted);font-size:0.82rem;display:@(Model.Rounds.Count == 0 ? "" : "none")">
+                            No rounds yet. Click <strong>+ Add Round</strong> to begin.
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="jp-footer">
+                <div class="d-flex gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="button" id="jpBack" class="btn btn-outline-secondary btn-sm"
+                            onclick="wizBack()" style="display:none">
+                        Back
+                    </button>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" id="jpNext" class="btn btn-primary btn-sm" onclick="wizNext()">
+                        Next
+                    </button>
+                    <button type="submit" id="jpSave" class="btn btn-primary btn-sm" style="display:none">
+                        Save
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        var jpStep = 1;
+        var roundIdx = @Model.Rounds.Count;
+        var errorSteps = new Set();
+
+        function jpSetStep(n) {
+            [1, 2].forEach(function (i) {
+                var panel = document.getElementById('jp' + i);
+                var dot   = document.getElementById('jd' + i);
+                var step  = document.getElementById('js' + i);
+                if (panel) panel.style.display = i === n ? '' : 'none';
+                var hasErr = errorSteps.has(i);
+                if (hasErr) {
+                    step.className = 'jp-step' + (i === n ? ' s-active' : '');
+                    dot.style.cssText = 'background:#ef4444;border-color:#ef4444;color:#fff;';
+                    dot.innerHTML = '!';
+                } else if (i < n) {
+                    step.className = 'jp-step s-done';
+                    dot.style.cssText = '';
+                    dot.innerHTML = '&#10003;';
+                } else if (i === n) {
+                    step.className = 'jp-step s-active';
+                    dot.style.cssText = '';
+                    dot.textContent = String(i);
+                } else {
+                    step.className = 'jp-step';
+                    dot.style.cssText = '';
+                    dot.textContent = String(i);
+                }
+            });
+            var ln = document.getElementById('jc1');
+            if (ln) ln.className = 'jp-line' + (n > 1 ? ' done' : '');
+            document.getElementById('jpBack').style.display = n > 1 ? '' : 'none';
+            document.getElementById('jpNext').style.display = n < 2 ? '' : 'none';
+            document.getElementById('jpSave').style.display = n === 2 ? '' : 'none';
+            jpStep = n;
+        }
+
+        function markErrors() {
+            var first = 0;
+            [1, 2].forEach(function (i) {
+                var panel = document.getElementById('jp' + i);
+                if (!panel) return;
+                var hasErr = panel.querySelector('.field-validation-error:not(:empty)') ||
+                             panel.querySelector('.input-validation-error');
+                if (hasErr) { errorSteps.add(i); if (!first) first = i; }
+            });
+            jpSetStep(first || 1);
+        }
+
+        function ok1() {
+            var t  = document.getElementById('jpTitle');
+            var od = document.getElementById('jpOpenDate');
+            var ok = true;
+            if (!t.value.trim()) { t.classList.add('is-invalid'); ok = false; } else t.classList.remove('is-invalid');
+            if (!od.value)       { od.classList.add('is-invalid'); ok = false; } else od.classList.remove('is-invalid');
+            return ok;
+        }
+
+        function wizNext() { if (jpStep === 1 && !ok1()) return; if (jpStep < 2) jpSetStep(jpStep + 1); }
+        function wizBack() { if (jpStep > 1) jpSetStep(jpStep - 1); }
+
+        function validateRounds() {
+            var errEl = document.getElementById('roundsError');
+            var cards = document.getElementById('roundsWrap').querySelectorAll('.card');
+            if (!cards.length) {
+                errEl.textContent = 'Add at least one interview round.';
+                errEl.style.display = '';
+                return false;
+            }
+            for (var i = 0; i < cards.length; i++) {
+                var list = cards[i].querySelector('.criteria-list');
+                if (!list || !list.querySelector('.col-12')) {
+                    errEl.textContent = 'Each round must have at least one evaluation criteria.';
+                    errEl.style.display = '';
+                    cards[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    return false;
+                }
+            }
+            errEl.style.display = 'none';
+            return true;
+        }
+
+        document.getElementById('jpSave').addEventListener('click', function(e) {
+            if (!validateRounds()) e.preventDefault();
+        });
+
+        function addRound() {
+            document.getElementById('roundsEmpty').style.display = 'none';
+            var ri = roundIdx++;
+            var html =
+                '<div class="card mb-3">' +
+                '<div class="card-body p-2 pb-1">' +
+                '<input type="hidden" name="Rounds[' + ri + '].Id" value="0" />' +
+                '<div class="d-flex align-items-center gap-2 mb-2">' +
+                '<input name="Rounds[' + ri + '].RoundName" class="form-control form-control-sm flex-fill" placeholder="e.g. HR Screening" />' +
+                '<input type="hidden" name="Rounds[' + ri + '].RoundOrder" value="' + (ri + 1) + '" />' +
+                '<div class="form-check mb-0 d-flex align-items-center gap-1 flex-shrink-0">' +
+                '<input name="Rounds[' + ri + '].IsMandatory" type="checkbox" class="form-check-input mt-0" checked value="true" />' +
+                '<label class="form-check-label small text-muted">Mandatory</label></div>' +
+                '<button type="button" class="btn btn-sm btn-outline-danger flex-shrink-0" onclick="removeRound(this)">&times;</button>' +
+                '</div>' +
+                '<div class="row g-2 criteria-list mb-1"></div>' +
+                '<div class="d-flex align-items-center justify-content-between pt-1" style="border-top:1px dashed var(--ahr-border)">' +
+                '<span class="criteria-empty text-muted small fst-italic">No criteria — add at least one.</span>' +
+                '<span class="flex-grow-1"></span>' +
+                '<button type="button" class="btn btn-outline-primary btn-sm" onclick="addCriteria(this,' + ri + ')">+ Add Criteria</button>' +
+                '</div>' +
+                '</div></div>';
+            document.getElementById('roundsWrap').insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeRound(btn) {
+            btn.closest('.card').remove();
+            if (!document.getElementById('roundsWrap').querySelector('.card'))
+                document.getElementById('roundsEmpty').style.display = '';
+        }
+
+        function addCriteria(btn, ri) {
+            var card = btn.closest('.card');
+            var list = card.querySelector('.criteria-list');
+            var empty = card.querySelector('.criteria-empty');
+            var ci = list.children.length;
+            empty.style.display = 'none';
+            var html =
+                '<div class="col-12 col-sm-6">' +
+                '<div class="input-group input-group-sm">' +
+                '<input type="hidden" name="Rounds[' + ri + '].Criteria[' + ci + '].Id" value="0" />' +
+                '<input name="Rounds[' + ri + '].Criteria[' + ci + '].CriteriaName" class="form-control" placeholder="Criteria name" style="flex:5" />' +
+                '<input name="Rounds[' + ri + '].Criteria[' + ci + '].MaxScore" type="number" min="1" max="100" step="0.5" value="10" class="form-control" style="flex:1;min-width:0" placeholder="Score" />' +
+                '<button type="button" class="btn btn-outline-secondary" onclick="removeCriteria(this)">&times;</button>' +
+                '</div></div>';
+            list.insertAdjacentHTML('beforeend', html);
+        }
+
+        function removeCriteria(btn) {
+            var col = btn.closest('.col-12');
+            var list = col.parentElement;
+            var card = list.closest('.card');
+            col.remove();
+            if (!list.querySelector('.col-12'))
+                card.querySelector('.criteria-empty').style.display = '';
+        }
+
+        @if (hasErrors) { <text>markErrors();</text> } else { <text>jpSetStep(1);</text> }
+    </script>
+}

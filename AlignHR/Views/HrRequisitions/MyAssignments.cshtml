@@ -1,0 +1,75 @@
+@model List<AlignHR.Models.HrMyAssignmentViewModel>
+
+@{
+    ViewData["Title"] = "My Assignments";
+    ViewBag.ActivePage = "HrMyAssignments";
+    ViewData["BreadcrumbIsRoot"] = true;
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="table-shell" data-erp-table>
+    <div class="erp-table-wrap table-responsive">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th>Req. No</th>
+                    <th>Position</th>
+                    <th>Department</th>
+                    <th>Assigned Date</th>
+                    <th>Assigned By</th>
+                    <th>Status</th>
+                    <th class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var statusClass = item.RequisitionStatus switch
+                    {
+                        "Approved"  => "badge-success",
+                        "Submitted" => "badge-warning",
+                        "Rejected"  => "badge-danger",
+                        "Cancelled" => "badge-danger",
+                        _           => "badge-secondary"
+                    };
+                    <tr>
+                        <td data-label="Req. No"><span class="fw-semibold">@(item.RequisitionNo ?? "—")</span></td>
+                        <td data-label="Position">@(item.PositionTitle ?? "—")</td>
+                        <td data-label="Department">@(item.DepartmentName ?? "—")</td>
+                        <td data-label="Assigned Date">@(item.AssignedDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                        <td data-label="Assigned By">@(item.AssignedByName ?? "—")</td>
+                        <td data-label="Status"><span class="status-badge @statusClass">@(item.RequisitionStatus ?? "—")</span></td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <a class="btn btn-icon btn-sm btn-icon-primary" title="View"
+                               asp-action="MyAssignmentDetail" asp-route-id="@item.AssignmentId">
+                                <i class="fa-solid fa-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-clipboard-list"></i>
+                <h3 class="h6 mt-2 mb-1">No assignments yet</h3>
+                <p class="text-muted mb-0">You have no requisitions assigned to you for recruitment.</p>
+            </div>
+        }
+    </div>
+</section>

@@ -1,0 +1,80 @@
+@model AlignHR.Models.AttendencePolicies
+
+@{
+    ViewData["Title"] = "Edit Attendance Policy";
+    ViewBag.ActivePage = "AttendencePolicies";
+}
+
+<!-- Breadcrumb Area -->
+<div class="breadcrumb-container animate-fade-in">
+    <div class="breadcrumb-item">
+        <i class="fas fa-home"></i>
+        <a href="/">Home</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item">
+        <a asp-action="Index">Attendance Policies</a>
+    </div>
+    <div class="breadcrumb-separator"><i class="fas fa-chevron-right"></i></div>
+    <div class="breadcrumb-item active">Edit Attendance Policy</div>
+</div>
+
+<!-- Main Content Card -->
+<div class="form-shell">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" id="editPolicyForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="id" />
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+            <div class="form-grid">
+                <!-- Row 1 -->
+                <div class="form-item">
+                    <label asp-for="LateGraceTime" class="form-label">Late Grace Time (Minutes) <span class="required">*</span></label>
+                    <input asp-for="LateGraceTime" type="number" class="form-control" placeholder="e.g. 15" required />
+                    <span asp-validation-for="LateGraceTime" class="text-danger small"></span>
+                </div>
+                <div class="form-item">
+                    <label asp-for="OtAfterMintues" class="form-label">OT Starts After (Minutes) <span class="required">*</span></label>
+                    <input asp-for="OtAfterMintues" type="number" class="form-control" placeholder="e.g. 60" required />
+                    <span asp-validation-for="OtAfterMintues" class="text-danger small"></span>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="form-item">
+                    <label asp-for="MaxOtPerDay" class="form-label">Max OT Per Day (Minutes) <span class="required">*</span></label>
+                    <input asp-for="MaxOtPerDay" type="number" class="form-control" placeholder="e.g. 240" required />
+                    <span asp-validation-for="MaxOtPerDay" class="text-danger small"></span>
+                </div>
+                <div class="form-item">
+                    <label asp-for="WeeklyHourLimit" class="form-label">Weekly Hour Limit (Hours) <span class="required">*</span></label>
+                    <input asp-for="WeeklyHourLimit" type="number" class="form-control" placeholder="e.g. 48" required />
+                    <span asp-validation-for="WeeklyHourLimit" class="text-danger small"></span>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="form-item">
+                    <label asp-for="EffictiveTime" class="form-label">Effective From Date <span class="required">*</span></label>
+                    <input asp-for="EffictiveTime" type="date" class="form-control" required />
+                    <span asp-validation-for="EffictiveTime" class="text-danger small"></span>
+                </div>
+                <div class="form-item" style="display: flex; align-items: center; gap: 1rem; padding-top: 1.5rem;">
+                    <label class="form-label" style="margin-bottom: 0;">Is Flexible Policy?</label>
+                    <label class="premium-switch">
+                        <input type="checkbox" asp-for="IsFlexiable">
+                        <span class="premium-slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions-sticky">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+            <partial name="_ValidationScriptsPartial" />
+}

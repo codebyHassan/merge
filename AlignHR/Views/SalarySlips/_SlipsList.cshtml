@@ -1,0 +1,53 @@
+@model IEnumerable<AlignHR.Models.SalarySlipMaster>
+
+@if (Model != null && Model.Any())
+{
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col">Employee ID</th>
+                    <th scope="col">Employee Name</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Net Salary</th>
+                    <th scope="col" class="text-end sticky-actions">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Employee?.Code</td>
+                        <td><strong>@item.EmployeeNameSnapshot</strong></td>
+                        <td>@item.DepartmentSnapshot</td>
+                        <td>
+                            <span class="status-badge @(item.Status == "Finalized" ? "status-approved" : "status-pending")">
+                                @item.Status
+                            </span>
+                        </td>
+                        <td><strong>@item.PayableAmount.ToString("N2")</strong></td>
+                        <td class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a href="/SalarySlips/Print/@item.Id" class="btn btn-icon btn-sm btn-icon-primary" target="_blank" title="Print Slip">
+                                    <i class="fas fa-print"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">@Model.Count() record(s) found</span>
+    </div>
+}
+else
+{
+    <div class="empty-state" style="display: block;">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <h3 class="h6 mt-2 mb-1">No Salary Slips Found</h3>
+        <p class="text-muted mb-0">No slips match your criteria. Select a period and try again.</p>
+    </div>
+}

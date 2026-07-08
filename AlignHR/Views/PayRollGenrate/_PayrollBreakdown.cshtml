@@ -1,0 +1,51 @@
+@model List<AlignHR.Models.PayRollDefinationFile>
+@{
+    int totalSalary = ViewBag.TotalSalary ?? 0;
+}
+
+<div class="breakdown-container animate-fade-in">
+    <h4 style="margin-bottom: 1rem; color: #334155; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+        <i class="fas fa-calculator" style="color: #6366f1;"></i>
+        Salary Breakdown
+    </h4>
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="border-bottom: 2px solid #e2e8f0; text-align: left; font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.025em;">
+                    <th style="padding: 0.75rem 1rem;">Component</th>
+                    <th style="padding: 0.75rem 1rem;">Percentage</th>
+                    <th style="padding: 0.75rem 1rem; text-align: right;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    double pct = 0;
+                    double.TryParse(item.Percentage, out pct);
+                    double amount = (totalSalary * pct) / 100;
+                    
+                    <tr class="breakdown-row" style="border-bottom: 1px solid #f1f5f9;">
+                        <td style="padding: 1rem;">
+                            <div style="font-weight: 600; color: #1e293b;">@item.label</div>
+                            <div style="font-size: 0.75rem; color: #94a3b8;">@item.Field</div>
+                        </td>
+                        <td style="padding: 1rem;">
+                            <span class="payroll-pill payroll-pill--primary">@pct%</span>
+                        </td>
+                        <td style="padding: 1rem; text-align: right; font-weight: 700; color: #0f172a; font-family: 'JetBrains Mono', monospace;">
+                            @amount.ToString("N0")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr style="background: #f8fafc; font-weight: 800; border-top: 2px solid #e2e8f0;">
+                    <td colspan="2" style="padding: 1.25rem 1rem; color: #1e293b;">Total Gross Salary</td>
+                    <td style="padding: 1.25rem 1rem; text-align: right; color: #6366f1; font-size: 1.2rem;">
+                        @totalSalary.ToString("N0")
+                    </td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

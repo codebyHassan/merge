@@ -1,0 +1,93 @@
+@model AlignHR.Models.WithoutPayDays
+@using AlignHR.Services
+@inject IPayrollLockService LockService
+
+@{
+    ViewData["Title"] = "LWP Details";
+    bool isLocked = await LockService.IsRecordLocked(Model.EmployeeId, Model.PeriodSalery);
+}
+
+<div class="page-header animate-fade-in">
+    <div class="breadcrumb">
+        <a href="/">Home</a>
+        <span>/</span>
+        <a href="/WithoutPayDays">Leave Without Pay</a>
+        <span>/</span>
+        <span>Details</span>
+    </div>
+
+    <div class="page-header-row">
+        <div>
+            <h1 class="page-title">LWP Record</h1>
+            <p class="page-subtitle">Unpaid leave details for @Model.Employee?.FirstName</p>
+        </div>
+
+        <div class="flex gap-12">
+            @if (isLocked)
+            {
+                <div class="status-badge locked"><i class="fas fa-lock"></i><span>FINALIZED</span></div>
+            }
+            else
+            {
+                <div class="status-badge active"><i class="fas fa-calendar-alt"></i><span>OPEN</span></div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="details-grid animate-slide-up">
+    <!-- Main Info -->
+    <div class="erp-card">
+        <div class="card-header-premium">
+            <i class="fas fa-user-clock"></i>
+            <span>Leave Information</span>
+        </div>
+        <div class="card-body-premium">
+            <div class="info-group">
+                <label>Employee</label>
+                <div class="value-highlight">@Model.Employee?.FirstName @Model.Employee?.LastName</div>
+                <div class="value small text-muted">Emp ID: @Model.Employee?.Code</div>
+            </div>
+            <hr class="divider" />
+            <div class="info-group">
+                <label>Salary Period</label>
+                <div class="value">@Model.SalaryPeriod?.PeriodName</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Impact Box -->
+    <div class="erp-card">
+        <div class="card-header-premium financial">
+            <i class="fas fa-calculator"></i>
+            <span>Deduction Impact</span>
+        </div>
+        <div class="card-body-premium centered">
+            <div class="stat-box-container">
+                <div class="stat-box">
+                    <label>Unpaid Days</label>
+                    <div class="stat-value secondary">@Model.withoutpaydays Days</div>
+                </div>
+            </div>
+            <div class="meta-info">
+                <div class="meta-item"><i class="fas fa-info-circle"></i><span>Type: Deduction from Gross</span></div>
+                <div class="meta-item"><i class="fas fa-history"></i><span>Logged: @Model.createat.ToString("dd MMM yyyy")</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="details-actions-footer span-all">
+        <a href="/WithoutPayDays" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i>
+            Back to List
+        </a>
+        
+        @if (!isLocked)
+        {
+            <a href="/WithoutPayDays/Edit/@Model.id" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i>
+                Edit Record
+            </a>
+        }
+    </div>
+</div>

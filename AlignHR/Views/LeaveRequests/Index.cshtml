@@ -1,0 +1,181 @@
+@model IPagedList<AlignHR.Models.LeaveRequest>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Leave Requests";
+    ViewBag.ActivePage = "LeaveRequests";
+    var submitterNames = ViewData["SubmitterNames"] as Dictionary<string, string> ?? new Dictionary<string, string>();
+    var session = AlignHR.Security.PermissionHelper.GetUserSession(Context);
+    var myEmpIdStr = session?.EmployeeId?.ToString();
+    var currentStatus = ViewData["CurrentStatus"]?.ToString();
+    var currentFilter = ViewData["CurrentFilter"]?.ToString();
+}
+
+<section class="filter-bar mb-2" aria-label="Leave requests filters">
+    <div class="input-group input-group-sm me-auto" style="width: auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="searchQuery"
+               value="@currentFilter"
+               placeholder="Search leave request"
+               aria-label="Search records"
+               hx-get="@Url.Action("Index")"
+               hx-target="#leave-requests-index-page"
+               hx-select="#leave-requests-index-page"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-include="[name='searchQuery'], [name='status']"
+               hx-push-url="true"
+               form="none" />
+    </div>
+    <div class="filter-group">
+        <div class="dropdown">
+            <button class="btn btn-export-custom btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-boundary="viewport">
+                Columns
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Employee Code" checked />Employee Code</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Employee Name" checked />Employee Name</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Leave Type" checked />Leave Type</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Dates" checked />Dates</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Days" checked />Days</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Submitted By" checked />Submitted By</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Status" checked />Status</label></li>
+                <li><label class="dropdown-item"><input class="form-check-input me-2" type="checkbox" data-column-toggle="Approver" checked />Approver</label></li>
+            </ul>
+        </div>
+        <button class="btn btn-export-custom btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFiltersCollapse"><i class="fa-solid fa-filter me-1"></i>Advanced</button>
+        <a class="btn btn-primary btn-sm" asp-action="Create"><i class="fa-solid fa-plus me-1"></i>Create</a>
+    </div>
+</section>
+
+<div class="collapse @(string.IsNullOrWhiteSpace(currentStatus) ? "" : "show")" id="advancedFiltersCollapse">
+    <div class="card card-body mb-2 p-2" style="background: var(--erp-surface-subtle); border: 1px solid var(--erp-border);">
+        <div class="row g-2">
+            <div class="col-12 col-md-3">
+                <label class="form-label small fw-semibold mb-1">Status</label>
+                <select name="status" class="form-select form-select-sm"
+                        hx-get="@Url.Action("Index")"
+                        hx-target="#leave-requests-index-page"
+                        hx-select="#leave-requests-index-page"
+                        hx-trigger="change"
+                        hx-include="[name='searchQuery'], [name='status']"
+                        hx-push-url="true"
+                        form="none">
+                    <option value="">All Statuses</option>
+                    <option value="Pending" selected="@(currentStatus == "Pending")">Pending</option>
+                    <option value="Approved" selected="@(currentStatus == "Approved")">Approved</option>
+                    <option value="Rejected" selected="@(currentStatus == "Rejected")">Rejected</option>
+                    <option value="Cancelled" selected="@(currentStatus == "Cancelled")">Cancelled</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="table-shell" data-erp-table id="leave-requests-index-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="1">Employee Code</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="2">Employee Name</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="3">Leave Type</button></th>
+                    <th scope="col">Dates</th>
+                    <th scope="col">Days</th>
+                    <th scope="col">Submitted By</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Approver</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var statusClass = item.Status switch
+                    {
+                        "Approved" => "badge-success",
+                        "Rejected" => "badge-danger",
+                        "Cancelled" => "badge-info",
+                        _ => "badge-warning"
+                    };
+
+                    <tr>
+                        <td data-label="Employee Code"><span class="text-muted small">@(item.Employee?.Code ?? "-")</span></td>
+                        <td data-label="Employee Name" class="fw-semibold">@(item.Employee?.FullName ?? "-")</td>
+                        <td data-label="Leave Type">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span>@(item.LeaveType?.Name ?? "-")</span>
+                                @if (item.IsHalfDay)
+                                {
+                                    <span class="status-badge badge-info">Half Day</span>
+                                }
+                            </div>
+                        </td>
+                        <td data-label="Dates">@item.FromDate.ToString("MMM dd") - @item.ToDate.ToString("MMM dd, yyyy")</td>
+                        <td data-label="Days" class="fw-semibold">@item.DaysCount.ToString("0.##")</td>
+                        <td data-label="Submitted By">
+                            @if (item.CreatedBy == myEmpIdStr)
+                            {
+                                <span class="status-badge badge-secondary">Self</span>
+                            }
+                            else if (!string.IsNullOrEmpty(item.CreatedBy) && submitterNames.ContainsKey(item.CreatedBy))
+                            {
+                                @submitterNames[item.CreatedBy]
+                            }
+                            else
+                            {
+                                <span class="text-muted small">System</span>
+                            }
+                        </td>
+                        <td data-label="Status"><span class="status-badge @statusClass">@item.Status</span></td>
+                        <td data-label="Approver">
+                            @if (item.CurrentApprover != null)
+                            {
+                                <div class="d-flex flex-column">
+                                    <span class="small fw-semibold">@item.CurrentApprover.FullName</span>
+                                    <span class="text-muted small">Level @item.ApprovalLevel</span>
+                                </div>
+                            }
+                            else if (item.Status == "Approved")
+                            {
+                                <span class="status-badge badge-success">Completed</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">-</span>
+                            }
+                        </td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a class="btn btn-icon btn-sm btn-icon-info" asp-action="Details" asp-route-id="@item.Id" title="View Details"><i class="fa-solid fa-eye"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-inbox"></i>
+                <h3 class="h6 mt-2 mb-1">No records match the current filters</h3>
+                <p class="text-muted mb-0">Adjust search or status filters.</p>
+            </div>
+        }
+    </div>
+
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage-@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav aria-label="Leave requests pagination">
+            @Html.PagedListPager(Model, page => Url.Action("Index", new { page, searchQuery = currentFilter, status = currentStatus }), new PagedListRenderOptions
+            {
+                UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" }
+            })
+        </nav>
+    </div>
+</section>

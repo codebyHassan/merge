@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] – AlignHR</title>
+    <meta name="description" content="Apply for a job opportunity at AlignHR." />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Sora:wght@100..800&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet" />
+    <link href="~/css/alignhr-theme.css" rel="stylesheet" asp-append-version="true" />
+
+    <style>
+        .public-shell {
+            min-height: 100vh;
+            background: var(--ahr-bg, #f7f8fa);
+            display: flex;
+            flex-direction: column;
+        }
+        .public-header {
+            background: var(--ahr-surface, #fff);
+            border-bottom: 1px solid var(--ahr-border, #e5e7eb);
+            padding: 14px 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .public-header .brand {
+            font-family: var(--ahr-font-display, 'Sora', sans-serif);
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ahr-text, #111827);
+            text-decoration: none;
+            letter-spacing: -0.3px;
+        }
+        .public-header .brand span {
+            color: var(--ahr-accent, #6366f1);
+        }
+        .public-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            padding: 40px 16px 60px;
+        }
+        .public-card {
+            background: var(--ahr-surface, #fff);
+            border: 1px solid var(--ahr-border, #e5e7eb);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 720px;
+            overflow: hidden;
+        }
+        .portal-wrap {
+            width: 100%;
+            max-width: 860px;
+        }
+        .public-footer {
+            text-align: center;
+            padding: 16px;
+            font-size: 12px;
+            color: var(--ahr-text-muted, #9ca3af);
+            border-top: 1px solid var(--ahr-border, #e5e7eb);
+        }
+    </style>
+</head>
+<body class="ahr-app">
+    <div class="public-shell">
+        <header class="public-header">
+            <a class="brand" href="/jobs" style="display:flex;align-items:center;gap:8px;">
+                <img src="~/images/alignhr-icon.png" alt="" style="width:26px;height:26px;border-radius:6px;object-fit:cover;" />
+                Align<span>HR</span>
+            </a>
+            <a href="/jobs" style="margin-left:auto;font-size:13px;font-weight:500;color:var(--ahr-text-muted);text-decoration:none;">
+                View All Openings
+            </a>
+        </header>
+
+        <div class="public-content">
+            @RenderBody()
+        </div>
+
+        <footer class="public-footer">
+            &copy; @DateTime.Now.Year AlignHR &mdash; Recruitment Portal
+        </footer>
+    </div>
+
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/alignhr-core.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,37 @@
+@model AlignHR.Models.TaxSurcharge
+@{
+    ViewData["Title"] = "Delete Tax Surcharge";
+    ViewBag.ActivePage = "TaxSurcharge";
+}
+<div class="delete-card card p-5 text-center shadow-lg border-0">
+    <div class="warning-icon">
+        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+        </svg>
+    </div>
+
+    <h2 class="mb-3">Confirm Deletion</h2>
+    <p class="text-muted mb-4">
+        Are you sure you want to delete the tax surcharge for <strong>@Model.FiscalYear</strong>?<br />
+        This action cannot be undone.
+    </p>
+
+    <div class="bg-light p-3 rounded mb-4 text-start">
+        <div class="row small">
+            <div class="col-6 text-muted">Rate:</div>
+            <div class="col-6 font-weight-bold">@Model.RatePercent%</div>
+            <div class="col-6 text-muted">Range:</div>
+            <div class="col-6 font-weight-bold">@Model.IncomeFrom.ToString("N2") - @(Model.IncomeTo?.ToString("N2") ?? "Above")</div>
+        </div>
+    </div>
+
+    <form asp-action="Delete" method="post">
+        <input type="hidden" asp-for="id" />
+        <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-danger btn-lg">Delete Permanently</button>
+            <a asp-action="Index" class="btn btn-light">Keep It</a>
+        </div>
+    </form>
+</div>

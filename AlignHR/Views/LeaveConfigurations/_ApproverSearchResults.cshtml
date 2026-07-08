@@ -1,0 +1,29 @@
+@model AlignHR.Controllers.ApproverSearchViewModel
+
+@if (Model.Employees.Any())
+{
+    foreach (var emp in Model.Employees)
+    {
+        var fullName = $"{emp.FirstName} {emp.LastName}".Trim();
+        var encodedCode = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(emp.Code ?? "");
+        var encodedName = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(fullName);
+
+        <button type="button"
+                class="approver-result"
+                onclick="selectApprover(@Model.RowIndex, '@encodedCode', '@encodedName')">
+            <span class="approver-result-main">
+                <span class="approver-result-name">@fullName</span>
+                <span class="approver-result-code">@emp.Code</span>
+            </span>
+
+            @if (emp.Department != null)
+            {
+                <span class="approver-result-tag">@emp.Department.Name</span>
+            }
+        </button>
+    }
+}
+else
+{
+    <div class="approver-result-empty">No employees found.</div>
+}

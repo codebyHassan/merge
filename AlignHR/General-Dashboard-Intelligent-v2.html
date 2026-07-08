@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AlignHR — Intelligent Dashboard Proposal</title>
+<style>
+  :root {
+    --bg:#f4f6f9; --surface:#fff; --surface-2:#f8fafc; --ink:#0f172a; --ink-2:#334155;
+    --muted:#64748b; --muted-2:#94a3b8; --border:#e2e8f0; --border-2:#cbd5e1;
+    --navy:#111827; --navy-2:#0b1220; --accent:#f97316; --accent-soft:#fff1e6;
+    --violet:#6d28d9; --violet-soft:#f2ecfe;
+    --good:#15803d; --good-soft:#dcfce7; --warn:#b45309; --warn-soft:#fef3c7;
+    --crit:#b91c1c; --crit-soft:#fee2e2; --info:#0369a1; --info-soft:#e0f2fe;
+    --radius:12px; --radius-sm:8px; --shadow:0 1px 2px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.05);
+    --mono:ui-monospace,"Cascadia Code","SF Mono",Consolas,monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --maxw:1180px;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#0b1220;--surface:#111827;--surface-2:#0f1a2e;--ink:#e5e7eb;--ink-2:#cbd5e1;
+    --muted:#94a3b8;--muted-2:#64748b;--border:#1f2937;--border-2:#334155;--navy:#0b1220;--navy-2:#060b16;
+    --accent:#fb923c;--accent-soft:#33210f;--violet:#a78bfa;--violet-soft:#1e1533;
+    --good:#4ade80;--good-soft:#0f2a1a;--warn:#fbbf24;--warn-soft:#2a2109;
+    --crit:#f87171;--crit-soft:#2a1113;--info:#38bdf8;--info-soft:#0a2233;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);}}
+  :root[data-theme="dark"]{
+    --bg:#0b1220;--surface:#111827;--surface-2:#0f1a2e;--ink:#e5e7eb;--ink-2:#cbd5e1;
+    --muted:#94a3b8;--muted-2:#64748b;--border:#1f2937;--border-2:#334155;--navy:#0b1220;--navy-2:#060b16;
+    --accent:#fb923c;--accent-soft:#33210f;--violet:#a78bfa;--violet-soft:#1e1533;
+    --good:#4ade80;--good-soft:#0f2a1a;--warn:#fbbf24;--warn-soft:#2a2109;
+    --crit:#f87171;--crit-soft:#2a1113;--info:#38bdf8;--info-soft:#0a2233;
+    --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);}
+  :root[data-theme="light"]{
+    --bg:#f4f6f9;--surface:#fff;--surface-2:#f8fafc;--ink:#0f172a;--ink-2:#334155;
+    --muted:#64748b;--muted-2:#94a3b8;--border:#e2e8f0;--border-2:#cbd5e1;--navy:#111827;--navy-2:#0b1220;
+    --accent:#f97316;--accent-soft:#fff1e6;--violet:#6d28d9;--violet-soft:#f2ecfe;
+    --good:#15803d;--good-soft:#dcfce7;--warn:#b45309;--warn-soft:#fef3c7;
+    --crit:#b91c1c;--crit-soft:#fee2e2;--info:#0369a1;--info-soft:#e0f2fe;
+    --shadow:0 1px 2px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.05);}
+
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px;}
+  .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600;}
+  h1,h2,h3{text-wrap:balance;margin:0;}
+  section{padding:54px 0;border-bottom:1px solid var(--border);}
+  .num{font-variant-numeric:tabular-nums;}
+  .section-head{margin-bottom:26px;}
+  .section-head h2{font-size:25px;letter-spacing:-.015em;margin-top:8px;}
+  .section-head p{color:var(--muted);max-width:64ch;margin:10px 0 0;}
+
+  /* masthead */
+  .masthead{background:radial-gradient(1100px 400px at 82% -10%,rgba(249,115,22,.12),transparent 60%),linear-gradient(180deg,var(--navy),var(--navy-2));color:#e5e7eb;border-bottom:1px solid var(--border);}
+  .masthead .wrap{padding:46px 20px;}
+  .brand-row{display:flex;align-items:center;gap:12px;margin-bottom:24px;}
+  .brand-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#2563eb);display:grid;place-items:center;color:#fff;font-weight:800;}
+  .brand-name{font-weight:700;} .brand-name b{color:var(--accent);}
+  .masthead h1{font-size:clamp(27px,4.4vw,42px);letter-spacing:-.02em;color:#fff;max-width:20ch;}
+  .masthead p.lede{color:#b6c2d4;font-size:16.5px;max-width:64ch;margin:15px 0 0;}
+  .mast-meta{display:flex;flex-wrap:wrap;gap:9px;margin-top:24px;}
+  .chip{font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.16);color:#cbd5e1;background:rgba(255,255,255,.04);}
+
+  /* audit strip */
+  .audit{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .audit .a{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
+  .audit .a .n{font-size:26px;font-weight:800;letter-spacing:-.02em;}
+  .audit .a .l{font-size:12px;color:var(--muted);margin-top:2px;}
+  .audit .a .s{font-family:var(--mono);font-size:10px;color:var(--muted-2);margin-top:8px;text-transform:uppercase;letter-spacing:.05em;}
+
+  /* legend */
+  .legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px;}
+  .lg{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);border:1px solid var(--border);background:var(--surface);border-radius:999px;padding:6px 12px;}
+  .sw{width:26px;height:16px;border-radius:5px;}
+  .sw.u{background:var(--surface-2);border:1.5px solid var(--border-2);}
+  .sw.m{background:repeating-linear-gradient(45deg,var(--accent-soft),var(--accent-soft) 5px,transparent 5px,transparent 10px);border:1.5px dashed var(--accent);}
+  .sw.s{background:var(--violet-soft);border:1.5px solid var(--violet);}
+
+  /* frame / mock */
+  .frame{background:var(--surface);border:1px solid var(--border-2);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);}
+  .frame-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--surface-2);border-bottom:1px solid var(--border);}
+  .dot{width:11px;height:11px;border-radius:50%;} .dot.r{background:#f87171;}.dot.y{background:#fbbf24;}.dot.g{background:#34d399;}
+  .frame-url{margin-left:10px;font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:4px 12px;flex:1;max-width:320px;}
+  .canvas{background:var(--bg);padding:18px;}
+
+  /* digest banner (smart) */
+  .digest{background:linear-gradient(120deg,var(--violet-soft),var(--surface));border:1px solid var(--violet);border-left:4px solid var(--violet);border-radius:var(--radius);padding:15px 18px;margin-bottom:16px;display:flex;gap:14px;align-items:flex-start;}
+  .digest .di{width:34px;height:34px;border-radius:9px;background:var(--violet);color:#fff;display:grid;place-items:center;flex:none;font-size:16px;}
+  .digest .smart-tag{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--violet);}
+  .digest h4{font-size:14.5px;margin:3px 0 3px;letter-spacing:-.01em;}
+  .digest p{margin:0;font-size:12.5px;color:var(--ink-2);}
+  .digest b{color:var(--accent);}
+
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:16px;}
+  .greet h3{font-size:17px;letter-spacing:-.01em;} .greet .sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:3px;}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2563eb,var(--accent));color:#fff;display:grid;place-items:center;font-weight:700;font-size:11px;}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);}
+  .card.mod{border:1.5px dashed var(--accent);}
+  .card.smart{border:1.5px solid var(--violet);}
+  .card-h{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 14px;border-bottom:1px solid var(--border);}
+  .card-h .t{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:7px;}
+  .card-h .t .ic{color:var(--accent);}
+  .tag{font-family:var(--mono);font-size:8.5px;letter-spacing:.08em;font-weight:700;text-transform:uppercase;border-radius:5px;padding:2px 6px;}
+  .tag.m{color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent);}
+  .tag.s{color:var(--violet);background:var(--violet-soft);border:1px solid var(--violet);}
+  .tag.u{color:var(--muted);background:var(--surface-2);border:1px solid var(--border-2);}
+  .card-b{padding:13px 14px;}
+
+  /* approvals inbox */
+  .apv{display:flex;align-items:center;gap:10px;padding:9px 0;}
+  .apv+.apv{border-top:1px solid var(--border);}
+  .apv .k{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:11px;flex:none;}
+  .apv .txt{flex:1;min-width:0;} .apv .txt h5{margin:0;font-size:12px;} .apv .txt p{margin:0;font-size:10.5px;color:var(--muted);}
+  .age{font-family:var(--mono);font-size:9.5px;padding:2px 6px;border-radius:5px;white-space:nowrap;}
+  .age.ok{background:var(--good-soft);color:var(--good);} .age.warn{background:var(--warn-soft);color:var(--warn);} .age.late{background:var(--crit-soft);color:var(--crit);}
+  .tint-accent{background:var(--accent-soft);color:var(--accent);} .tint-info{background:var(--info-soft);color:var(--info);}
+  .tint-good{background:var(--good-soft);color:var(--good);} .tint-warn{background:var(--warn-soft);color:var(--warn);}
+  .tint-violet{background:var(--violet-soft);color:var(--violet);} .tint-crit{background:var(--crit-soft);color:var(--crit);}
+
+  /* team availability */
+  .who{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:12px;}
+  .who+.who{border-top:1px solid var(--border);}
+  .who .av{width:24px;height:24px;border-radius:50%;background:var(--surface-2);border:1px solid var(--border);display:grid;place-items:center;font-size:9px;font-weight:700;color:var(--muted);flex:none;}
+  .who .st{margin-left:auto;font-family:var(--mono);font-size:9.5px;padding:2px 7px;border-radius:999px;}
+
+  /* donut */
+  .donut{width:96px;height:96px;border-radius:50%;flex:none;
+    background:conic-gradient(var(--accent) 0 40%,#2563eb 40% 62%,var(--good) 62% 82%,var(--violet) 82% 100%);
+    display:grid;place-items:center;}
+  .donut .hole{width:64px;height:64px;border-radius:50%;background:var(--surface);display:grid;place-items:center;text-align:center;}
+  .donut .hole b{font-size:15px;} .donut .hole span{font-size:8.5px;color:var(--muted);display:block;}
+  .lgd{display:flex;flex-direction:column;gap:6px;font-size:11px;}
+  .lgd .li{display:flex;align-items:center;gap:7px;} .lgd .li .d{width:9px;height:9px;border-radius:3px;}
+
+  /* sparkline */
+  .spark{display:flex;align-items:flex-end;gap:4px;height:52px;}
+  .spark .b{flex:1;background:linear-gradient(180deg,var(--accent),var(--accent-soft));border-radius:3px 3px 0 0;min-width:6px;}
+  .spark .b.hi{background:var(--accent);}
+
+  /* anniversaries */
+  .cel{display:flex;align-items:center;gap:9px;padding:7px 0;font-size:12px;}
+  .cel+.cel{border-top:1px solid var(--border);}
+  .cel .ic{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-size:12px;flex:none;}
+  .cel .yr{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted);}
+
+  /* expiry radar */
+  .exp{display:flex;align-items:center;gap:9px;padding:8px 0;font-size:11.5px;}
+  .exp+.exp{border-top:1px solid var(--border);}
+  .exp .bar{flex:1;height:5px;border-radius:999px;background:var(--border);overflow:hidden;}
+  .exp .bar>span{display:block;height:100%;}
+
+  .u-label{font-family:var(--mono);font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}
+  .kv{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;} .kv .v{font-size:12.5px;font-weight:700;}
+
+  .callout{border:1.5px dashed var(--border-2);border-radius:10px;padding:11px 14px;font-size:11.5px;color:var(--muted);background:var(--surface-2);margin-top:14px;}
+
+  /* catalog table */
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow-x:auto;box-shadow:var(--shadow);}
+  table.map{width:100%;border-collapse:collapse;font-size:12.5px;min-width:720px;}
+  table.map th,table.map td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:top;}
+  table.map th{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;}
+  table.map td b{font-weight:700;} table.map td .why{color:var(--muted);font-size:11.5px;display:block;margin-top:2px;}
+  table.map code{font-family:var(--mono);font-size:11px;background:var(--surface-2);border:1px solid var(--border);border-radius:5px;padding:1px 5px;color:var(--accent);white-space:nowrap;}
+  table.map tr:last-child td{border-bottom:none;}
+  .rowtag{font-family:var(--mono);font-size:9px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:5px;}
+  .rowtag.u{color:var(--muted);background:var(--surface-2);border:1px solid var(--border-2);}
+  .rowtag.m{color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent);}
+  .rowtag.s{color:var(--violet);background:var(--violet-soft);border:1px solid var(--violet);}
+
+  /* differentiators */
+  .diff-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+  .diff{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border-top:3px solid var(--violet);}
+  .diff h4{font-size:15px;margin-bottom:6px;letter-spacing:-.01em;}
+  .diff p{margin:0;font-size:12.5px;color:var(--muted);}
+  .diff .vs{font-family:var(--mono);font-size:10.5px;color:var(--violet);margin-top:10px;display:block;}
+
+  footer{padding:32px 0 56px;} footer p{color:var(--muted);font-size:12.5px;margin:0;}
+  .theme-toggle{position:fixed;top:16px;right:16px;z-index:50;font-family:var(--mono);font-size:11px;background:var(--surface);color:var(--ink-2);border:1px solid var(--border-2);border-radius:999px;padding:7px 14px;cursor:pointer;box-shadow:var(--shadow);}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px;}
+
+  /* deeper-insights visuals */
+  .heat{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+  .heat .d{aspect-ratio:1;border-radius:3px;background:var(--surface-2);border:1px solid var(--border);}
+  .heat .d.p{background:var(--good);border-color:var(--good);}
+  .heat .d.l{background:var(--warn);border-color:var(--warn);}
+  .heat .d.a{background:var(--crit);border-color:var(--crit);}
+  .heat .d.v{background:#2563eb;border-color:#2563eb;}
+  .heat .d.h{background:var(--border-2);border-color:var(--border-2);}
+  .heat-lgd{display:flex;flex-wrap:wrap;gap:9px;margin-top:11px;font-size:10px;color:var(--muted);}
+  .heat-lgd span{display:flex;align-items:center;gap:5px;} .heat-lgd i{width:10px;height:10px;border-radius:3px;}
+  .bott{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:11.5px;}
+  .bott .lab{width:82px;flex:none;color:var(--ink-2);}
+  .bott .trk{flex:1;height:8px;border-radius:999px;background:var(--border);overflow:hidden;}
+  .bott .trk>span{display:block;height:100%;}
+  .bott .val{font-family:var(--mono);font-size:10px;width:32px;text-align:right;flex:none;}
+  .mix{height:28px;border-radius:6px;overflow:hidden;display:flex;font-size:9.5px;font-weight:700;color:#fff;}
+  .mix>span{display:grid;place-items:center;}
+  .warnbox{display:flex;gap:11px;align-items:center;padding:12px 14px;border-radius:var(--radius);background:var(--warn-soft);border:1px solid var(--warn);border-left:4px solid var(--warn);}
+  .warnbox .wi{font-size:19px;flex:none;} .warnbox h5{margin:0 0 2px;font-size:12.5px;color:var(--warn);} .warnbox p{margin:0;font-size:11.5px;color:var(--ink-2);}
+  .theme-cell{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--violet);font-weight:700;}
+
+  @media (max-width:900px){.audit,.grid3,.diff-grid{grid-template-columns:1fr;} .audit{grid-template-columns:repeat(2,1fr);}}
+  @media (max-width:560px){section{padding:38px 0;}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="(function(){var r=document.documentElement;var d=r.getAttribute('data-theme')==='dark'||(!r.getAttribute('data-theme')&&matchMedia('(prefers-color-scheme:dark)').matches);r.setAttribute('data-theme',d?'light':'dark');})()">◐ Theme</button>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="brand-row"><div class="brand-mark">A</div><div class="brand-name">ALIGN<b>HR</b></div></div>
+    <div class="eyebrow">Design Proposal · v2 · Data-Driven &amp; Intelligent</div>
+    <h1>A dashboard that reads the database, not just the brochure.</h1>
+    <p class="lede">Built from an audit of the real codebase — 90 tables across Core HR, Attendance, Leave, Payroll, Recruitment, Onboarding, Documents, and a shared Approval-Workflow engine. Every widget below is wired to columns that already exist, surfacing insights the module dashboards never combine: aging approvals, expiring documents, team availability, and celebration moments.</p>
+    <div class="mast-meta">
+      <span class="chip">90 tables audited</span>
+      <span class="chip">8 built modules</span>
+      <span class="chip">30+ widgets mapped</span>
+      <span class="chip">No major backend rewrite</span>
+    </div>
+  </div>
+</header>
+
+<!-- what we found -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">What the codebase actually holds</div>
+    <div class="section-head"><h2>The data is richer than the PDF</h2>
+      <p>The brochure lists 16 modules; the schema implements eight — but each carries fields the deck never visualizes. These are the raw materials for a dashboard that feels like it <em>knows</em> the user.</p></div>
+    <div class="audit">
+      <div class="a"><div class="n num">90</div><div class="l">EF Core entities / tables</div><div class="s">ApplicationDbContext</div></div>
+      <div class="a"><div class="n num">8</div><div class="l">Modules actually built</div><div class="s">CoreHR·Att·Leave·Pay·ATS·Onb·DMS·WF</div></div>
+      <div class="a"><div class="n num">4</div><div class="l">Approval streams to unify</div><div class="s">Leave·Requisition·Offer·Document</div></div>
+      <div class="a"><div class="n num">3</div><div class="l">Signals no HR tool shows</div><div class="s">DocExpiry·ApprovalAge·Availability</div></div>
+    </div>
+    <div class="legend">
+      <span class="lg"><span class="sw u"></span> Universal — every user</span>
+      <span class="lg"><span class="sw m"></span> Module-gated — if enabled &amp; permitted</span>
+      <span class="lg"><span class="sw s"></span> Smart component — the differentiators</span>
+    </div>
+  </div>
+</section>
+
+<!-- mock -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">The proposal · annotated mock</div>
+    <div class="section-head"><h2>Intelligent General Dashboard</h2>
+      <p>Top: a smart natural-language digest. Below: universal identity + a unified approvals inbox, then module widgets. Purple = smart/derived, dashed = module-gated, plain = universal.</p></div>
+
+    <div class="frame">
+      <div class="frame-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="frame-url">app.alignhr.com/dashboard</span></div>
+      <div class="canvas">
+
+        <div class="topbar">
+          <div class="greet"><h3>Good morning, Sarah 👋</h3><div class="sub">MON 06 JUL 2026 · SALES · EMP-10482</div></div>
+          <span class="avatar">SK</span>
+        </div>
+
+        <!-- SMART DIGEST -->
+        <div class="digest">
+          <div class="di">✨</div>
+          <div>
+            <span class="smart-tag">Smart digest · derived at login</span>
+            <h4>Here's your day at a glance</h4>
+            <p>You have <b>2 approvals</b> waiting (one aging 3 days), <b>1 document</b> expiring in 5 days, and <b>3 teammates</b> are on leave today. Payroll for June was disbursed — net <b>Rs 84,500</b>.</p>
+          </div>
+        </div>
+
+        <div class="grid3">
+          <!-- UNIFIED APPROVALS (smart) -->
+          <div class="card smart">
+            <div class="card-h"><span class="t"><span class="ic">☑</span> Approvals Inbox</span><span class="tag s">Smart · unified</span></div>
+            <div class="card-b" style="padding-top:4px;padding-bottom:4px">
+              <div class="apv"><span class="k tint-accent">✈</span><div class="txt"><h5>Leave · Ali Raza</h5><p>Annual · 3 days</p></div><span class="age late">3d old</span></div>
+              <div class="apv"><span class="k tint-info">📄</span><div class="txt"><h5>Document · Policy sign-off</h5><p>Awaiting your approval</p></div><span class="age warn">1d</span></div>
+              <div class="apv"><span class="k tint-violet">🧾</span><div class="txt"><h5>Requisition · REQ-204</h5><p>Sr. Accountant</p></div><span class="age ok">2h</span></div>
+            </div>
+          </div>
+
+          <!-- TEAM AVAILABILITY (smart) -->
+          <div class="card smart">
+            <div class="card-h"><span class="t"><span class="ic">👥</span> Team Availability</span><span class="tag s">Smart · today</span></div>
+            <div class="card-b" style="padding-top:4px;padding-bottom:4px">
+              <div class="who"><span class="av">MB</span> Michael Brown <span class="st tint-good">In · 09:02</span></div>
+              <div class="who"><span class="av">EJ</span> Emily Davis <span class="st tint-warn">On leave</span></div>
+              <div class="who"><span class="av">RK</span> Ravi Kumar <span class="st tint-crit">Absent</span></div>
+              <div class="who"><span class="av">SN</span> Sana Noor <span class="st tint-info">Late · 09:41</span></div>
+            </div>
+          </div>
+
+          <!-- MY PROFILE (universal) -->
+          <div class="card">
+            <div class="card-h"><span class="t"><span class="ic">☷</span> My Snapshot</span><span class="tag u">Universal</span></div>
+            <div class="card-b">
+              <div class="kv">
+                <div><span class="u-label">Employee</span><div class="v num">EMP-10482</div></div>
+                <div><span class="u-label">Reports to</span><div class="v">A. Rahman</div></div>
+                <div><span class="u-label">Tenure</span><div class="v num">3.3 yrs</div></div>
+                <div><span class="u-label">Profile</span><div class="v num">85%</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- LEAVE BALANCE donut (module) -->
+          <div class="card mod">
+            <div class="card-h"><span class="t"><span class="ic">✈</span> Leave Balance</span><span class="tag m">Leave</span></div>
+            <div class="card-b" style="display:flex;gap:14px;align-items:center">
+              <div class="donut"><div class="hole"><b class="num">24</b><span>days left</span></div></div>
+              <div class="lgd">
+                <span class="li"><span class="d" style="background:var(--accent)"></span> Casual · 6</span>
+                <span class="li"><span class="d" style="background:#2563eb"></span> Sick · 8</span>
+                <span class="li"><span class="d" style="background:var(--good)"></span> Earned · 10</span>
+                <span class="li"><span class="d" style="background:var(--violet)"></span> Comp · 0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- PAYROLL trend (module) -->
+          <div class="card mod">
+            <div class="card-h"><span class="t"><span class="ic">₨</span> Net Pay Trend</span><span class="tag m">Payroll</span></div>
+            <div class="card-b">
+              <div class="spark">
+                <span class="b" style="height:60%"></span><span class="b" style="height:66%"></span>
+                <span class="b" style="height:64%"></span><span class="b" style="height:72%"></span>
+                <span class="b" style="height:70%"></span><span class="b hi" style="height:82%"></span>
+              </div>
+              <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px">
+                <span class="u-label">Last 6 payslips</span><b class="num">Rs 84,500</b>
+              </div>
+            </div>
+          </div>
+
+          <!-- DOC EXPIRY radar (smart) -->
+          <div class="card smart">
+            <div class="card-h"><span class="t"><span class="ic">⏳</span> Expiry Radar</span><span class="tag s">Smart · DMS</span></div>
+            <div class="card-b" style="padding-top:6px;padding-bottom:6px">
+              <div class="exp"><span>Passport</span><span class="bar"><span style="width:15%;background:var(--crit)"></span></span><span class="num" style="color:var(--crit)">5d</span></div>
+              <div class="exp"><span>Work permit</span><span class="bar"><span style="width:45%;background:var(--warn)"></span></span><span class="num" style="color:var(--warn)">28d</span></div>
+              <div class="exp"><span>Contract</span><span class="bar"><span style="width:80%;background:var(--good)"></span></span><span class="num" style="color:var(--good)">96d</span></div>
+            </div>
+          </div>
+
+          <!-- ANNIVERSARIES (smart, universal) -->
+          <div class="card smart">
+            <div class="card-h"><span class="t"><span class="ic">🎉</span> Celebrations</span><span class="tag s">Smart · engagement</span></div>
+            <div class="card-b" style="padding-top:4px;padding-bottom:4px">
+              <div class="cel"><span class="ic tint-violet">🎂</span> Work anniversary · Fatima K. <span class="yr num">5 yrs</span></div>
+              <div class="cel"><span class="ic tint-good">🌱</span> New joiner · Bilal A. <span class="yr">Sales</span></div>
+              <div class="cel"><span class="ic tint-accent">🎉</span> Anniversary · Usman T. <span class="yr num">2 yrs</span></div>
+            </div>
+          </div>
+
+          <!-- COMPANY PULSE (universal) -->
+          <div class="card">
+            <div class="card-h"><span class="t"><span class="ic">📊</span> Company Pulse</span><span class="tag u">Universal</span></div>
+            <div class="card-b" style="display:flex;gap:14px;align-items:center">
+              <div style="flex:1">
+                <div style="font-size:24px;font-weight:800" class="num">1,248</div>
+                <div class="u-label">Headcount · 96% active</div>
+              </div>
+              <div style="text-align:right;font-size:11px;color:var(--muted)">
+                <div><b class="num" style="color:var(--good)">+12</b> joined (Jul)</div>
+                <div><b class="num" style="color:var(--crit)">−3</b> exits</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MY REQUESTS (universal-ish) -->
+          <div class="card">
+            <div class="card-h"><span class="t"><span class="ic">📨</span> My Requests</span><span class="tag u">Universal</span></div>
+            <div class="card-b" style="padding-top:4px;padding-bottom:4px">
+              <div class="apv"><span class="k tint-warn">✈</span><div class="txt"><h5>Annual leave · Aug</h5><p>Pending · L2 approval</p></div><span class="age warn">Pending</span></div>
+              <div class="apv"><span class="k tint-good">₨</span><div class="txt"><h5>Loan advance</h5><p>Approved · 6 installments left</p></div><span class="age ok">Active</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">Onboarding tasks, interview panels for today, overtime hours, and bonus payouts drop in as additional module cards — each only when that module is enabled and the user is permitted. Everything shown here reads from tables that already exist.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DATA MAPPING -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Deliverable · Widget → data mapping</div>
+    <div class="section-head"><h2>Every widget, wired to real tables</h2>
+      <p>No widget depends on data the app doesn't hold. Three are marked ⚠ — they need one small new table (a few columns) to reach full value.</p></div>
+    <div class="table-wrap">
+      <table class="map">
+        <thead><tr><th>Widget</th><th>Type</th><th>Purpose &amp; value</th><th>Models / tables / service</th></tr></thead>
+        <tbody>
+          <tr><td><b>Smart digest banner</b></td><td><span class="rowtag s">Smart</span></td><td>Natural-language "your day" summary composed from the queries below.<span class="why">Premium first-impression; zero extra data.</span></td><td><code>LeaveWorkflowService</code> · <code>HrWorkflowInstanceStep</code> · <code>Document</code> · <code>SalarySlipMaster</code></td></tr>
+          <tr><td><b>Unified approvals inbox</b></td><td><span class="rowtag s">Smart</span></td><td>One queue across leave, requisition, offer &amp; document approvals with aging chips.<span class="why">No built HR tool merges these four streams.</span></td><td><code>LeaveApproval</code> · <code>HrWorkflowInstanceStep</code> · <code>HrOfferApproval</code> · <code>DocApprovalInstanceStep</code></td></tr>
+          <tr><td><b>Team availability today</b></td><td><span class="rowtag s">Smart</span></td><td>Who's in / late / on-leave / absent right now, for managers.<span class="why">Combines punches + approved leave over the org tree.</span></td><td><code>AttendenceLogs</code> · <code>LeaveRequest</code> · <code>Employee.LineManagerEmpNo</code></td></tr>
+          <tr><td><b>Document expiry radar</b></td><td><span class="rowtag s">Smart</span></td><td>Passport / permit / contract expiring in 30–90 days with urgency bars.<span class="why">Proactive compliance; unique signal.</span></td><td><code>Document.ExpiryDate</code> · <code>DocumentType</code></td></tr>
+          <tr><td><b>Celebrations</b></td><td><span class="rowtag s">Smart</span></td><td>Work anniversaries + new joiners this month.<span class="why">Engagement value without the Engagement module.</span></td><td><code>Employee.Dateofjoin</code> · <code>EmployeeHireHistory</code></td></tr>
+          <tr><td><b>Net-pay trend</b></td><td><span class="rowtag m">Payroll</span></td><td>Sparkline of last 6 payslips + latest net.<span class="why">Turns a static payslip into a trend.</span></td><td><code>SalarySlipMaster.NetSalary</code> · <code>SalaryPeriod</code></td></tr>
+          <tr><td><b>Leave balance donut</b></td><td><span class="rowtag m">Leave</span></td><td>Balance by type, colored by the type's own palette.<span class="why">Uses <code>LeaveType.ColorCode</code> already in DB.</span></td><td><code>LeaveBalance</code> · <code>LeaveType.ColorCode</code></td></tr>
+          <tr><td><b>My requests tracker</b></td><td><span class="rowtag u">Universal</span></td><td>Status of my leave, loan &amp; document requests in one strip.<span class="why">Self-service transparency.</span></td><td><code>LeaveRequest</code> · <code>MasterLoanAdvance</code> · <code>DocApprovalInstance</code></td></tr>
+          <tr><td><b>My attendance / streak</b></td><td><span class="rowtag m">Attendance</span></td><td>Today's punch, month present-days, punctuality score.<span class="why">Gamified from raw punches.</span></td><td><code>AttendenceLogs</code> · <code>Shift</code> · <code>OverTimeHours</code></td></tr>
+          <tr><td><b>Company pulse</b></td><td><span class="rowtag u">Universal</span></td><td>Headcount, % active, joiners &amp; exits this month, dept donut.<span class="why">Org-wide stat every user can see.</span></td><td><code>Employee</code> · <code>Department</code> · <code>EmployeeHireHistory</code></td></tr>
+          <tr><td><b>My snapshot + completeness</b></td><td><span class="rowtag u">Universal</span></td><td>Identity + a completeness ring from filled fields.<span class="why">Drives data quality.</span></td><td><code>Employee</code> · <code>Department</code> · <code>Valueset</code></td></tr>
+          <tr><td><b>Recruitment funnel</b></td><td><span class="rowtag m">ATS</span></td><td>Applications by stage + today's interview panels.<span class="why">Recruiter value at a glance.</span></td><td><code>HrJobApplication</code> · <code>HrApplicationStage</code> · <code>HrInterviewSchedule</code></td></tr>
+          <tr><td><b>Onboarding tasks</b></td><td><span class="rowtag m">Onboarding</span></td><td>My assigned tasks + overdue count.<span class="why">Nothing slips through.</span></td><td><code>HrOnboardingTask</code> · <code>HrOnboarding</code></td></tr>
+          <tr><td><b>Announcements ⚠</b></td><td><span class="rowtag u">Universal</span></td><td>Company broadcasts.<span class="why">Needs a small <code>Announcement</code> table (no model today).</span></td><td>⚠ new: <code>Announcement</code></td></tr>
+          <tr><td><b>Holiday calendar ⚠</b></td><td><span class="rowtag u">Universal</span></td><td>Next holidays + countdown.<span class="why">No holiday table found — needs a small one.</span></td><td>⚠ new: <code>Holiday</code></td></tr>
+          <tr><td><b>Birthdays ⚠</b></td><td><span class="rowtag s">Smart</span></td><td>Birthdays this week.<span class="why"><code>Employee</code> has no DOB column — anniversaries work today, birthdays need a field.</span></td><td>⚠ add: <code>Employee.DateOfBirth</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- DEEPER INSIGHTS (round 2) -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Deliverable · Deeper insights · round 2</div>
+    <div class="section-head"><h2>Fifteen more, mined straight from the schema</h2>
+      <p>Beyond the core widgets — analytics, wellbeing nudges, and ops signals no typical HR dashboard surfaces. Four shown live below; the full set is mapped underneath. Every field here was verified to exist.</p></div>
+
+    <div class="grid3" style="margin-bottom:22px">
+      <!-- attendance heatmap -->
+      <div class="card smart">
+        <div class="card-h"><span class="t"><span class="ic">▦</span> Attendance Heatmap</span><span class="tag s">Smart · month</span></div>
+        <div class="card-b">
+          <div class="heat">
+            <span class="d p"></span><span class="d p"></span><span class="d l"></span><span class="d p"></span><span class="d p"></span><span class="d h"></span><span class="d h"></span>
+            <span class="d p"></span><span class="d p"></span><span class="d p"></span><span class="d v"></span><span class="d v"></span><span class="d h"></span><span class="d h"></span>
+            <span class="d p"></span><span class="d l"></span><span class="d p"></span><span class="d p"></span><span class="d a"></span><span class="d h"></span><span class="d h"></span>
+            <span class="d p"></span><span class="d p"></span><span class="d p"></span><span class="d p"></span><span class="d p"></span><span class="d h"></span><span class="d h"></span>
+          </div>
+          <div class="heat-lgd">
+            <span><i style="background:var(--good)"></i>Present</span>
+            <span><i style="background:var(--warn)"></i>Late</span>
+            <span><i style="background:var(--crit)"></i>Absent</span>
+            <span><i style="background:#2563eb"></i>Leave</span>
+            <span><i style="background:var(--border-2)"></i>Holiday</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- approval bottlenecks -->
+      <div class="card smart">
+        <div class="card-h"><span class="t"><span class="ic">⏱</span> Approval Bottlenecks</span><span class="tag s">Smart · cycle time</span></div>
+        <div class="card-b">
+          <div class="bott"><span class="lab">L1 Manager</span><span class="trk"><span style="width:28%;background:var(--good)"></span></span><span class="val">0.4d</span></div>
+          <div class="bott"><span class="lab">L2 Finance</span><span class="trk"><span style="width:100%;background:var(--crit)"></span></span><span class="val">4.1d</span></div>
+          <div class="bott"><span class="lab">L3 HR</span><span class="trk"><span style="width:44%;background:var(--warn)"></span></span><span class="val">1.2d</span></div>
+          <div style="margin-top:9px;font-size:11px;color:var(--muted)">Avg cycle <b class="num">1.8d</b> · slowest step auto-flagged</div>
+        </div>
+      </div>
+
+      <!-- hire-type mix -->
+      <div class="card smart">
+        <div class="card-h"><span class="t"><span class="ic">🔀</span> Hire-Type Mix</span><span class="tag s">Smart · unique to you</span></div>
+        <div class="card-b">
+          <div class="mix">
+            <span style="width:60%;background:var(--accent)">New 60%</span>
+            <span style="width:25%;background:#2563eb">Repl 25%</span>
+            <span style="width:15%;background:var(--violet)">Trf 15%</span>
+          </div>
+          <div style="margin-top:11px;font-size:11px;color:var(--muted)">This quarter · from your <code style="font-family:var(--mono);font-size:10px">EmployeeHireHistory</code> table</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- forfeiture warning full-width -->
+    <div class="warnbox" style="margin-bottom:26px">
+      <span class="wi">⏳</span>
+      <div><h5>Leave forfeiture warning · Smart · wellbeing</h5>
+        <p>“<b>5 earned-leave days will lapse on 31 Dec</b> — plan them before year-end.” Derived from <code style="font-family:var(--mono);font-size:10px">LeaveBalance</code> + carry-forward rules. A wellbeing nudge that actively protects the employee.</p></div>
+    </div>
+
+    <div class="table-wrap">
+      <table class="map">
+        <thead><tr><th>Theme</th><th>Widget</th><th>What it reveals</th><th>Tables / fields (verified)</th></tr></thead>
+        <tbody>
+          <tr><td class="theme-cell">Analytics</td><td><b>Approval bottlenecks</b></td><td>Avg approval time per step; names the slowest.</td><td><code>HrWorkflowInstanceStep.AssignedDate/ActionDate</code> · <code>LeaveApproval</code></td></tr>
+          <tr><td class="theme-cell">Analytics</td><td><b>Time-to-fill / velocity</b></td><td>Avg days-to-hire and time in each stage.</td><td><code>HrRequisition.InitialDate</code> · <code>HrApplicationStageHistory.ChangedDate</code></td></tr>
+          <tr><td class="theme-cell">Analytics</td><td><b>Hire-type mix</b></td><td>New vs Replacement vs Transfer split.</td><td><code>EmployeeHireHistory.HireType</code></td></tr>
+          <tr><td class="theme-cell">Analytics</td><td><b>Headcount trend + turnover</b></td><td>Net growth line and turnover %.</td><td><code>EmployeeHireHistory</code> · <code>Employee.ServiceEndDate</code></td></tr>
+          <tr><td class="theme-cell">Wellbeing</td><td><b>Attendance heatmap</b></td><td>Month grid: present / late / absent / leave.</td><td><code>AttendenceLogs</code> · <code>LeaveRequest</code></td></tr>
+          <tr><td class="theme-cell">Wellbeing</td><td><b>Leave forfeiture warning</b></td><td>Days that will lapse at year-end.</td><td><code>LeaveBalance</code> · <code>LeaveYearLock</code></td></tr>
+          <tr><td class="theme-cell">Wellbeing</td><td><b>Document completeness</b></td><td>Required doc types on file vs missing.</td><td><code>Document</code> · <code>DocumentType</code></td></tr>
+          <tr><td class="theme-cell">Wellbeing</td><td><b>Loan repayment progress</b></td><td>Installments paid / remaining balance.</td><td><code>MasterLoanAdvance</code> · <code>MasterLoanAdvanceDetail</code></td></tr>
+          <tr><td class="theme-cell">Wellbeing</td><td><b>First-90-days tracker</b></td><td>A new joiner's own onboarding %.</td><td><code>HrOnboarding</code> · <code>HrOnboardingTask</code></td></tr>
+          <tr><td class="theme-cell">Personal</td><td><b>Your approver scorecard</b></td><td>Your own avg action time, ranked.</td><td><code>HrWorkflowInstanceStep</code> · <code>LeaveApproval</code></td></tr>
+          <tr><td class="theme-cell">Manager</td><td><b>Forward leave calendar</b></td><td>Who's off in the next two weeks.</td><td><code>LeaveRequest</code> (future approved)</td></tr>
+          <tr><td class="theme-cell">Payroll ops</td><td><b>Payroll exceptions</b></td><td>Salary-on-hold / unpaid-day flags.</td><td><code>Employee.IsSalaryStopped/SalaryStatus</code> · <code>WithoutPayDays</code></td></tr>
+          <tr><td class="theme-cell">Payroll ops</td><td><b>Statutory readiness</b></td><td>% filers / EOBI / PF enrolled.</td><td><code>Employee.IsFiler/isEobi/isPfMember</code></td></tr>
+          <tr><td class="theme-cell">Payroll ops</td><td><b>Payroll cost by dept</b></td><td>Total net pay + MoM change.</td><td><code>SalarySlipMaster.NetSalary</code> · <code>SalaryPeriod</code></td></tr>
+          <tr><td class="theme-cell">Recruiting</td><td><b>Offer acceptance rate</b></td><td>Accepted vs declined offers.</td><td><code>HrOffer.Status</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- differentiators -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Deliverable · What makes it stand out</div>
+    <div class="section-head"><h2>Six things typical HR dashboards don't do</h2>
+      <p>Each is buildable now from existing data and reads as premium.</p></div>
+    <div class="diff-grid">
+      <div class="diff"><h4>① One approvals inbox, not four</h4><p>Leave, requisitions, offers and document sign-offs land in a single queue with aging chips (green → amber → red by days waiting).</p><span class="vs">Typical tool: approvals scattered per module</span></div>
+      <div class="diff"><h4>② A digest that talks</h4><p>A one-sentence, login-time summary of what needs the user today — assembled from live counts, not a static banner.</p><span class="vs">Typical tool: static welcome text</span></div>
+      <div class="diff"><h4>③ Availability, not just attendance</h4><p>Managers see who's actually reachable now — in, late, on leave, absent — by fusing punches with approved leave over the org tree.</p><span class="vs">Typical tool: raw punch list</span></div>
+      <div class="diff"><h4>④ Proactive expiry radar</h4><p>Documents nearing expiry surface weeks ahead with urgency bars — compliance before it becomes a problem.</p><span class="vs">Typical tool: find out when it lapses</span></div>
+      <div class="diff"><h4>⑤ Culture built-in</h4><p>Anniversaries and new joiners create belonging without needing a separate Engagement module licensed.</p><span class="vs">Typical tool: paywalled module</span></div>
+      <div class="diff"><h4>⑥ Aging &amp; SLA awareness</h4><p>Every pending item shows how long it's waited (<code>AssignedDate</code> → now), nudging faster action and exposing bottlenecks.</p><span class="vs">Typical tool: no time context</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- bootstrap + build notes -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Deliverable · Build approach</div>
+    <div class="section-head"><h2>Bootstrap layout &amp; low-risk delivery</h2>
+      <p>A single <code>DashboardViewModel</code> assembled in <code>DashboardController.Index()</code>; each widget a Razor partial gated by <code>HasControllerAccess()</code>. Charts via a tiny inline SVG/Chart.js — no heavy framework.</p></div>
+    <div class="table-wrap">
+      <table class="map">
+        <thead><tr><th>Region</th><th>Desktop</th><th>Mobile</th><th>Bootstrap</th></tr></thead>
+        <tbody>
+          <tr><td><b>Digest banner</b></td><td>full width</td><td>full width</td><td><code>col-12</code> · <code>.alert</code>-style card</td></tr>
+          <tr><td><b>Widget grid</b></td><td>3 columns</td><td>1 column</td><td><code>row g-3</code> › <code>col-12 col-md-6 col-xl-4</code></td></tr>
+          <tr><td><b>Approvals / lists</b></td><td colspan="2">capped 3–5 rows + <em>View all →</em></td><td><code>list-group list-group-flush</code></td></tr>
+          <tr><td><b>Donut / sparkline</b></td><td colspan="2">inline SVG or Chart.js canvas</td><td><code>.ratio</code> wrapper</td></tr>
+          <tr><td><b>Aging / status</b></td><td colspan="2">color-coded pills</td><td><code>.badge rounded-pill</code></td></tr>
+          <tr><td><b>Gating</b></td><td colspan="2">server-side per widget</td><td><code>@@if(Model.Show.Leave){…}</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout">Effort: one view-model + ~12 partials + a handful of aggregate queries (most are single <code>GroupBy</code>/<code>Count</code>). The three ⚠ items each need a small table or column. No changes to existing module logic.</div>
+  </div>
+</section>
+
+<footer><div class="wrap"><p>AlignHR Intelligent Dashboard — v2 proposal grounded in a schema audit (90 tables, 8 built modules). Universal widgets rely on identity &amp; org data; module widgets gate on the existing permission model; smart components derive new insight from data already captured. Bootstrap 5, responsive, light + dark.</p></div></footer>
+</body>
+</html>

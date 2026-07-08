@@ -1,0 +1,120 @@
+@model IPagedList<AlignHR.Models.HrRequisitionListItemViewModel>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Requisitions";
+    ViewBag.ActivePage = "HrRequisitions";
+    var currentFilter = ViewData["CurrentFilter"]?.ToString();
+}
+
+<section class="filter-bar flex-wrap gap-2 mb-2" aria-label="Requisitions filters">
+    <div class="input-group input-group-sm" style="min-width:180px;flex:1 1 180px;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="search"
+               value="@currentFilter"
+               placeholder="Search requisitions"
+               aria-label="Search records"
+               hx-get="@Url.Action("Index")"
+               hx-target="#requisitions-index-page"
+               hx-select="#requisitions-index-page"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-include="[name='search']"
+               hx-push-url="true"
+               form="none" />
+    </div>
+    <div class="filter-group flex-wrap gap-2">
+        <a class="btn btn-primary btn-sm" asp-action="Create"><i class="fa-solid fa-plus me-1"></i>New Requisition</a>
+    </div>
+</section>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<section class="table-shell" data-erp-table id="requisitions-index-page">
+    <div class="erp-table-wrap table-responsive">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col">Req. No</th>
+                    <th scope="col">Position Title</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Employee</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Created On</th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    var statusClass = item.Status switch
+                    {
+                        "Approved"  => "badge-success",
+                        "Submitted" => "badge-warning",
+                        "Rejected"  => "badge-danger",
+                        "Cancelled" => "badge-danger",
+                        _           => "badge-secondary"
+                    };
+
+                    <tr>
+                        <td data-label="Req. No"><span class="fw-semibold">@item.RequisitionNo</span></td>
+                        <td data-label="Position Title">@item.PositionTitle</td>
+                        <td data-label="Department">@(item.DepartmentName ?? "-")</td>
+                        <td data-label="Employee">@(item.EmployeeName ?? "-")</td>
+                        <td data-label="Status"><span class="status-badge @statusClass">@item.Status</span></td>
+                        <td data-label="Created On">@(item.CreatedOn?.ToString("dd MMM yyyy") ?? "-")</td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Details" asp-route-id="@item.Id" title="View">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                @if (item.Status == "Draft")
+                                {
+                                    <a class="btn btn-icon btn-sm btn-icon-warning" asp-action="Edit" asp-route-id="@item.Id" title="Edit">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (!Model.Any())
+        {
+            <div class="empty-state" data-table-empty>
+                <i class="fa-solid fa-inbox"></i>
+                <h3 class="h6 mt-2 mb-1">No requisitions found</h3>
+                <p class="text-muted mb-0">Adjust search or create a new requisition.</p>
+            </div>
+        }
+    </div>
+
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">Showing @Model.FirstItemOnPage-@Model.LastItemOnPage of @Model.TotalItemCount</span>
+        <nav aria-label="Requisitions pagination">
+            @Html.PagedListPager(Model, page => Url.Action("Index", new { page, search = currentFilter }), new PagedListRenderOptions
+            {
+                UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" }
+            })
+        </nav>
+    </div>
+</section>

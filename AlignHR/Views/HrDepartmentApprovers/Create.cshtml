@@ -1,0 +1,119 @@
+@model AlignHR.Models.HrDepartmentApproverFormViewModel
+
+@{
+    ViewData["Title"] = "Add Department Approver";
+    ViewBag.ActivePage = "HrDepartmentApprovers";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Create" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-4">
+                    <label asp-for="DepartmentId" class="form-label small fw-semibold">
+                        Department <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="DepartmentId" asp-items="ViewBag.Departments"
+                            class="form-select form-select-sm" required>
+                        <option value="">— Select Department —</option>
+                    </select>
+                    <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label asp-for="ApproverType" class="form-label small fw-semibold">
+                        Approver Type <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="ApproverType" asp-items="ViewBag.ApproverTypes"
+                            class="form-select form-select-sm" required>
+                        <option value="">— Select Type —</option>
+                    </select>
+                    <span asp-validation-for="ApproverType" class="text-danger small"></span>
+                    <div class="form-text small text-muted mt-1">
+                        <strong>HRBP</strong> — Step 1 &nbsp;|&nbsp;
+                        <strong>HOD</strong> — Step 2 &nbsp;|&nbsp;
+                        <strong>RecruitmentHead</strong> — Step 3
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label asp-for="EmployeeId" class="form-label small fw-semibold">
+                        Approver (Employee) <span class="text-danger">*</span>
+                    </label>
+                    <select asp-for="EmployeeId" asp-items="ViewBag.Employees"
+                            class="form-select form-select-sm" required>
+                        <option value="">— Select Employee —</option>
+                    </select>
+                    <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-auto d-flex align-items-end pb-1">
+                    <div class="form-check">
+                        <input asp-for="IsActive" type="checkbox" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label small">Active</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-check me-1"></i>Save Approver
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var deptSel = document.getElementById('DepartmentId');
+            var typeSel = document.getElementById('ApproverType');
+            var empSel  = document.getElementById('EmployeeId');
+
+            function reloadEmployees() {
+                var deptId = deptSel.value;
+                var type   = typeSel.value;
+                if (!deptId) {
+                    empSel.innerHTML = '<option value="">— Select Employee —</option>';
+                    return;
+                }
+                fetch('/HrDepartmentApprovers/GetEmployees?departmentId=' + encodeURIComponent(deptId) + '&approverType=' + encodeURIComponent(type))
+                    .then(function (r) { return r.json(); })
+                    .then(function (list) {
+                        var current = empSel.value;
+                        empSel.innerHTML = '<option value="">— Select Employee —</option>';
+                        list.forEach(function (e) {
+                            var opt = document.createElement('option');
+                            opt.value = e.id;
+                            opt.textContent = e.display;
+                            if (String(e.id) === current) opt.selected = true;
+                            empSel.appendChild(opt);
+                        });
+                        if (list.length === 0 && (type === 'RecruitmentHead' || type === 'HRBP')) {
+                            var opt = document.createElement('option');
+                            opt.disabled = true;
+                            opt.textContent = 'No recruitment mapping found for this department';
+                            empSel.appendChild(opt);
+                        }
+                    });
+            }
+
+            deptSel.addEventListener('change', reloadEmployees);
+            typeSel.addEventListener('change', reloadEmployees);
+        })();
+    </script>
+}

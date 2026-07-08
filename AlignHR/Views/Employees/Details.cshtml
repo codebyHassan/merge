@@ -1,0 +1,269 @@
+@model AlignHR.Models.Employee
+@{
+    ViewData["Title"] = "Employee Details";
+    ViewBag.ActivePage = "Employees";
+}
+
+
+<div class="employee-create-grid">
+    <aside class="employee-profile-panel">
+        <div class="profile-card-compact">
+            <div class="profile-avatar-upload" style="pointer-events: none;">
+                @if (!string.IsNullOrEmpty(Model.ProfileImage))
+                {
+                    <span style="background-image: url('/uploads/employees/@Model.ProfileImage'); background-size: cover; background-position: center;"></span>
+                }
+                else
+                {
+                    <span>@(Model.FirstName?.Substring(0, 1))@(Model.LastName?.Substring(0, 1))</span>
+                }
+            </div>
+            <div>
+                <strong>@Model.FirstName @Model.LastName</strong>
+                <span>@Model.Code | @Model.Department?.Name</span>
+            </div>
+        </div>
+
+        @if (ViewBag.HasDmsDefinition == true)
+        {
+            <div class="readiness-card mt-3 p-3 border rounded bg-light shadow-sm">
+                <div class="readiness-header d-flex justify-content-between align-items-center mb-2">
+                    <span class="small fw-bold text-muted">DMS Checklist</span>
+                    <strong class="text-primary small">@ViewBag.DmsDefinitionName</strong>
+                </div>
+                <div class="progress mb-2" style="height: 10px; border-radius: 5px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" 
+                         style="width: @ViewBag.DmsProgress%;" aria-valuenow="@ViewBag.DmsProgress" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="small text-muted">Completion Progress</span>
+                    <strong class="small @(ViewBag.DmsProgress == 100 ? "text-success" : "text-dark")">@ViewBag.DmsProgress%</strong>
+                </div>
+                <a href="@Url.Action("UploadChecklist", "Employees", new { id = Model.Id })" class="btn btn-primary w-100 btn-sm text-center">
+                    <i class="fa-solid fa-cloud-arrow-up me-1"></i> Manage Documents
+                </a>
+            </div>
+        }
+
+        <!-- <div class="readiness-card">
+            <div class="readiness-header">
+                <span>Employment Status</span>
+                <strong class="@(Model.SalaryStatus == "Active" ? "text-success" : "text-danger")">@Model.SalaryStatus</strong>
+            </div>
+            <ul class="requirement-list">
+                <li class="@(Model.SalaryStatus == "Active" ? "complete" : "")"><i class="fa-solid @(Model.SalaryStatus == "Active" ? "fa-circle-check" : "fa-circle-xmark")"></i> Salary Status</li>
+                <li class="@(!Model.IsServiceEnded ? "complete" : "")"><i class="fa-solid @(!Model.IsServiceEnded ? "fa-circle-check" : "fa-circle-xmark")"></i> In Service</li>
+                <li class="@(Model.IsFiler ? "complete" : "")"><i class="@(Model.IsFiler ? "fa-solid fa-circle-check" : "fa-regular fa-circle")"></i> Tax Filer</li>
+                <li class="@(Model.isPfMember ? "complete" : "")"><i class="@(Model.isPfMember ? "fa-solid fa-circle-check" : "fa-regular fa-circle")"></i> PF Member</li>
+            </ul>
+        </div>
+
+        <div class="policy-note">
+            <strong>Record info</strong>
+            <span>Created: @Model.createat.ToString("dd MMM yyyy") | Updated: @Model.updateat.ToString("dd MMM yyyy")</span>
+        </div> -->
+    </aside>
+
+    <main class="employee-form-main">
+        <ul class="nav nav-tabs border-0 mb-0" id="employeeTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="identity-tab" data-bs-toggle="tab" data-bs-target="#identity-pane" type="button" role="tab"><i class="fa-solid fa-id-card me-1"></i> Identity</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="employment-tab" data-bs-toggle="tab" data-bs-target="#employment-pane" type="button" role="tab"><i class="fa-solid fa-briefcase me-1"></i> Employment</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="payroll-tab" data-bs-toggle="tab" data-bs-target="#payroll-pane" type="button" role="tab"><i class="fa-solid fa-money-bill-wave me-1"></i> Payroll & Statutory</button>
+            </li>
+        </ul>
+
+        <div class="tab-content border rounded-bottom border-top-0 bg-white p-3 p-md-4 shadow-sm" id="employeeTabsContent">
+            <!-- Tab 1: Identity -->
+            <div class="tab-pane fade show active" id="identity-pane" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Employee Code</label>
+                        <div class="fw-bold text-dark small mt-1">@Model.Code</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">First Name</label>
+                        <div class="text-dark small fw-medium mt-1">@Model.FirstName</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Last Name</label>
+                        <div class="text-dark small fw-medium mt-1">@Model.LastName</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Reporting Manager</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.LineManagerEmpNo ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Leave Approver</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.LeaveApproverEmpNo ?? "—")</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Employment -->
+            <div class="tab-pane fade" id="employment-pane" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Department</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.Department?.Name ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Designation</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.Designation?.Name ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Joining Date</label>
+                        <div class="text-dark small fw-bold mt-1">@Model.Dateofjoin.ToString("dd MMM yyyy")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Employment Type</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.EmploymentType?.Name ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Employment Status</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.EmploymentStatus?.Name ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Work Location</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.Location?.Name ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Sub Department</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.SubDepartment?.Name ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Division</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.Division?.Name ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Grade</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.Grade?.Name ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Leave Permissions</label>
+                        <div class="mt-1">
+                            <span class="badge @(Model.CanApplyForOthers ? "bg-success" : "bg-secondary") bg-opacity-10 @(Model.CanApplyForOthers ? "text-success" : "text-secondary") border @(Model.CanApplyForOthers ? "border-success" : "border-secondary")">
+                                <i class="fa-solid @(Model.CanApplyForOthers ? "fa-check" : "fa-user") me-1"></i> @(Model.CanApplyForOthers ? "Can Apply for Others" : "Standard")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Payroll & Statutory -->
+            <div class="tab-pane fade" id="payroll-pane" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Bank Name</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.BankName?.Name ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Account Holder</label>
+                        <div class="text-dark small fw-medium mt-1">@(Model.BankHolderName ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">IBAN / Account</label>
+                        <div class="text-dark small fw-medium mt-1" style="font-family: var(--bs-font-monospace);">@(Model.AccountNumber ?? "—")</div>
+                    </div>
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Salary Status</label>
+                        <div class="mt-1">
+                            <span class="badge @(Model.SalaryStatus == "Active" ? "bg-success" : "bg-danger") bg-opacity-10 @(Model.SalaryStatus == "Active" ? "text-success" : "text-danger") border @(Model.SalaryStatus == "Active" ? "border-success" : "border-danger")">
+                                @Model.SalaryStatus
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-3">
+                        <label class="form-label text-muted small fw-semibold mb-0">Service Controls</label>
+                        <div class="d-flex gap-2 flex-wrap mt-1">
+                            <span class="badge @(Model.IsServiceEnded ? "bg-danger" : "bg-success") bg-opacity-10 @(Model.IsServiceEnded ? "text-danger" : "text-success") border @(Model.IsServiceEnded ? "border-danger" : "border-success")">
+                                <i class="fa-solid @(Model.IsServiceEnded ? "fa-circle-xmark" : "fa-circle-check") me-1"></i>
+                                @(Model.IsServiceEnded ? "Service Ended" : "In Service")
+                            </span>
+                            <span class="badge @(Model.IsSalaryStopped ? "bg-danger" : "bg-success") bg-opacity-10 @(Model.IsSalaryStopped ? "text-danger" : "text-success") border @(Model.IsSalaryStopped ? "border-danger" : "border-success")">
+                                <i class="fa-solid @(Model.IsSalaryStopped ? "fa-circle-xmark" : "fa-circle-check") me-1"></i>
+                                @(Model.IsSalaryStopped ? "Salary Stopped" : "Salary Active")
+                            </span>
+                        </div>
+                    </div>
+
+                    @if (Model.IsServiceEnded && Model.ServiceEndDate.HasValue)
+                    {
+                        <div class="col-12 col-md-6 col-xl-3">
+                            <label class="form-label text-muted small fw-semibold mb-0">Service End Date</label>
+                            <div class="text-danger small fw-bold mt-1">@Model.ServiceEndDate.Value.ToString("dd MMM yyyy HH:mm")</div>
+                        </div>
+                    }
+
+                    <div class="col-12">
+                        <hr class="text-muted opacity-25 my-2" />
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <label class="form-label text-muted small fw-semibold mb-0">Tax Setup</label>
+                        <div class="d-flex gap-2 flex-wrap mt-1">
+                            <span class="badge @(Model.IsFiler ? "bg-success" : "bg-secondary") bg-opacity-10 @(Model.IsFiler ? "text-success" : "text-secondary") border @(Model.IsFiler ? "border-success" : "border-secondary")">
+                                <i class="fa-solid @(Model.IsFiler ? "fa-check" : "fa-xmark") me-1"></i> @(Model.IsFiler ? "Filer" : "Non-Filer")
+                            </span>
+                            @if (Model.TaxExempted)
+                            {
+                                <span class="badge bg-info bg-opacity-10 text-info border border-info">Tax Exempted</span>
+                            }
+                            @if (Model.ZakatDeduction)
+                            {
+                                <span class="badge bg-warning bg-opacity-10 text-warning border border-warning">Zakat Declaration</span>
+                            }
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.NTN))
+                        {
+                            <div class="mt-2">
+                                <span class="text-muted small me-1">NTN:</span>
+                                <span class="fw-medium text-dark small" style="font-family: var(--bs-font-monospace);">@Model.NTN</span>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <label class="form-label text-muted small fw-semibold mb-0">Statutory Deductions</label>
+                        <div class="d-flex flex-column gap-2 mt-1">
+                            <span class="badge @(Model.isEobi ? "bg-success" : "bg-secondary") bg-opacity-10 @(Model.isEobi ? "text-success" : "text-secondary") border @(Model.isEobi ? "border-success" : "border-secondary") text-start d-inline-block w-auto" style="max-width: fit-content;">
+                                EOBI: @(Model.isEobi ? (Model.EobiNumber?.ToString() ?? "Active") : "Not Enrolled")
+                            </span>
+                            <span class="badge @(Model.isSocailSecuirty ? "bg-success" : "bg-secondary") bg-opacity-10 @(Model.isSocailSecuirty ? "text-success" : "text-secondary") border @(Model.isSocailSecuirty ? "border-success" : "border-secondary") text-start d-inline-block w-auto" style="max-width: fit-content;">
+                                SS: @(Model.isSocailSecuirty ? (Model.SocailSecuirty?.ToString() ?? "Active") : "Not Enrolled")
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-md-12 col-xl-4">
+                        <label class="form-label text-muted small fw-semibold mb-0">PF & Overtime</label>
+                        <div class="d-flex flex-column gap-2 mt-1">
+                            <span class="badge @(Model.isOverTime ? "bg-success" : "bg-secondary") bg-opacity-10 @(Model.isOverTime ? "text-success" : "text-secondary") border @(Model.isOverTime ? "border-success" : "border-secondary") text-start d-inline-block w-auto" style="max-width: fit-content;">
+                                OT: @(Model.isOverTime ? (Model.OvertimePolicy?.PolicyName ?? "Active") : "No Overtime")
+                            </span>
+                            <span class="badge @(Model.isPfMember ? "bg-success" : "bg-secondary") bg-opacity-10 @(Model.isPfMember ? "text-success" : "text-secondary") border @(Model.isPfMember ? "border-success" : "border-secondary") text-start d-inline-block w-auto" style="max-width: fit-content;">
+                                PF: @(Model.isPfMember ? $"Member (#{Model.pfmembernumber})" : "Non-Member")
+                            </span>
+                            @if (Model.IsFixedPFAmount && Model.PFAmount.HasValue)
+                            {
+                                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary text-start d-inline-block w-auto" style="max-width: fit-content;">
+                                    Fixed PF: @Model.PFAmount.Value.ToString("N2")
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-actions-sticky mt-4">
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Index"> Back</a>
+            
+        </div>
+    </main>
+</div>

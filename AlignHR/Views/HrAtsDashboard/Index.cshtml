@@ -1,0 +1,195 @@
+@model AlignHR.Models.HrAtsDashboardViewModel
+
+@{
+    ViewData["Title"] = "ATS Dashboard";
+    ViewBag.ActivePage = "HrAtsDashboard";
+
+    string StageClass(string? s) => s switch
+    {
+        "Applied"      => "badge-secondary",
+        "Screening"    => "badge-primary",
+        "Shortlisted"  => "badge-primary",
+        "Interview"    => "badge-warning",
+        "Final Review" => "badge-warning",
+        "Selected"     => "badge-success",
+        "Hired"        => "badge-success",
+        "Rejected"     => "badge-danger",
+        "Withdrawn"    => "badge-secondary",
+        _              => "badge-secondary"
+    };
+
+    string StageBarColor(string? s) => s switch
+    {
+        "Applied"      => "var(--ahr-text-muted,#6b7280)",
+        "Screening"    => "var(--ahr-accent,#6366f1)",
+        "Shortlisted"  => "var(--ahr-accent,#6366f1)",
+        "Interview"    => "#f59e0b",
+        "Final Review" => "#f59e0b",
+        "Selected"     => "#10b981",
+        "Hired"        => "#10b981",
+        "Rejected"     => "#ef4444",
+        "Withdrawn"    => "var(--ahr-text-muted,#6b7280)",
+        _              => "var(--ahr-accent,#6366f1)"
+    };
+}
+
+@* ── Summary Cards ── *@
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card-inner text-center">
+            <i class="fa-solid fa-briefcase fa-lg mb-2" style="color:var(--ahr-accent,#6366f1);opacity:.8;"></i>
+            <div class="fs-2 fw-bold">@Model.OpenJobPostings</div>
+            <div class="small text-muted mt-1">Open Postings</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card-inner text-center">
+            <i class="fa-solid fa-file-lines fa-lg mb-2" style="color:#10b981;opacity:.8;"></i>
+            <div class="fs-2 fw-bold">@Model.ActiveApplications</div>
+            <div class="small text-muted mt-1">Active Applications</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card-inner text-center">
+            <i class="fa-solid fa-users fa-lg mb-2" style="color:#06b6d4;opacity:.8;"></i>
+            <div class="fs-2 fw-bold">@Model.CandidatesInPipeline</div>
+            <div class="small text-muted mt-1">Candidates in Pipeline</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card-inner text-center">
+            <i class="fa-solid fa-layer-group fa-lg mb-2" style="color:#f59e0b;opacity:.8;"></i>
+            <div class="fs-2 fw-bold">@Model.ApplicationsByStage.Count</div>
+            <div class="small text-muted mt-1">Active Stages</div>
+        </div>
+    </div>
+</div>
+
+@* ── Stage Breakdown + Open Postings ── *@
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-5">
+        <div class="card-inner h-100">
+            <div class="fw-semibold small mb-3">
+                <i class="fa-solid fa-chart-bar me-1 text-muted"></i>Applications by Stage
+            </div>
+            @if (Model.ApplicationsByStage.Any())
+            {
+                var total = Model.ApplicationsByStage.Sum(s => s.Count);
+                @foreach (var stage in Model.ApplicationsByStage.OrderByDescending(s => s.Count))
+                {
+                    var pct = total > 0 ? (int)((stage.Count * 100.0) / total) : 0;
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center small mb-1">
+                            <span class="status-badge @StageClass(stage.StageName)">@stage.StageName</span>
+                            <span class="fw-semibold">@stage.Count</span>
+                        </div>
+                        <div class="progress" style="height:5px;background:var(--ahr-border,#e5e7eb);border-radius:4px;">
+                            <div class="progress-bar" style="width:@pct%;background:@StageBarColor(stage.StageName);transition:width .4s;border-radius:4px;"></div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-muted small mb-0">No active applications.</p>
+            }
+        </div>
+    </div>
+
+    <div class="col-12 col-md-7">
+        <div class="card-inner h-100">
+            <div class="fw-semibold small mb-3">
+                <i class="fa-solid fa-briefcase me-1 text-muted"></i>Open Job Postings
+            </div>
+            @if (Model.ActivePostings.Any())
+            {
+                <div class="table-shell mb-0" style="--erp-table-radius:8px;">
+                    <div class="erp-table-wrap">
+                        <table class="table table-sm erp-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Title</th>
+                                    <th>Open Date</th>
+                                    <th class="text-end sticky-actions">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in Model.ActivePostings)
+                                {
+                                    <tr>
+                                        <td><span class="fw-semibold" style="font-family:var(--ahr-font-mono,monospace);font-size:12px;">@p.JobCode</span></td>
+                                        <td>@p.JobTitle</td>
+                                        <td class="text-muted small">@p.OpenDate.ToString("dd MMM yyyy")</td>
+                                        <td class="text-end sticky-actions">
+                                            <div class="d-flex justify-content-end gap-1">
+                                                <a asp-controller="HrJobPostings" asp-action="Details" asp-route-id="@p.Id"
+                                                   class="btn btn-icon btn-sm btn-icon-secondary" title="View Posting">
+                                                    <i class="fa-solid fa-eye"></i>
+                                                </a>
+                                                <a asp-controller="HrApplications" asp-action="Index" asp-route-jobPostingId="@p.Id"
+                                                   class="btn btn-icon btn-sm btn-icon-primary" title="View Applications">
+                                                    <i class="fa-solid fa-users"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <p class="text-muted small mb-0">No open postings.</p>
+            }
+        </div>
+    </div>
+</div>
+
+@* ── Recent Applications ── *@
+<div class="card-inner">
+    <div class="fw-semibold small mb-3">
+        <i class="fa-solid fa-clock-rotate-left me-1 text-muted"></i>Recent Applications
+    </div>
+    @if (Model.RecentApplications.Any())
+    {
+        <div class="table-shell mb-0" style="--erp-table-radius:8px;">
+            <div class="erp-table-wrap">
+                <table class="table table-hover table-sm erp-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Candidate</th>
+                            <th>Email</th>
+                            <th>Stage</th>
+                            <th>Applied</th>
+                            <th class="text-end sticky-actions">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.RecentApplications)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@a.CandidateName</td>
+                                <td class="text-muted small">@a.CandidateEmail</td>
+                                <td><span class="status-badge @StageClass(a.CurrentStage)">@(a.CurrentStage ?? "—")</span></td>
+                                <td class="text-muted small">@(a.AppliedDate?.ToString("dd MMM yyyy") ?? "—")</td>
+                                <td class="text-end sticky-actions">
+                                    <a asp-controller="HrApplications" asp-action="Details" asp-route-id="@a.Id"
+                                       class="btn btn-icon btn-sm btn-icon-primary" title="View">
+                                        <i class="fa-solid fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted small mb-0">No recent applications.</p>
+    }
+</div>

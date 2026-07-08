@@ -1,0 +1,131 @@
+@{
+    ViewData["Title"] = "Login";
+    Layout = "_LoginLayout";
+}
+
+<div class="ahr-split-container">
+
+    <!-- Left hero panel – hidden on mobile via CSS -->
+    <div class="ahr-split-hero">
+        <div class="hero-glow"></div>
+        <div class="hero-grid"></div>
+        <div class="hero-content">
+            <div class="hero-brand">
+                <div class="hero-brand-icon"><img src="~/images/alignhr-icon.png" alt="" /></div>
+                <span class="hero-brand-name">AlignHR</span>
+            </div>
+            <h1 class="hero-title">Streamline your<br>workforce today</h1>
+            <p class="hero-description">Manage payroll, attendance, shifts, and HR operations — all in one clean, fast platform.</p>
+            <div class="hero-mockup">
+                <div class="mockup-header">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <span class="mockup-title">dashboard &middot; live</span>
+                </div>
+                <div class="mockup-body">
+                    <div class="mockup-row">
+                        <div class="mockup-card">
+                            <span class="mockup-label">Employees</span>
+                            <div class="mockup-val">248</div>
+                        </div>
+                        <div class="mockup-card">
+                            <span class="mockup-label">Present</span>
+                            <div class="mockup-val">231</div>
+                        </div>
+                        <div class="mockup-card">
+                            <span class="mockup-label">On Leave</span>
+                            <div class="mockup-val">17</div>
+                        </div>
+                    </div>
+                    <div class="mockup-chart-container">
+                        <div class="mockup-chart-label">Weekly Attendance</div>
+                        <div class="mockup-chart">
+                            <div class="bar-wrapper"><div class="bar" style="--h:38px"></div><span class="bar-lbl">M</span></div>
+                            <div class="bar-wrapper"><div class="bar" style="--h:52px"></div><span class="bar-lbl">T</span></div>
+                            <div class="bar-wrapper"><div class="bar" style="--h:46px"></div><span class="bar-lbl">W</span></div>
+                            <div class="bar-wrapper"><div class="bar" style="--h:55px"></div><span class="bar-lbl">T</span></div>
+                            <div class="bar-wrapper"><div class="bar" style="--h:42px"></div><span class="bar-lbl">F</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="ahr-split-form">
+        <div class="ahr-auth-card">
+
+            <a href="/" class="ahr-auth-brand">
+                <div class="brand-icon"><img src="~/images/alignhr-icon.png" alt="" /></div>
+                <span class="ahr-brand-name">AlignHR</span>
+            </a>
+
+            <h1 class="ahr-auth-title">Sign in</h1>
+            <p class="ahr-auth-subtitle">Enter your credentials to continue</p>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                var errors = ViewData.ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+                if (errors.Any())
+                {
+                    <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mb-3" role="alert">
+                        <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+                        <span>@errors.First()</span>
+                    </div>
+                }
+            }
+
+            <form asp-action="Login" method="post" id="loginForm">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label" for="emailInput">Email Address</label>
+                    <div class="ahr-field-wrap">
+                        <i class="bi bi-envelope ahr-field-icon"></i>
+                        <input name="email" type="email" class="form-control ahr-field-input" id="emailInput"
+                               placeholder="you@company.com" required autocomplete="email" />
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label" for="passwordInput">Password</label>
+                    <div class="ahr-field-wrap">
+                        <i class="bi bi-lock ahr-field-icon"></i>
+                        <input name="password" type="password" class="form-control ahr-field-input ahr-field-input--has-toggle" id="passwordInput"
+                               placeholder="••••••••" required autocomplete="current-password" />
+                        <button type="button" class="ahr-field-toggle" id="togglePassword" aria-label="Toggle password visibility">
+                            <i class="bi bi-eye" id="eyeIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" id="loginBtn">
+                    Sign In
+                </button>
+            </form>
+
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('togglePassword').addEventListener('click', function () {
+            const input = document.getElementById('passwordInput');
+            const icon  = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type     = 'text';
+                icon.className = 'bi bi-eye-slash';
+            } else {
+                input.type     = 'password';
+                icon.className = 'bi bi-eye';
+            }
+        });
+    </script>
+}

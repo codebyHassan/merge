@@ -1,0 +1,189 @@
+@{
+    ViewData["Title"] = "Administration";
+    ViewBag.ActivePage = "Administration";
+
+    int totalUsers       = ViewBag.TotalUsers ?? 0;
+    int activeUsers      = ViewBag.ActiveUsers ?? 0;
+    int totalRoles       = ViewBag.TotalRoles ?? 0;
+    int totalFunctions   = ViewBag.TotalFunctions ?? 0;
+    int totalValuesets   = ViewBag.TotalValuesets ?? 0;
+    int totalUserRoles   = ViewBag.TotalUserRoles ?? 0;
+    int totalFuncRoles   = ViewBag.TotalFunctionRoles ?? 0;
+}
+
+<!-- Stats -->
+<section class="row g-2 mb-3" aria-label="Administration summary">
+    <div class="col-6 col-xl-3">
+        <article class="metric-card">
+            <div class="metric-label">Total Users</div>
+            <div class="metric-value">@totalUsers</div>
+            <div class="metric-meta">
+                <span class="trend-up"><i class="fa-solid fa-circle-check"></i>@activeUsers active</span>
+            </div>
+        </article>
+    </div>
+    <div class="col-6 col-xl-3">
+        <article class="metric-card">
+            <div class="metric-label">Roles</div>
+            <div class="metric-value">@totalRoles</div>
+            <div class="metric-meta">
+                <span><i class="fa-solid fa-shield-halved" style="color:var(--erp-primary);"></i>@totalUserRoles assignments</span>
+            </div>
+        </article>
+    </div>
+    <div class="col-6 col-xl-3">
+        <article class="metric-card">
+            <div class="metric-label">Functions</div>
+            <div class="metric-value">@totalFunctions</div>
+            <div class="metric-meta">
+                <span><i class="fa-solid fa-key" style="color:var(--erp-primary);"></i>@totalFuncRoles permissions</span>
+            </div>
+        </article>
+    </div>
+    <div class="col-6 col-xl-3">
+        <article class="metric-card">
+            <div class="metric-label">Value Sets</div>
+            <div class="metric-value">@totalValuesets</div>
+            <div class="metric-meta">
+                <span><i class="fa-solid fa-list-ul" style="color:var(--erp-primary);"></i>lookup entries</span>
+            </div>
+        </article>
+    </div>
+</section>
+
+<!-- Module Cards -->
+<div class="row g-3">
+
+    <!-- Users -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <article class="erp-card h-100" style="padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:.875rem;margin-bottom:.875rem;">
+                <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#06b6d4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:.92rem;color:var(--erp-text);">Users</div>
+                    <div style="font-size:.75rem;color:var(--erp-muted);">@totalUsers total &middot; @activeUsers active</div>
+                </div>
+            </div>
+            <p style="font-size:.8rem;color:var(--erp-muted);line-height:1.55;margin-bottom:1.25rem;">
+                Create and manage system user accounts, link employee profiles, and control active status.
+            </p>
+            <div style="display:flex;gap:.5rem;">
+                <a asp-controller="User" asp-action="Index" class="btn btn-soft btn-sm" style="flex:1;text-align:center;">View Users</a>
+                <a asp-controller="User" asp-action="Create" class="btn btn-primary btn-sm" style="flex:1;text-align:center;">Add User</a>
+            </div>
+        </article>
+    </div>
+
+    <!-- Roles -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <article class="erp-card h-100" style="padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:.875rem;margin-bottom:.875rem;">
+                <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#8b5cf6,#a78bfa);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;">
+                    <i class="fas fa-shield-halved"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:.92rem;color:var(--erp-text);">Roles</div>
+                    <div style="font-size:.75rem;color:var(--erp-muted);">@totalRoles defined</div>
+                </div>
+            </div>
+            <p style="font-size:.8rem;color:var(--erp-muted);line-height:1.55;margin-bottom:1.25rem;">
+                Define roles that group related permissions. Assign roles to users and map functions to each role.
+            </p>
+            <div style="display:flex;gap:.5rem;">
+                <a asp-controller="Roles" asp-action="Index" class="btn btn-soft btn-sm" style="flex:1;text-align:center;">View Roles</a>
+                <a asp-controller="Roles" asp-action="create" class="btn btn-primary btn-sm" style="flex:1;text-align:center;">Add Role</a>
+            </div>
+        </article>
+    </div>
+
+    <!-- Functions -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <article class="erp-card h-100" style="padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:.875rem;margin-bottom:.875rem;">
+                <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;">
+                    <i class="fas fa-code-branch"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:.92rem;color:var(--erp-text);">Functions</div>
+                    <div style="font-size:.75rem;color:var(--erp-muted);">@totalFunctions registered</div>
+                </div>
+            </div>
+            <p style="font-size:.8rem;color:var(--erp-muted);line-height:1.55;margin-bottom:1.25rem;">
+                System functions represent controller/action routes that can be protected and assigned to roles for access control.
+            </p>
+            <div style="display:flex;gap:.5rem;">
+                <a asp-controller="Function" asp-action="Index" class="btn btn-soft btn-sm" style="flex:1;text-align:center;">View Functions</a>
+                <a asp-controller="Function" asp-action="create" class="btn btn-primary btn-sm" style="flex:1;text-align:center;">Add Function</a>
+            </div>
+        </article>
+    </div>
+
+    <!-- User Roles -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <article class="erp-card h-100" style="padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:.875rem;margin-bottom:.875rem;">
+                <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#6B7280,#374151);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;">
+                    <i class="fas fa-user-tag"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:.92rem;color:var(--erp-text);">User Roles</div>
+                    <div style="font-size:.75rem;color:var(--erp-muted);">@totalUserRoles assignments</div>
+                </div>
+            </div>
+            <p style="font-size:.8rem;color:var(--erp-muted);line-height:1.55;margin-bottom:1.25rem;">
+                Assign one or more roles to each user to grant them the corresponding set of permissions in the system.
+            </p>
+            <div style="display:flex;gap:.5rem;">
+                <a asp-controller="UserRole" asp-action="Index" class="btn btn-soft btn-sm" style="flex:1;text-align:center;">View Assignments</a>
+                <a asp-controller="UserRole" asp-action="Create" class="btn btn-primary btn-sm" style="flex:1;text-align:center;">Assign Role</a>
+            </div>
+        </article>
+    </div>
+
+    <!-- Function Roles -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <article class="erp-card h-100" style="padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:.875rem;margin-bottom:.875rem;">
+                <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;">
+                    <i class="fas fa-key"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:.92rem;color:var(--erp-text);">Function Roles</div>
+                    <div style="font-size:.75rem;color:var(--erp-muted);">@totalFuncRoles permissions mapped</div>
+                </div>
+            </div>
+            <p style="font-size:.8rem;color:var(--erp-muted);line-height:1.55;margin-bottom:1.25rem;">
+                Map system functions to roles to control which roles can access specific pages and actions.
+            </p>
+            <div style="display:flex;gap:.5rem;">
+                <a asp-controller="FunctionRole" asp-action="Index" class="btn btn-soft btn-sm" style="flex:1;text-align:center;">View Assignments</a>
+                <a asp-controller="FunctionRole" asp-action="Create" class="btn btn-primary btn-sm" style="flex:1;text-align:center;">Assign Function</a>
+            </div>
+        </article>
+    </div>
+
+    <!-- Value Sets -->
+    <div class="col-12 col-md-6 col-xl-4">
+        <article class="erp-card h-100" style="padding:1.5rem;">
+            <div style="display:flex;align-items:center;gap:.875rem;margin-bottom:.875rem;">
+                <div style="width:46px;height:46px;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#0369a1);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;flex-shrink:0;">
+                    <i class="fas fa-list-ul"></i>
+                </div>
+                <div>
+                    <div style="font-weight:700;font-size:.92rem;color:var(--erp-text);">Value Sets</div>
+                    <div style="font-size:.75rem;color:var(--erp-muted);">@totalValuesets entries</div>
+                </div>
+            </div>
+            <p style="font-size:.8rem;color:var(--erp-muted);line-height:1.55;margin-bottom:1.25rem;">
+                Manage system lookup values such as employment types, departments, statuses, and other reference data.
+            </p>
+            <div style="display:flex;gap:.5rem;">
+                <a asp-controller="valueset" asp-action="Index" class="btn btn-soft btn-sm" style="flex:1;text-align:center;">View Value Sets</a>
+                <a asp-controller="valueset" asp-action="Create" class="btn btn-primary btn-sm" style="flex:1;text-align:center;">Add Value Set</a>
+            </div>
+        </article>
+    </div>
+
+</div>

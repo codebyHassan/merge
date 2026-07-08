@@ -1,0 +1,210 @@
+@model AlignHR.Models.MasterLoanAdvance
+@{
+    ViewData["Title"] = "Edit Transaction";
+    ViewBag.ActivePage = "MasterLoanAdvance";
+    var isLoanTransaction = Model.TransactionType == AlignHR.Models.TransactionType.Loan;
+    var selectedTransactionType = isLoanTransaction ? "Loan" : "Salary";
+    var employeeDisplay = Model.Employee != null
+        ? $"{Model.Employee.FirstName} {Model.Employee.LastName} ({Model.Employee.Code})"
+        : string.Empty;
+}
+
+<form asp-action="Edit" method="post" id="loanAdvanceForm" class="employee-create needs-validation" novalidate>
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+    <input type="hidden" asp-for="id" />
+    <input type="hidden" asp-for="createdby" />
+    <input type="hidden" asp-for="createat" />
+
+    <div class="row g-4">
+        <aside class="col-lg-6 col-md-12 employee-profile-panel">
+            <div class="readiness-card" style="position: relative; z-index: 1001;">
+                <div class="readiness-header">
+                    <span>Employee Selection</span>
+                    <strong>Required</strong>
+                </div>
+                <label class="form-label">Search Employee <span class="required">*</span></label>
+                <div class="search-input-container">
+                    <input type="text" id="employeeSearch" name="term" class="form-control" placeholder="Type name or code..." autocomplete="off"
+                           value="@employeeDisplay"
+                           hx-get="/Ajax/SearchEmployees"
+                           hx-trigger="keyup delay:300ms, search"
+                           hx-target="#employeeResults"
+                           hx-indicator="#searchIndicator" />
+                    <div id="searchIndicator" class="htmx-indicator search-spinner-box">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                    </div>
+                </div>
+                <div id="employeeResults" class="search-results-container"></div>
+                <input type="hidden" asp-for="EmployeeID" id="hfEmployeeId" required />
+                <span asp-validation-for="EmployeeID" class="text-danger small"></span>
+            </div>
+
+            @if (Model.Employee != null)
+            {
+                <div id="employeeResult" class="employee-profile-slot"
+                     hx-get="@Url.Action("SearchEmployee", "MasterLoanAdvance", new { code = Model.Employee.Code })"
+                     hx-trigger="load">
+                    <div class="search-placeholder">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        <p>Loading employee profile...</p>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div id="employeeResult" class="employee-profile-slot">
+                    <div class="placeholder-card">
+                        <div class="placeholder-icon">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <strong>Search and select an employee</strong>
+                        <p>The employee profile card will appear here after selection.</p>
+                    </div>
+                </div>
+            }
+        </aside>
+
+        <main class="col-lg-6 col-md-12 employee-form-main">
+            <input asp-for="TransactionType" type="hidden" id="transactionTypeInput" />
+
+            <ul class="nav nav-tabs border-0 mb-0" id="transactionTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button type="button"
+                            class="nav-link @(isLoanTransaction ? string.Empty : "active") loan-transaction-tab"
+                            data-value="Salary"
+                            hx-get="@Url.Action("GetFields", "MasterLoanAdvance", new { TransactionType = "Salary", id = Model.id })"
+                            hx-target="#dynamicFields"
+                            onclick="switchTransactionTab(this)">
+                        <i class="fas fa-money-check-alt me-1"></i> Salary Advance
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button type="button"
+                            class="nav-link @(isLoanTransaction ? "active" : string.Empty) loan-transaction-tab"
+                            data-value="Loan"
+                            hx-get="@Url.Action("GetFields", "MasterLoanAdvance", new { TransactionType = "Loan", id = Model.id })"
+                            hx-target="#dynamicFields"
+                            onclick="switchTransactionTab(this)">
+                        <i class="fas fa-hand-holding-usd me-1"></i> Employee Loan
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="transaction-pane" role="tabpanel">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6 col-xl-4">
+                            <label asp-for="Status" class="form-label">Transaction Status <span class="required">*</span></label>
+                            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<AlignHR.Models.LoanStatus>()"></select>
+                            <span asp-validation-for="Status" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <div id="dynamicFields"
+                                 class="htmx-fade-up"
+                                 hx-get="@Url.Action("GetFields", "MasterLoanAdvance", new { TransactionType = selectedTransactionType, id = Model.id })"
+                                 hx-trigger="load">
+                                <div class="search-placeholder">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                    <p>Loading record details...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions-sticky mt-0">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                <button type="submit" class="btn btn-primary btn-sm">Save</button>
+            </div>
+        </main>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const searchInput = document.getElementById('employeeSearch');
+            const hiddenInput = document.getElementById('hfEmployeeId');
+            const results = document.getElementById('employeeResults');
+
+            searchInput?.addEventListener('input', function () {
+                if (hiddenInput) {
+                    hiddenInput.value = '';
+                }
+            });
+
+            document.body.addEventListener('click', function (e) {
+                const row = e.target.closest('.search-result-item');
+                if (!row) {
+                    return;
+                }
+
+                const id = row.dataset.id;
+                const name = row.dataset.name;
+                const code = row.dataset.code;
+
+                if (hiddenInput) {
+                    hiddenInput.value = id;
+                }
+
+                if (results) {
+                    results.innerHTML = '';
+                }
+
+                if (searchInput) {
+                    searchInput.value = name + ' (' + code + ')';
+                }
+
+                htmx.ajax('GET', '@Url.Action("SearchEmployee", "MasterLoanAdvance")', {
+                    values: { code: code },
+                    target: '#employeeResult',
+                    indicator: '#searchIndicator'
+                });
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('#employeeSearch') && !e.target.closest('#employeeResults') && results) {
+                    results.innerHTML = '';
+                }
+            });
+
+            const initialType = '@selectedTransactionType';
+            if (document.getElementById('transactionTypeInput')) {
+                document.getElementById('transactionTypeInput').value = initialType;
+            }
+            updateTransactionSummary(initialType);
+        });
+
+        function switchTransactionTab(btn) {
+            const tabs = document.querySelectorAll('#transactionTabs .loan-transaction-tab');
+            const input = document.getElementById('transactionTypeInput');
+
+            tabs.forEach(tab => tab.classList.remove('active'));
+            btn.classList.add('active');
+
+            if (input) {
+                input.value = btn.getAttribute('data-value');
+            }
+
+            updateTransactionSummary(btn.getAttribute('data-value'));
+        }
+
+        function updateTransactionSummary(type) {
+            const badge = document.getElementById('transactionBadge');
+            const label = document.getElementById('transactionSummaryType');
+            const isLoan = type === 'Loan';
+
+            if (badge) {
+                badge.textContent = isLoan ? 'LN' : 'SA';
+            }
+
+            if (label) {
+                label.textContent = isLoan ? 'Employee Loan' : 'Salary Advance';
+            }
+        }
+    </script>
+}

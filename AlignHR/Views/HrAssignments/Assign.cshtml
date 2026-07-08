@@ -1,0 +1,74 @@
+@model AlignHR.Models.HrAssignmentFormViewModel
+
+@{
+    ViewData["Title"] = "Assign Recruiter";
+    ViewBag.ActivePage = "HrRequisitions";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <div class="mb-3">
+            <div class="small text-muted">Requisition</div>
+            <div class="fw-semibold">@Model.RequisitionNo — @Model.PositionTitle</div>
+        </div>
+
+        <form asp-action="Assign" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="RequisitionFk" />
+            <input type="hidden" asp-for="RequisitionNo" />
+            <input type="hidden" asp-for="PositionTitle" />
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            @if (ViewBag.RecruiterWarning != null)
+            {
+                <div class="alert alert-warning py-2 px-3 small mb-3" role="alert">
+                    <i class="fa-solid fa-triangle-exclamation me-1"></i>@ViewBag.RecruiterWarning
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label asp-for="RecruiterEmployeeFK" class="form-label small fw-semibold">Recruiter <span class="text-danger">*</span></label>
+                    <select asp-for="RecruiterEmployeeFK" asp-items="ViewBag.Recruiters" class="form-select form-select-sm">
+                        <option value="">— Select Recruiter —</option>
+                    </select>
+                    <span asp-validation-for="RecruiterEmployeeFK" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label asp-for="AssignedDate" class="form-label small fw-semibold">Assigned Date</label>
+                    <input asp-for="AssignedDate" type="date" class="form-control form-control-sm" />
+                    <span asp-validation-for="AssignedDate" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Notes" class="form-label small fw-semibold">Notes</label>
+                    <textarea asp-for="Notes" class="form-control form-control-sm" rows="3"
+                              placeholder="Any notes about this assignment…"></textarea>
+                    <span asp-validation-for="Notes" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-controller="HrRequisitions" asp-action="Details" asp-route-id="@Model.RequisitionFk"
+                       class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-user-check me-1"></i>Assign Recruiter
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

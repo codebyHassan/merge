@@ -1,0 +1,63 @@
+@model AlignHR.Models.DocumentCategory
+
+@{
+    ViewData["Title"] = "Edit Document Category";
+    ViewBag.ActivePage = "DocumentCategories";
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="CategoryID" />
+            <input type="hidden" asp-for="createat" />
+            <input type="hidden" asp-for="createdby" />
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="alert alert-danger p-2 mb-3 small" role="alert">
+                    <div asp-validation-summary="ModelOnly"></div>
+                </div>
+            }
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6">
+                    <label asp-for="CategoryName" class="form-label small fw-semibold">Category Name <span class="text-danger">*</span></label>
+                    <input asp-for="CategoryName" class="form-control form-control-sm" required />
+                    <span asp-validation-for="CategoryName" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Description" class="form-label small fw-semibold">Description</label>
+                    <input asp-for="Description" class="form-control form-control-sm" />
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="d-flex align-items-center justify-content-between p-3" style="background: var(--bg-secondary); border-radius: 12px; border: 1px solid var(--border); min-height: 70px;">
+                        <div class="toggle-content">
+                            <div class="toggle-title" style="font-size: 14px; font-weight: 700; color: var(--text);">Active</div>
+                        </div>
+                        <label class="premium-switch m-0">
+                            <input type="checkbox" name="IsActive" value="true" @(Model.IsActive ? "checked" : "") />
+                            <span class="premium-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <span class="text-muted small me-auto align-self-center">
+                        ID #@Model.CategoryID
+                    </span>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Cancel</a>
+                    <button type="submit" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-floppy-disk me-1"></i>Save Changes
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

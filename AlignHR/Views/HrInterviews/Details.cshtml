@@ -1,0 +1,240 @@
+@model AlignHR.Models.HrInterviewDetailsViewModel
+
+@{
+    ViewData["Title"] = "Interview — " + Model.RoundName;
+    ViewBag.ActivePage = "HrJobPostings";
+
+    var statusClass = Model.Status switch
+    {
+        "Completed"   => "badge-success",
+        "Cancelled"   => "badge-danger",
+        "NoShow"      => "badge-danger",
+        "Rescheduled" => "badge-warning",
+        _             => "badge-secondary"
+    };
+
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show py-2 small">
+        @TempData["Success"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show py-2 small">
+        @TempData["Error"]<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="form-shell w-100 animate-fade-in">
+    <div class="card-inner">
+
+        @* ── Header ── *@
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-4">
+            <div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="fw-bold fs-6">@Model.RoundName</span>
+                    <span class="status-badge @statusClass">@Model.Status</span>
+                    @if (Model.RoundOrder > 0)
+                    {
+                        <span class="badge bg-secondary bg-opacity-25 text-secondary fw-normal" style="font-size:11px;">Round @Model.RoundOrder</span>
+                    }
+                </div>
+                <div class="text-muted small mt-1">@Model.CandidateName &mdash; @Model.JobCode @Model.JobTitle</div>
+            </div>
+            <a asp-controller="HrApplications" asp-action="Details" asp-route-id="@Model.ApplicationId"
+               class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-arrow-left me-1"></i>Back
+            </a>
+        </div>
+
+        @* ── Interview Info ── *@
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-md-3">
+                <div class="small text-muted mb-1">Candidate</div>
+                <div class="fw-semibold">@Model.CandidateName</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted mb-1">Job Posting</div>
+                <div>
+                    @if (Model.JobPostingId.HasValue)
+                    {
+                        <a asp-controller="HrJobPostings" asp-action="Details" asp-route-id="@Model.JobPostingId"
+                           class="text-decoration-none">@Model.JobCode</a>
+                        <span class="text-muted"> — @Model.JobTitle</span>
+                    }
+                    else
+                    {
+                        <span>@Model.JobCode — @Model.JobTitle</span>
+                    }
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted mb-1">Scheduled</div>
+                <div>@Model.ScheduledDateTime.ToString("dd MMM yyyy")</div>
+                <div class="small text-muted">@Model.ScheduledDateTime.ToString("HH:mm")</div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="small text-muted mb-1">Avg Score</div>
+                @if (Model.AverageScore.HasValue)
+                {
+                    var scoreClass = Model.AverageScore.Value >= 70 ? "text-success"
+                                   : Model.AverageScore.Value >= 50 ? "text-warning"
+                                   : "text-danger";
+                    <div class="fw-bold fs-6 @scoreClass">@Model.AverageScore.Value.ToString("0.#")<span class="fs-6 fw-normal text-muted">/100</span></div>
+                }
+                else
+                {
+                    <div class="text-muted">—</div>
+                }
+            </div>
+            @if (!string.IsNullOrEmpty(Model.MeetingLink))
+            {
+                <div class="col-12 col-md-6">
+                    <div class="small text-muted mb-1">Meeting Link</div>
+                    <a href="@Model.MeetingLink" target="_blank" rel="noopener noreferrer"
+                       class="small text-break">
+                        <i class="fa-solid fa-video me-1"></i>@Model.MeetingLink
+                    </a>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Model.Location))
+            {
+                <div class="col-12 col-md-6">
+                    <div class="small text-muted mb-1">Location</div>
+                    <div><i class="fa-solid fa-location-dot me-1 text-muted"></i>@Model.Location</div>
+                </div>
+            }
+        </div>
+
+        @* ── Evaluation Criteria ── *@
+        @if (Model.Criteria.Any())
+        {
+            <hr class="my-3 opacity-25" />
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <div class="fw-semibold small">
+                    <i class="fa-solid fa-list-check me-1 text-muted"></i>Evaluation Criteria
+                </div>
+                <span class="badge bg-secondary bg-opacity-25 text-secondary fw-normal" style="font-size:11px;">
+                    @Model.Criteria.Count criteria &nbsp;·&nbsp; Max @Model.Criteria.Sum(c => c.MaxScore).ToString("0.#") pts
+                </span>
+            </div>
+            <div class="table-shell mb-0" style="--erp-table-radius:8px;">
+                <div class="erp-table-wrap">
+                    <table class="table table-sm erp-table mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:40px">#</th>
+                                <th>Criteria</th>
+                                <th style="width:100px" class="text-end">Max Score</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @{ int ci = 0; }
+                            @foreach (var c in Model.Criteria)
+                            {
+                                ci++;
+                                <tr>
+                                    <td class="text-muted small">@ci</td>
+                                    <td>@c.CriteriaName</td>
+                                    <td class="text-end">
+                                        <span class="badge bg-secondary bg-opacity-25 text-secondary fw-normal">@c.MaxScore.ToString("0.#")</span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2" class="text-end small text-muted fw-semibold">Total</td>
+                                <td class="text-end fw-semibold">@Model.Criteria.Sum(c => c.MaxScore).ToString("0.#")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        }
+
+        @* ── Interview Panel ── *@
+        <hr class="my-3 opacity-25" />
+        <div class="fw-semibold small mb-2">
+            <i class="fa-solid fa-users me-1 text-muted"></i>Interview Panel
+        </div>
+
+        @if (Model.Panel.Any())
+        {
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                @foreach (var p in Model.Panel)
+                {
+                    <span class="badge bg-secondary bg-opacity-25 text-secondary fw-normal" style="font-size:12px;padding:5px 10px;">
+                        @p.EmployeeName
+                    </span>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="text-muted small mb-4">No panel members assigned yet.</div>
+        }
+
+        @* ── Feedback ── *@
+        @{
+            var feedback = Model.Feedback.FirstOrDefault();
+            string recClass = feedback?.Recommendation switch
+            {
+                "Strong Hire" => "badge-success",
+                "Hire"        => "badge-success",
+                "Reject"      => "badge-danger",
+                "Hold"        => "badge-warning",
+                _             => "badge-secondary"
+            };
+        }
+        <hr class="my-3 opacity-25" />
+        <div class="d-flex align-items-center justify-content-between mb-2">
+            <div class="fw-semibold small">
+                <i class="fa-solid fa-star-half-stroke me-1 text-muted"></i>Feedback
+            </div>
+            @if (feedback != null)
+            {
+                <a asp-action="SubmitFeedback" asp-route-scheduleId="@Model.Id"
+                   class="btn btn-outline-secondary btn-sm" style="font-size:11px;">
+                    @(feedback.IsSubmitted ? "View Feedback" : "Edit Draft")
+                </a>
+            }
+            else
+            {
+                <a asp-action="SubmitFeedback" asp-route-scheduleId="@Model.Id"
+                   class="btn btn-primary btn-sm" style="font-size:11px;">
+                    Submit Feedback
+                </a>
+            }
+        </div>
+
+        @if (feedback != null)
+        {
+            <div style="border:1px solid var(--ahr-border);border-radius:6px;padding:14px 16px;background:var(--ahr-surface);">
+                <div class="d-flex flex-wrap gap-3 align-items-center">
+                    <span class="status-badge @(feedback.IsSubmitted ? "badge-success" : "badge-warning")">
+                        @(feedback.IsSubmitted ? "Submitted" : "Draft")
+                    </span>
+                    @if (!string.IsNullOrEmpty(feedback.Recommendation))
+                    {
+                        <span class="status-badge @recClass">@feedback.Recommendation</span>
+                    }
+                    @if (feedback.OverallScore.HasValue)
+                    {
+                        var sc = feedback.OverallScore.Value;
+                        var scColor = sc >= 70 ? "#16a34a" : sc >= 50 ? "#f59e0b" : "#ef4444";
+                        <span style="font-size:13px;font-weight:600;color:@scColor;">Score: @sc.ToString("0.#")%</span>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="text-muted small">No feedback submitted yet.</div>
+        }
+
+    </div>
+</div>

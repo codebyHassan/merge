@@ -1,0 +1,80 @@
+@model AlignHR.Models.Shift
+@{
+    ViewData["Title"] = "Edit Shift";
+    ViewBag.ActivePage = "Shift";
+}
+
+<div class="form-shell w-100">
+    <div class="card-inner">
+        <form asp-action="Edit" method="post" id="shiftEditForm" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="createdby" />
+            <input type="hidden" asp-for="createat" />
+
+            <div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+            <div class="row g-3">
+                <!-- Row 1 -->
+                <div class="col-12 col-md-3">
+                    <label asp-for="ShiftName" class="form-label small fw-semibold">Shift Name <span class="text-danger">*</span></label>
+                    <input asp-for="ShiftName" class="form-control form-control-sm" placeholder="e.g. Morning Standard" required />
+                    <span asp-validation-for="ShiftName" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="GroupName" class="form-label small fw-semibold">Group Name</label>
+                    <select asp-for="GroupName" class="form-select form-select-sm" asp-items="Html.GetEnumSelectList<AlignHR.Models.GroupName>()">
+                        <option value="">-- Select Group --</option>
+                    </select>
+                    <span asp-validation-for="GroupName" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="StartTime" class="form-label small fw-semibold">Start Time <span class="text-danger">*</span></label>
+                    <input asp-for="StartTime" type="time" asp-format="{0:HH:mm}" class="form-control form-control-sm" required />
+                    <span asp-validation-for="StartTime" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="EndTime" class="form-label small fw-semibold">End Time <span class="text-danger">*</span></label>
+                    <input asp-for="EndTime" type="time" asp-format="{0:HH:mm}" class="form-control form-control-sm" required />
+                    <span asp-validation-for="EndTime" class="text-danger small"></span>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="col-12 col-md-3">
+                    <label asp-for="GraceTime" class="form-label small fw-semibold">Grace Time <span class="text-danger">*</span></label>
+                    <input asp-for="GraceTime" type="time" asp-format="{0:HH:mm}" class="form-control form-control-sm" required />
+                    <span asp-validation-for="GraceTime" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="BreakStartTime" class="form-label small fw-semibold">Break Start Time</label>
+                    <input asp-for="BreakStartTime" type="time" asp-format="{0:HH:mm}" class="form-control form-control-sm" />
+                    <span asp-validation-for="BreakStartTime" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3">
+                    <label asp-for="BreakEndTime" class="form-label small fw-semibold">Break End Time</label>
+                    <input asp-for="BreakEndTime" type="time" asp-format="{0:HH:mm}" class="form-control form-control-sm" />
+                    <span asp-validation-for="BreakEndTime" class="text-danger small"></span>
+                </div>
+                <div class="col-12 col-md-3 d-flex align-items-end">
+                    <div class="form-check form-switch mb-2">
+                        <input class="form-check-input" type="checkbox" name="IsNightShift" id="IsNightShift" value="true" @(Model?.IsNightShift == true ? "checked" : "") />
+                        <input type="hidden" name="IsNightShift" value="false" />
+                        <label class="form-check-label fw-semibold small" for="IsNightShift">Is Night Shift?</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Actions Footer -->
+            <div class="row mt-4">
+                <div class="col-12 d-flex justify-content-end gap-2">
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back</a>
+                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

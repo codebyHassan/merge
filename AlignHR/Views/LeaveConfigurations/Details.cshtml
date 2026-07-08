@@ -1,0 +1,89 @@
+@model AlignHR.Models.LeaveConfiguration
+@{ ViewData["Title"] = "Configuration Details"; ViewBag.ActivePage = "LeaveConfigurations"; }
+
+<div class="page-header animate-fade">
+    <div>
+        <h1 class="page-title">Configuration Details</h1>
+        <p class="page-subtitle"><strong>@Model.GroupingType</strong>-based external approval routing — ID #@Model.Id</p>
+    </div>
+    <div style="display:flex;gap:12px">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary btn-sm"><i class="fas fa-edit"></i> Edit</a>
+        <a asp-action="Index" class="btn btn-secondary">Back to List</a>
+    </div>
+</div>
+
+<div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:24px;" class="animate-fade" style="animation-delay:0.1s">
+    <!-- Left: Config Info -->
+    <div class="hr-card" style="margin-bottom:0;height:fit-content;">
+        <div class="card-header">
+            <div class="card-title"><i class="fas fa-info-circle"></i> Configuration</div>
+            <span class="status-badge @(Model.IsActive ? "active" : "inactive")">@(Model.IsActive ? "Active" : "Inactive")</span>
+        </div>
+        <div class="card-body">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+                <div>
+                    <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Grouping Type</div>
+                    <div style="font-weight:600;font-size:16px;color:var(--primary);">@Model.GroupingType</div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Total Mappings</div>
+                    <div style="font-weight:600;font-size:16px;">@Model.Details.Count</div>
+                </div>
+                <div>
+                    <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Created</div>
+                    <div style="font-weight:600;">@Model.CreatedAt.ToString("MMM dd, yyyy hh:mm tt")</div>
+                </div>
+            </div>
+        </div>
+        <div style="padding:12px 24px;background:var(--surface-hover);border-top:1px solid var(--border-light);font-size:12px;color:var(--text-muted);">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                @if (Model.IsDepartment) { <span class="status-badge active">Department</span> }
+                @if (Model.IsSubDepartment) { <span class="status-badge active">Sub-Department</span> }
+                @if (Model.IsGrade) { <span class="status-badge active">Grade</span> }
+                @if (Model.IsDivision) { <span class="status-badge active">Division</span> }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Mapping Table -->
+    <div class="hr-card" style="margin-bottom:0;">
+        <div class="card-header">
+            <div class="card-title"><i class="fas fa-users-cog"></i> Approver Mappings</div>
+            <span class="status-badge pending">@Model.Details.Count records</span>
+        </div>
+        <div class="card-body" style="padding:0;">
+            @if (Model.Details.Any())
+            {
+                <table class="table table-hover erp-table" style="margin:0;">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>@Model.GroupingType</th>
+                            <th>Approver Code</th>
+                            <th>Approver Name</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ var i = 1; }
+                        @foreach (var d in Model.Details)
+                        {
+                            <tr>
+                                <td>@i</td>
+                                <td><strong>@d.ReferenceName</strong></td>
+                                <td><code style="background:var(--surface-hover);padding:2px 8px;border-radius:4px;font-size:13px;">@d.ApproverEmpNo</code></td>
+                                <td>@d.ApproverName</td>
+                            </tr>
+                            i++;
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <div style="padding:40px 20px;text-align:center;">
+                    <p style="color:var(--text-muted);">No approver mappings configured.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

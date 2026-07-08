@@ -1,0 +1,122 @@
+@model IPagedList<AlignHR.Models.ApprovalTemplate>
+@using X.PagedList
+@using X.PagedList.Mvc.Core
+@using X.PagedList.Web.Common
+
+@{
+    ViewData["Title"] = "Approval Templates";
+    ViewBag.ActivePage = "ApprovalTemplate";
+}
+
+<section class="filter-bar mb-2" aria-label="Approval templates filters">
+    <div class="input-group input-group-sm me-auto" style="width: auto;">
+        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+        <input class="form-control"
+               type="search"
+               name="search"
+               value="@Context.Request.Query["search"]"
+               placeholder="Search templates"
+               aria-label="Search records"
+               hx-get="@Url.Action("Index")"
+               hx-target="#template-index-page"
+               hx-select="#template-index-page"
+               hx-trigger="keyup[key=='Enter'], search"
+               hx-include="[name='search']"
+               hx-push-url="true"
+               form="none" />
+    </div>
+    <div class="filter-group">
+        <a class="btn btn-primary btn-sm" asp-action="Create"><i class="fa-solid fa-plus me-1"></i>Create</a>
+    </div>
+</section>
+
+<section class="table-shell" data-erp-table id="template-index-page">
+    <div class="erp-table-wrap">
+        <table class="table table-hover erp-table">
+            <thead>
+                <tr>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="0">Template Name</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="1">Document Type</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="2">Flow Type</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="3">Steps</button></th>
+                    <th scope="col"><button class="table-sort" type="button" data-sort="4">Status</button></th>
+                    <th scope="col" class="text-end sticky-actions">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var l in Model)
+                {
+                    <tr>
+                        <td data-label="Template Name">
+                            <span class="fw-semibold">@l.TemplateName</span>
+                            <span class="text-muted small ms-1">v@l.Version</span>
+                        </td>
+                        <td data-label="Document Type">
+                            <span class="text-muted small">@(l.DocumentType?.TypeName ?? "—")</span>
+                        </td>
+                        <td data-label="Flow Type">
+                            @{
+                                var ftBadge = l.FlowType switch {
+                                    AlignHR.Models.WorkflowFlowType.Department => ("bg-info bg-opacity-10 text-info", "Department"),
+                                    AlignHR.Models.WorkflowFlowType.Reporting  => ("bg-warning bg-opacity-10 text-warning", "Reporting"),
+                                    AlignHR.Models.WorkflowFlowType.Position   => ("bg-purple bg-opacity-10 text-purple", "Position"),
+                                    _                                           => ("bg-secondary", l.FlowType.ToString())
+                                };
+                            }
+                            <span class="badge @ftBadge.Item1">@ftBadge.Item2</span>
+                        </td>
+                        <td data-label="Steps">
+                            <span class="badge bg-secondary">@l.Steps?.Count steps</span>
+                        </td>
+                        <td data-label="Status">
+                            @if (l.IsActive)
+                            {
+                                <span class="badge bg-success bg-opacity-10 text-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger bg-opacity-10 text-danger">Inactive</span>
+                            }
+                        </td>
+                        <td data-label="Actions" class="text-end sticky-actions">
+                            <div class="d-flex justify-content-end gap-1">
+                                <a class="btn btn-icon btn-sm btn-icon-primary" asp-action="Edit" asp-route-id="@l.Id" title="Edit"><i class="fa-solid fa-pen-to-square"></i></a>
+                                <a class="btn btn-icon btn-sm btn-icon-danger" asp-action="Delete" asp-route-id="@l.Id" title="Delete"><i class="fa-solid fa-trash-can"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="empty-state" data-table-empty style="display: @(Model.Any() ? "none" : "block");">
+            <i class="fa-solid fa-inbox"></i>
+            <h3 class="h6 mt-2 mb-1">No records match the current filters</h3>
+            <p class="text-muted mb-0">Adjust search or filters.</p>
+        </div>
+    </div>
+
+    <div class="table-footer">
+        <span class="text-muted small fw-semibold">
+            @if (Model.Any()) {
+                @:Showing @Model.FirstItemOnPage-@Model.LastItemOnPage of @Model.TotalItemCount
+            } else {
+                @:Showing 0-0 of 0
+            }
+        </span>
+        <nav aria-label="Approval templates pagination">
+            @Html.PagedListPager(Model, page => Url.Action("Index", new { 
+                page, 
+                search = Context.Request.Query["search"]
+            }), new PagedListRenderOptions
+            {
+                UlElementClasses = new[] { "pagination", "pagination-sm", "mb-0" },
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" }
+            })
+        </nav>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
